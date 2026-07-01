@@ -236,9 +236,10 @@ export default function OnboardingPage() {
         window.location.href = data.url
         return
       }
-    } catch {}
+    } catch (err) {
+      console.error('Checkout error:', err)
+    }
     setLoading(false)
-    router.push('/dashboard')
   }
 
   return (
