@@ -100,6 +100,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [generatedPhotos, setGeneratedPhotos] = useState<string[]>([])
+  const [genError, setGenError] = useState<string | null>(null)
   const [predictionIds, setPredictionIds] = useState<string[]>([])
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -126,6 +127,7 @@ export default function OnboardingPage() {
     setProgress(0)
     setDidYouKnowIdx(0)
     setGeneratedPhotos([])
+    setGenError(null)
 
     async function startGeneration() {
       if (photos.length === 0) {
@@ -169,8 +171,10 @@ export default function OnboardingPage() {
             }
           } catch {}
         }, 4000)
-      } catch {
-        // Fallback to fake progress if API fails
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setGenError(msg)
+        // Fallback to fake progress so user can continue
         let p = 0
         progressRef.current = setInterval(() => {
           p += 0.5
@@ -432,8 +436,14 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <div className="text-center relative z-10">
-                  <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">DID YOU KNOW?</p>
-                  <p className="text-zinc-300 text-sm">{DID_YOU_KNOW[didYouKnowIdx]}</p>
+                  {genError ? (
+                    <p className="text-red-400 text-xs px-4">⚠ {genError}</p>
+                  ) : (
+                    <>
+                      <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">DID YOU KNOW?</p>
+                      <p className="text-zinc-300 text-sm">{DID_YOU_KNOW[didYouKnowIdx]}</p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="px-4 pb-4">
