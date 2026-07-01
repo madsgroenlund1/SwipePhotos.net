@@ -721,10 +721,27 @@ export default function OnboardingPage() {
                 {/* Google */}
                 <button
                   onClick={async () => {
+                    setLoading(true)
+                    try {
+                      // Create checkout first, store URL, then OAuth
+                      const res = await fetch('/api/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ packageId: selectedPackage, email: '' }),
+                      })
+                      const data = await res.json()
+                      if (data.orderId && photos.length > 0) {
+                        const fd = new FormData()
+                        fd.append('orderId', data.orderId)
+                        for (const photo of photos) fd.append('files', photo)
+                        await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+                      }
+                      if (data.url) localStorage.setItem('sw_pending_checkout', data.url)
+                    } catch {}
                     const supabase = createClient()
                     await supabase.auth.signInWithOAuth({
                       provider: 'google',
-                      options: { redirectTo: `${window.location.origin}/auth/callback` },
+                      options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
                     })
                   }}
                   className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-3.5 rounded-2xl text-sm hover:bg-zinc-100 transition-colors"
