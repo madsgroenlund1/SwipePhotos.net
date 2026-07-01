@@ -23,25 +23,27 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
 
-    const predictions = await Promise.all(
-      SCENES.map(prompt =>
-        replicate.predictions.create({
-          version: PULID_VERSION,
-          input: {
-            main_face_image: dataUrl,
-            prompt,
-            negative_prompt: 'bad quality, blurry, deformed, cartoon, illustration, painting, drawing, art, sketch, nsfw',
-            num_steps: 20,
-            start_step: 0,
-            guidance_scale: 1.2,
-            id_weight: 1.0,
-            num_outputs: 1,
-          },
-        })
-      )
-    )
+    // Sequential with delay to avoid rate limits on low-credit accounts
+    const ids: string[] = []
+    for (const prompt of SCENES) {
+      const p = await replicate.predictions.create({
+        version: PULID_VERSION,
+        input: {
+          main_face_image: dataUrl,
+          prompt,
+          negative_prompt: 'bad quality, blurry, deformed, cartoon, illustration, painting, drawing, art, sketch, nsfw',
+          num_steps: 20,
+          start_step: 0,
+          guidance_scale: 1.2,
+          id_weight: 1.0,
+          num_outputs: 1,
+        },
+      })
+      ids.push(p.id)
+      await new Promise(r => setTimeout(r, 1500))
+    }
 
-    return NextResponse.json({ ids: predictions.map(p => p.id) })
+    return NextResponse.json({ ids })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Preview generation error:', msg)
