@@ -213,11 +213,16 @@ export default function OnboardingPage() {
     if (!email.includes('@')) return
     setLoading(true)
     try {
-      await fetch('/api/auth/signup', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ packageId: selectedPackage, email }),
       })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+        return
+      }
     } catch {}
     setLoading(false)
     router.push('/dashboard')
