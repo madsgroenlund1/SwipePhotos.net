@@ -10,10 +10,10 @@ import { cn } from '@/lib/utils'
 const TOTAL_STEPS = 9
 
 const STYLE_OPTIONS = [
-  { id: 'casual', label: 'Casual Outdoor', src: '/photos/presets/mannequin-1.jpg', free: true },
-  { id: 'formal', label: 'Smart Formal', src: '/photos/presets/mannequin-2.jpg', free: true },
-  { id: 'rooftop', label: 'Rooftop Bar', src: '/photos/presets/mannequin-1.jpg', free: false },
-  { id: 'beach', label: 'Beach Vibes', src: '/photos/presets/mannequin-2.jpg', free: false },
+  { id: 'casual', label: 'Casual Outdoor', src: '/photos/before-after/julius/after/1.jpg', free: true },
+  { id: 'formal', label: 'Smart Formal', src: '/photos/before-after/alex/after/1.jpg', free: true },
+  { id: 'rooftop', label: 'Rooftop Bar', src: '/photos/before-after/andreas/after/1.jpg', free: false },
+  { id: 'beach', label: 'Beach Vibes', src: '/photos/before-after/benni/after/1.jpg', free: false },
 ]
 
 const AI_TRACES_BAD = [
