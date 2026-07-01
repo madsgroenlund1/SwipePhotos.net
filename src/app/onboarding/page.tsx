@@ -66,7 +66,7 @@ const DID_YOU_KNOW = [
   'Better photos = less texting needed',
   "We're the ONLY generator with anti-AI-detection",
   'SwipePhotos photos pass every AI scanner',
-  'Men using SwipePhotos get 10x more matches',
+  '🔥 Men using SwipePhotos get 10x more matches',
 ]
 
 const PACKAGES = [
@@ -155,7 +155,7 @@ export default function OnboardingPage() {
       progressRef.current = setInterval(() => {
         p += p < 70 ? 1.2 : 0.3
         setProgress(Math.min(p, 100))
-        setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
+        setDidYouKnowIdx(Math.min(Math.floor(p / 25), DID_YOU_KNOW.length - 1))
         if (p >= 100) clearInterval(progressRef.current!)
       }, 80)
     }
