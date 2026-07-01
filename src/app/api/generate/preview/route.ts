@@ -4,26 +4,11 @@ import Replicate from 'replicate'
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! })
 
 const SCENES = [
-  {
-    prompt: 'photo of a man sitting at an outdoor Italian restaurant, Mediterranean cobblestone street, white linen shirt, relaxed genuine smile, wine glass on table, warm sunlight, candid lifestyle photo, 35mm f2.0, photorealistic',
-    negative: 'cartoon, anime, illustration, painting, 3d render, cgi, unrealistic, plastic skin, nsfw, blurry, bad quality',
-  },
-  {
-    prompt: 'candid photo of a man on a European city street at golden hour, light casual shirt, confident neutral expression, not smiling, looking straight at camera, shallow depth of field, street photography, photorealistic',
-    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
-  },
-  {
-    prompt: 'photo of a man at a rooftop bar at night, city lights bokeh background, striped casual shirt, relaxed confident pose, calm cool expression, ambient warm light, photorealistic portrait',
-    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
-  },
-  {
-    prompt: 'candid photo of a man at a beach club, macrame umbrellas, white open linen shirt, sunglasses, holding cocktail, summer vibes, relaxed look, photorealistic, shot on iPhone',
-    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
-  },
-  {
-    prompt: 'photo of a man at an outdoor cafe terrace, summer, people in blurry background, light shirt, laughing natural expression, warm daylight, candid lifestyle photography, photorealistic',
-    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
-  },
+  'photo of a man sitting at an outdoor Italian restaurant, Mediterranean cobblestone street, white linen shirt, relaxed natural smile, pizza on table, warm sunlight, bokeh background, candid lifestyle photo',
+  'photo of a man on a European city street at golden hour, light casual shirt, confident neutral expression, not smiling, looking at camera, shallow depth of field, street photography',
+  'photo of a man at a rooftop bar at night, city lights bokeh behind him, striped casual shirt, relaxed arm on chair, calm cool expression, ambient warm lighting',
+  'photo of a man at a beach club, macrame umbrellas background, white open linen shirt, sunglasses, holding cocktail, summer vibes, relaxed confident look',
+  'photo of a man at an outdoor cafe terrace, summer, people blurred in background, light shirt, laughing natural expression, warm daylight, candid lifestyle',
 ]
 
 export async function POST(req: NextRequest) {
@@ -37,23 +22,25 @@ export async function POST(req: NextRequest) {
     const dataUrl = `data:${file.type};base64,${base64}`
 
     const ids: string[] = []
-    for (const scene of SCENES) {
+    for (const prompt of SCENES) {
       const p = await replicate.predictions.create({
-        model: 'zsxkib/instant-id',
+        model: 'fofr/flux-pulid',
         input: {
-          image: dataUrl,
-          prompt: scene.prompt,
-          negative_prompt: scene.negative,
-          num_inference_steps: 30,
-          guidance_scale: 5,
-          ip_adapter_scale: 0.8,
-          controlnet_conditioning_scale: 0.8,
-          width: 832,
-          height: 1216,
+          main_face_image: dataUrl,
+          prompt,
+          num_outputs: 1,
+          num_inference_steps: 20,
+          guidance_scale: 4,
+          true_cfg: 1,
+          id_weight: 1.0,
+          negative_prompt: 'bad quality, blurry, deformed, cartoon, illustration, painting, 3d render, nsfw, plastic skin, fake',
+          output_format: 'webp',
+          output_quality: 90,
+          start_step: 4,
         },
       })
       ids.push(p.id)
-      await new Promise(r => setTimeout(r, 1500))
+      await new Promise(r => setTimeout(r, 1000))
     }
 
     return NextResponse.json({ ids })
