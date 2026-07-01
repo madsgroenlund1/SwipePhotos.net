@@ -64,15 +64,21 @@ const CAROUSEL_PHOTOS: Record<string, string[]> = {
 }
 
 const DID_YOU_KNOW = [
+  'The templates are picked by famous dating coaches',
+  'The bottom 50% of profiles only get 4% of the likes!',
+  "We're the ONLY photo generator with anti-AI-detection",
   'Better photos = less texting needed',
-  "We're the ONLY generator with anti-AI-detection",
+  'SwipePhotos users get 10x more matches on average',
+  'Top 10% of profiles get 58% of all likes on Hinge',
+  'Your first photo determines 90% of your swipe rate',
   'SwipePhotos photos pass every AI scanner',
-  '🔥 SwipePhotos users get 10x more matches',
+  'Professional-looking photos double your match rate',
+  'Most dating coaches recommend quality photos above all',
 ]
 
 const PACKAGES = [
-  { id: 'starter', name: 'Starter', price: '$19', photos: '20 AI photos', popular: false },
-  { id: 'popular', name: 'Popular', price: '$39', photos: '40 AI photos', popular: true },
+  { id: 'starter', name: 'Starter', price: '$19', photos: '20 AI photos / month', popular: false },
+  { id: 'popular', name: 'Popular', price: '$39', photos: '40 AI photos / month', popular: true },
 ]
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -113,6 +119,9 @@ export default function OnboardingPage() {
   const [cleanedCount, setCleanedCount] = useState(0)
   const [selectedPackage, setSelectedPackage] = useState<string>('popular')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
@@ -152,40 +161,35 @@ export default function OnboardingPage() {
     setGenError(null)
 
     async function startGeneration() {
-      if (photos.length === 0) {
-        let p = 0
-        progressRef.current = setInterval(() => {
-          p += 1.5
-          setProgress(Math.min(p, 100))
-          setDidYouKnowIdx(Math.min(Math.floor(p / 25), DID_YOU_KNOW.length - 1))
-          if (p >= 100) clearInterval(progressRef.current!)
-        }, 80)
-        return
-      }
-
-      // Slow progress while fal.ai generates 4 photos (~15-25s)
+      // Slow realistic progress (~25s to reach 90%, then waits for API)
       let p = 0
+      let apiDone = false
+      let ticks = 0
       progressRef.current = setInterval(() => {
-        p += p < 80 ? 0.6 : 0.1
-        setProgress(Math.min(p, 95))
-        setDidYouKnowIdx(Math.min(Math.floor(p / 25), DID_YOU_KNOW.length - 1))
+        ticks++
+        // Speed: fast early, very slow near 90% (waits for real result)
+        const speed = p < 30 ? 0.8 : p < 60 ? 0.4 : p < 85 ? 0.15 : apiDone ? 2 : 0.02
+        p = Math.min(p + speed, apiDone ? 100 : 92)
+        setProgress(p)
+        // Rotate facts every ~20 ticks (4 seconds)
+        setDidYouKnowIdx(Math.floor(ticks / 20) % DID_YOU_KNOW.length)
+        if (p >= 100) clearInterval(progressRef.current!)
       }, 200)
+
+      if (photos.length === 0) return // demo mode: let timer run, no API call
 
       try {
         const fd = new FormData()
         fd.append('photo', photos[0])
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
         const data = await res.json()
-        clearInterval(progressRef.current!)
-        setProgress(100)
-        setDidYouKnowIdx(DID_YOU_KNOW.length - 1)
         if (data.photos && Object.keys(data.photos).length > 0) {
           setGeneratedPhotos(data.photos)
         }
-      } catch {
-        clearInterval(progressRef.current!)
-        setProgress(100)
-        setDidYouKnowIdx(DID_YOU_KNOW.length - 1)
+      } catch (err) {
+        console.error('Preview generation failed:', err)
+      } finally {
+        apiDone = true
       }
     }
 
@@ -211,18 +215,19 @@ export default function OnboardingPage() {
   }
 
   async function handleEmailSubmit() {
-    if (!email.includes('@')) return
+    if (!email.includes('@') || !agreedToTerms) return
     setLoading(true)
     try {
-      // 1. Create order + get Stripe URL and orderId
+      // 1. Create order + get Stripe URL
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packageId: selectedPackage, email }),
       })
       const data = await res.json()
+      console.log('[checkout response]', data)
 
-      // 2. Upload photos to Supabase so training can start after payment
+      // 2. Upload photos
       if (data.orderId && photos.length > 0) {
         const fd = new FormData()
         fd.append('orderId', data.orderId)
@@ -235,6 +240,8 @@ export default function OnboardingPage() {
         window.location.href = data.url
         return
       }
+
+      console.error('[checkout] No URL in response:', data)
     } catch (err) {
       console.error('Checkout error:', err)
     }
@@ -286,19 +293,13 @@ export default function OnboardingPage() {
               </div>
               <div className="px-4 pb-2 grid grid-cols-2 gap-2">
                 {STYLE_OPTIONS.map((opt) => (
-                  <div key={opt.id} className="relative" onClick={() => opt.free && setSelectedStyle(opt.id)}>
+                  <div key={opt.id} className="relative" onClick={() => setSelectedStyle(opt.id)}>
                     <div className={cn(
                       'relative aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all cursor-pointer',
-                      selectedStyle === opt.id ? 'border-blue-500' : 'border-white/10',
-                      !opt.free && 'opacity-50 cursor-default'
+                      selectedStyle === opt.id ? 'border-blue-500' : 'border-white/10'
                     )}>
                       <img src={opt.src} alt={opt.label} className="w-full h-full object-cover object-top" />
-                      {!opt.free && (
-                        <div className="absolute inset-0 bg-black/60 flex items-end justify-center pb-3">
-                          <span className="text-zinc-400 text-xs text-center px-2">Browse 100+ proven templates later</span>
-                        </div>
-                      )}
-                      {selectedStyle === opt.id && opt.free && (
+                      {selectedStyle === opt.id && (
                         <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                           <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
@@ -308,7 +309,25 @@ export default function OnboardingPage() {
                   </div>
                 ))}
               </div>
-              <div className="px-4 pb-4 pt-2">
+              {/* Blur teaser – more templates */}
+              <div className="relative px-4 mt-1 mb-2 overflow-hidden" style={{ height: 80 }}>
+                <div className="grid grid-cols-4 gap-1.5 opacity-50">
+                  {[
+                    '/photos/presets/scene-restaurant.jpg',
+                    '/photos/presets/scene-formal.jpg',
+                    '/photos/presets/scene-rooftop.jpg',
+                    '/photos/presets/scene-beach.jpg',
+                  ].map((src, i) => (
+                    <div key={i} className="aspect-[3/4] rounded-xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover object-top" />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/80 to-transparent flex items-end justify-center pb-2">
+                  <p className="text-zinc-500 text-xs font-medium">Browse 100+ proven templates after purchase</p>
+                </div>
+              </div>
+              <div className="px-4 pb-4 pt-1">
                 <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
                   Continue →
                 </button>
@@ -474,91 +493,127 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 5: Select favorite ──────────────────────────── */}
-          {step === 5 && (() => {
-            const photos5 = hasGenerated ? generatedArray : fallbackPhotos
-            const currentLabel = hasGenerated ? STYLE_LABELS[STYLE_ORDER[carouselIdx]] : undefined
-            return (
+          {/* ── STEP 5: Preview grid ──────────────────────────────── */}
+          {step === 5 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-4">
+              <div className="p-6 pb-3">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-0">
                   {hasGenerated ? 'Your AI photos are ready' : 'This is what you\'ll get'}
                 </h2>
                 {hasGenerated
-                  ? <p className="text-green-400 text-xs mt-1">Generated from your photo ✓ — swipe through all 4 styles</p>
-                  : <p className="text-zinc-400 text-sm mt-2 leading-relaxed">Your photos will be in these styles — generated just for you. Takes ~1 hour, then sent to your email and ready to download in your profile.</p>
+                  ? <p className="text-green-400 text-xs mt-1">✓ Generated from your selfie — 4 styles</p>
+                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Your photos will be generated in these 4 styles. Takes ~1 hour, then sent to your email.</p>
                 }
               </div>
               <div className="px-4 pb-2">
-                <div className="relative flex items-center justify-center" style={{ height: 280 }}>
-                  {carouselIdx > 0 && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
-                      <img src={photos5[carouselIdx - 1]} alt="" className="w-full h-full object-cover object-top" />
-                    </div>
-                  )}
-                  {carouselIdx < photos5.length - 1 && (
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
-                      <img src={photos5[carouselIdx + 1]} alt="" className="w-full h-full object-cover object-top" />
-                    </div>
-                  )}
-                  <div className="relative rounded-2xl overflow-hidden border-2 border-blue-500/60 z-10" style={{ width: 170, height: 260 }}>
-                    <img src={photos5[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
-                    {currentLabel && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6">
-                        <p className="text-white text-[11px] font-semibold text-center">{currentLabel}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {STYLE_ORDER.map((style) => {
+                    const src = hasGenerated ? generatedPhotos[style] : STYLE_OPTIONS.find(s => s.id === style)?.src
+                    if (!src) return null
+                    return (
+                      <div key={style} className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                        <img src={src} alt={STYLE_LABELS[style]} className="w-full h-full object-cover object-top" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6">
+                          <p className="text-white text-[10px] font-semibold text-center">{STYLE_LABELS[style]}</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  {carouselIdx > 0 && (
-                    <button onClick={() => setCarouselIdx(i => i - 1)} className="absolute left-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                  )}
-                  {carouselIdx < photos5.length - 1 && (
-                    <button onClick={() => setCarouselIdx(i => i + 1)} className="absolute right-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                  )}
+                    )
+                  })}
                 </div>
-                <p className="text-center text-zinc-600 text-sm mt-3">{carouselIdx + 1}/{photos5.length}</p>
               </div>
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 pt-3">
                 <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
               </div>
             </div>
-          )})()}
+          )}
 
           {/* ── STEP 6: DON'T USE YET ───────────────────────────── */}
           {step === 6 && (
-            <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-4">
+            <div className="bg-[#0d0d0d] rounded-3xl overflow-hidden">
+              <div className="p-5 pb-3">
                 <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-red-500 mb-2">DON&apos;T USE THIS PHOTO YET!</h2>
+                <h2 className="text-2xl font-bold text-red-500 mb-1">DON&apos;T USE THIS PHOTO YET!</h2>
                 <p className="text-zinc-400 text-sm">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
               </div>
-              <div className="px-4 pb-2">
+              <div className="px-3 pb-2">
                 <div className="grid grid-cols-3 gap-2">
-                  {DETECTION_TOOLS.map((tool) => (
-                    <div key={tool.name} className="bg-zinc-900 rounded-2xl p-3 border border-red-500/20">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
-                          <span className="text-white text-[8px] font-bold">{tool.logo}</span>
+                  {/* TruthScan — AI detected */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-1">
+                      <span className="text-blue-600 text-[9px] font-bold">✦</span>
+                      <span className="text-[9px] font-bold text-gray-800">TruthScan</span>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
+                      <div className="px-1.5 pt-1.5 pb-1">
+                        <p className="text-[7px] font-semibold text-gray-800 leading-tight mb-1">Basic AI Image Analysis</p>
+                        <div className="h-1 bg-red-500 rounded-full mb-0.5" />
+                        <div className="flex justify-between mb-1">
+                          <span className="text-[6px] text-red-500 font-bold">Synthetic</span>
                         </div>
-                        <span className="text-zinc-400 text-[10px] font-medium truncate">{tool.name}</span>
-                      </div>
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
-                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                      </div>
-                      <div className="text-center">
-                        <span className="text-red-400 text-[10px] font-bold">✗ AI Detected</span>
+                        <div className="flex justify-between text-center mb-1">
+                          <div><p className="text-[7px] font-bold text-gray-900">99%</p><p className="text-[5px] text-gray-500">AI Prob.</p></div>
+                          <div><p className="text-[7px] font-bold text-gray-900">High</p><p className="text-[5px] text-gray-500">Confidence</p></div>
+                          <div><p className="text-[7px] font-bold text-gray-900">AI</p><p className="text-[5px] text-gray-500">Class.</p></div>
+                        </div>
+                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
+                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                        </div>
+                        <div className="bg-red-600 rounded text-center py-0.5 mb-0.5">
+                          <p className="text-[6px] text-white font-bold">AI Probability: 99% AI</p>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
+                  </div>
+                  {/* sightengine — AI detected */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
+                      <span className="text-gray-700 text-[9px] font-bold">sight</span><span className="text-green-600 text-[9px] font-bold">engine</span>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
+                      <div className="px-1.5 pt-1.5 pb-1">
+                        <p className="text-[7px] font-bold text-gray-900 leading-tight mb-1">Detect AI-generated images</p>
+                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
+                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                        </div>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-[6px] font-bold text-gray-900">Likely AI-generated</p>
+                          <div className="bg-red-600 rounded px-1 py-0.5"><span className="text-[7px] text-white font-bold">92%</span></div>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">GenAI</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-500 rounded-full" style={{width:'92%'}} /></div><span className="text-[5px] text-gray-600">92%</span></div>
+                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">Face</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-orange-400 rounded-full" style={{width:'10%'}} /></div><span className="text-[5px] text-gray-600">1%</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
+                  </div>
+                  {/* IsThisAI — AI detected */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
+                      <span className="text-gray-800 text-[9px] font-bold">IsThis</span><div className="w-3 h-3 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-white text-[5px] font-bold">AI</span></div>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
+                      <div className="aspect-[3/4] overflow-hidden">
+                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                      </div>
+                      <div className="px-1.5 py-1">
+                        <p className="text-[5px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Analysis Result</p>
+                        <div className="flex items-center gap-0.5 mb-0.5">
+                          <span className="text-red-500 text-[7px]">⊘</span>
+                          <p className="text-[8px] font-bold text-red-500">AI-Generated</p>
+                        </div>
+                        <p className="text-[5px] text-gray-500 mb-0.5">99% Confidence</p>
+                        <div className="h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-500 rounded-full" style={{width:'99%'}} /></div>
+                      </div>
+                    </div>
+                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
+                  </div>
                 </div>
               </div>
               <div className="px-4 pb-4 pt-2">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+                <button onClick={next} className="w-full bg-red-500 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
               </div>
             </div>
           )}
@@ -604,30 +659,87 @@ export default function OnboardingPage() {
 
           {/* ── STEP 8: Undetectable ─────────────────────────────── */}
           {step === 8 && (
-            <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-4">
+            <div className="bg-[#0d0d0d] rounded-3xl overflow-hidden">
+              <div className="p-5 pb-3">
                 <ProgressBar step={8} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-green-400 mb-2">Undetectable</h2>
+                <h2 className="text-2xl font-bold text-green-400 mb-1">Undetectable</h2>
                 <p className="text-zinc-400 text-sm">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
               </div>
-              <div className="px-4 pb-2">
+              <div className="px-3 pb-2">
                 <div className="grid grid-cols-3 gap-2">
-                  {DETECTION_TOOLS.map((tool) => (
-                    <div key={tool.name} className="bg-zinc-900 rounded-2xl p-3 border border-green-500/20">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
-                          <span className="text-white text-[8px] font-bold">{tool.logo}</span>
+                  {/* sightengine — Human */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
+                      <span className="text-gray-700 text-[9px] font-bold">sight</span><span className="text-green-600 text-[9px] font-bold">engine</span>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
+                      <div className="px-1.5 pt-1.5 pb-1">
+                        <p className="text-[7px] font-bold text-gray-900 leading-tight mb-1">Detect AI-generated images</p>
+                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
+                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                         </div>
-                        <span className="text-zinc-400 text-[10px] font-medium truncate">{tool.name}</span>
-                      </div>
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
-                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                      </div>
-                      <div className="text-center">
-                        <span className="text-green-400 text-[10px] font-bold">✓ Human</span>
+                        <p className="text-[5px] text-gray-500 text-center mb-0.5">Tap to try an image or video</p>
+                        <p className="text-[6px] font-bold text-green-700 leading-tight">Not likely to be AI-generated or Deepfake</p>
+                        <div className="flex items-center justify-between mt-0.5 mb-1">
+                          <div className="bg-green-700 rounded px-1 py-0.5"><span className="text-[7px] text-white font-bold">3%</span></div>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">GenAI</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-gray-300 rounded-full" style={{width:'1%'}} /></div><span className="text-[5px] text-gray-600">1%</span></div>
+                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">Face</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-orange-300 rounded-full" style={{width:'3%'}} /></div><span className="text-[5px] text-gray-600">3%</span></div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
+                  </div>
+                  {/* TruthScan — Human */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-1">
+                      <span className="text-blue-600 text-[9px] font-bold">✦</span>
+                      <span className="text-[9px] font-bold text-gray-800">TruthScan</span>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
+                      <div className="px-1.5 pt-1.5 pb-1">
+                        <p className="text-[7px] font-semibold text-gray-800 leading-tight mb-1">Basic AI Image Analysis</p>
+                        <div className="h-1 bg-green-500 rounded-full mb-0.5" />
+                        <div className="flex justify-between mb-0.5">
+                          <span className="text-[6px] text-green-600 font-bold">Real</span>
+                        </div>
+                        <div className="flex justify-between text-center mb-1">
+                          <div><p className="text-[7px] font-bold text-gray-900">10%</p><p className="text-[5px] text-gray-500">AI Prob.</p></div>
+                          <div><p className="text-[7px] font-bold text-gray-900">High</p><p className="text-[5px] text-gray-500">Confidence</p></div>
+                          <div><p className="text-[7px] font-bold text-gray-900">Real</p><p className="text-[5px] text-gray-500">Class.</p></div>
+                        </div>
+                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
+                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                        </div>
+                        <div className="bg-green-600 rounded text-center py-0.5">
+                          <p className="text-[6px] text-white font-bold">AI Probability: 10% AI</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
+                  </div>
+                  {/* IsThisAI — Human */}
+                  <div className="flex flex-col items-center">
+                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
+                      <span className="text-gray-800 text-[9px] font-bold">IsThis</span><div className="w-3 h-3 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-white text-[5px] font-bold">AI</span></div>
+                    </div>
+                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
+                      <div className="aspect-[3/4] overflow-hidden">
+                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                      </div>
+                      <div className="px-1.5 py-1">
+                        <p className="text-[5px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Analysis Result</p>
+                        <div className="flex items-center gap-0.5 mb-0.5">
+                          <span className="text-green-500 text-[7px]">✓</span>
+                          <p className="text-[8px] font-bold text-green-600">Likely Real</p>
+                        </div>
+                        <p className="text-[5px] text-gray-500 mb-0.5">90% Confidence</p>
+                        <div className="h-1 bg-gray-100 rounded-full"><div className="h-full bg-green-500 rounded-full" style={{width:'90%'}} /></div>
+                      </div>
+                    </div>
+                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
+                  </div>
                 </div>
               </div>
               <div className="px-4 pb-4 pt-2">
@@ -649,13 +761,26 @@ export default function OnboardingPage() {
                     <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                   </div>
                   {[
-                    { icon: '🔥', pos: '-top-3 -left-4', label: '99+' },
-                    { icon: '🏠', pos: '-top-3 -right-4', label: '99+' },
-                    { icon: '📸', pos: '-bottom-3 -left-6', label: '99+' },
-                    { icon: '💚', pos: '-bottom-3 -right-6', label: '99+' },
-                  ].map(({ icon, pos, label }) => (
-                    <div key={pos} className={`absolute ${pos} bg-zinc-800 rounded-xl w-10 h-10 flex items-center justify-center border border-white/10`}>
-                      <span className="text-lg">{icon}</span>
+                    {
+                      pos: '-top-3 -left-4', label: '99+', delay: '0s', bg: 'bg-gradient-to-br from-[#fd267a] to-[#ff6036]',
+                      svg: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white"><path d="M12.02 1C7.57 1 4 4.76 4 9.36c0 3.79 2.32 7.02 5.62 8.3-.06-.55-.12-1.4.02-2 .13-.54.88-3.72.88-3.72s-.22-.45-.22-1.12c0-1.05.61-1.83 1.36-1.83.64 0 .95.48.95 1.06 0 .64-.41 1.61-.62 2.5-.18.75.37 1.36 1.1 1.36 1.32 0 2.34-1.39 2.34-3.41 0-1.78-1.28-3.03-3.1-3.03-2.11 0-3.35 1.58-3.35 3.22 0 .64.25 1.32.56 1.69.06.07.07.14.05.21-.06.23-.19.75-.21.86-.03.14-.11.17-.25.1-1-.47-1.63-1.93-1.63-3.1 0-2.52 1.83-4.83 5.28-4.83 2.77 0 4.93 1.97 4.93 4.61 0 2.75-1.73 4.96-4.14 4.96-.81 0-1.57-.42-1.83-.91l-.5 1.86c-.18.69-.66 1.56-1 2.08.75.23 1.55.36 2.37.36 4.45 0 8.07-3.76 8.07-8.39C20.05 4.76 16.48 1 12.02 1z"/></svg>
+                    },
+                    {
+                      pos: '-top-3 -right-4', label: '99+', delay: '0.4s', bg: 'bg-[#1c1c1c]',
+                      svg: <svg viewBox="0 0 50 50" className="w-5 h-5" fill="white"><path d="M 10 5 C 10 5 8.96875 8.0625 7.65625 9.65625 C 6.34375 11.25 5 12 5 12 C 5 12 6.671875 14.203125 9.53125 14.53125 C 9.671875 14.546875 9.808594 14.554688 9.9375 14.5625 C 9.488281 15.820313 9.058594 18.121094 9.34375 22 C 9.710938 27.078125 12.375 34.96875 25 44 C 37.625 34.96875 40.289063 27.078125 40.65625 22 C 40.941406 18.121094 40.511719 15.820313 40.0625 14.5625 C 40.191406 14.554688 40.328125 14.546875 40.46875 14.53125 C 43.328125 14.203125 45 12 45 12 C 45 12 43.65625 11.25 42.34375 9.65625 C 41.03125 8.0625 40 5 40 5 C 40 5 36.671875 7.546875 34.03125 8.34375 C 31.390625 9.140625 29 9 25 9 C 21 9 18.609375 9.140625 15.96875 8.34375 C 13.328125 7.546875 10 5 10 5 Z"/></svg>
+                    },
+                    {
+                      pos: '-bottom-3 -left-6', label: '99+', delay: '0.8s', bg: 'bg-gradient-to-br from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]',
+                      svg: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    },
+                    {
+                      pos: '-bottom-3 -right-6', label: '99+', delay: '1.2s', bg: 'bg-[#FFC629]',
+                      svg: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="white"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 3.5c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    },
+                  ].map(({ pos, label, delay, bg, svg }) => (
+                    <div key={pos} className={`absolute ${pos} ${bg} rounded-xl w-10 h-10 flex items-center justify-center shadow-lg`}
+                      style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
+                      {svg}
                       <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full px-1">{label}</span>
                     </div>
                   ))}
@@ -687,7 +812,7 @@ export default function OnboardingPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-white font-bold">{pkg.price}</span>
-                        <span className="text-zinc-500 text-xs"> one-time</span>
+                        <span className="text-zinc-500 text-xs">/month</span>
                       </div>
                     </div>
                   ))}
@@ -701,19 +826,19 @@ export default function OnboardingPage() {
 
           {/* ── STEP 10: Email / Account ─────────────────────────── */}
           {step === 10 && (
-            <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-4">
+            <div className="bg-[#1a1a1a] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-5">
                 <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1">Create your account</h2>
-                <p className="text-zinc-500 text-sm">One step away from your photos.</p>
+                <p className="text-zinc-500 text-sm">Welcome! Please fill in the details to get started.</p>
               </div>
               <div className="px-6 pb-6 space-y-3">
                 {/* Google */}
                 <button
+                  disabled={loading}
                   onClick={async () => {
                     setLoading(true)
                     try {
-                      // Create checkout first, store URL, then OAuth
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -734,7 +859,7 @@ export default function OnboardingPage() {
                       options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
                     })
                   }}
-                  className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold py-3.5 rounded-2xl text-sm hover:bg-zinc-100 transition-colors"
+                  className="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors border border-white/10"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -747,28 +872,78 @@ export default function OnboardingPage() {
 
                 {/* Divider */}
                 <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-white/8" />
-                  <span className="text-zinc-600 text-xs">or</span>
-                  <div className="flex-1 h-px bg-white/8" />
+                  <div className="flex-1 h-px bg-white/10" />
+                  <span className="text-zinc-500 text-xs">or</span>
+                  <div className="flex-1 h-px bg-white/10" />
                 </div>
 
                 {/* Email */}
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  className="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
-                />
+                <div className="space-y-1">
+                  <label className="text-white text-sm font-medium">Email address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="w-full bg-zinc-900 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="space-y-1">
+                  <label className="text-white text-sm font-medium">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Create a password"
+                      className="w-full bg-zinc-900 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors pr-11"
+                    />
+                    <button
+                      type="button"
+                      onPointerDown={() => setShowPassword(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Terms */}
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <div
+                    onPointerDown={() => setAgreedToTerms(v => !v)}
+                    className={cn('mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors', agreedToTerms ? 'bg-blue-500 border-blue-500' : 'border-zinc-600 bg-transparent')}
+                  >
+                    {agreedToTerms && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                  <span className="text-zinc-400 text-xs leading-relaxed">
+                    I agree to the{' '}
+                    <Link href="/terms" className="text-white underline underline-offset-2">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" className="text-white underline underline-offset-2">Privacy Policy</Link>
+                  </span>
+                </label>
+
+                {/* Continue */}
                 <button
-                  onClick={handleEmailSubmit}
-                  disabled={!email.includes('@') || loading}
-                  className={cn('w-full py-3.5 rounded-2xl font-semibold text-sm transition-all', email.includes('@') && !loading ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
+                  onPointerDown={handleEmailSubmit}
+                  disabled={!email.includes('@') || !agreedToTerms || loading}
+                  className={cn('w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2', email.includes('@') && agreedToTerms && !loading ? 'bg-white text-black hover:bg-zinc-100' : 'bg-white/10 text-zinc-500 cursor-not-allowed')}
                 >
-                  {loading ? 'Setting up...' : 'Continue with Email →'}
+                  {loading ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-zinc-400/30 border-t-zinc-400 animate-spin" />
+                  ) : (
+                    <>Continue <span className="text-sm">▶</span></>
+                  )}
                 </button>
 
-                <p className="text-center text-zinc-600 text-xs pt-1">Already have an account? <Link href="/auth/signin" className="text-zinc-400 hover:text-white">Sign in</Link></p>
+                <p className="text-center text-zinc-600 text-xs pt-1">Already have an account? <Link href="/auth/signin" className="text-zinc-400 hover:text-white font-semibold">Sign in</Link></p>
               </div>
             </div>
           )}

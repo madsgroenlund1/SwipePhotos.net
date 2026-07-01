@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createAdminClient()
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
     // Look up existing user (optional — new users won't have an account yet)
     let customerId: string | undefined

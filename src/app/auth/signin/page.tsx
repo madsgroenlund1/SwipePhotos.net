@@ -15,13 +15,17 @@ export default function SignInPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) setError(error.message)
-    else setSent(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) setError(error.message || 'Something went wrong. Please try again.')
+      else setSent(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    }
     setLoading(false)
   }
 

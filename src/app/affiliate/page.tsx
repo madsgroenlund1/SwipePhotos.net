@@ -2,120 +2,241 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle } from 'lucide-react'
+
+function EarningsCalc() {
+  const [sales, setSales] = useState(10)
+  const earning = Math.round(sales * 39 * 0.3)
+  const tiers = [
+    { label: 'Side hustle', sales: 5, emoji: '☕' },
+    { label: 'Part-time', sales: 20, emoji: '💸' },
+    { label: 'Full-time', sales: 60, emoji: '🚀' },
+  ]
+  return (
+    <div className="bg-gradient-to-br from-blue-600/10 to-blue-500/5 border border-blue-500/20 rounded-2xl p-5 mb-6">
+      <p className="text-blue-400 text-xs font-semibold uppercase tracking-wide mb-1">Earnings calculator</p>
+      <p className="text-white text-sm mb-4">Drag to see your potential monthly income</p>
+
+      {/* Slider */}
+      <div className="mb-4">
+        <div className="flex justify-between items-end mb-2">
+          <span className="text-zinc-400 text-xs">{sales} sales/month</span>
+          <span className="text-2xl font-bold text-white">${earning.toLocaleString()}<span className="text-zinc-400 text-sm font-normal">/mo</span></span>
+        </div>
+        <input
+          type="range" min={1} max={100} value={sales}
+          onChange={e => setSales(Number(e.target.value))}
+          className="w-full h-2 rounded-full appearance-none cursor-pointer"
+          style={{ background: `linear-gradient(to right, #3b82f6 ${sales}%, #27272a ${sales}%)` }}
+        />
+        <div className="flex justify-between text-zinc-600 text-[10px] mt-1">
+          <span>1</span><span>25</span><span>50</span><span>75</span><span>100</span>
+        </div>
+      </div>
+
+      {/* Quick tiers */}
+      <div className="grid grid-cols-3 gap-2">
+        {tiers.map(t => (
+          <button
+            key={t.label}
+            onClick={() => setSales(t.sales)}
+            className={`rounded-xl p-2.5 text-center transition-all border ${sales === t.sales ? 'border-blue-500 bg-blue-500/10' : 'border-white/8 bg-white/3 hover:border-white/20'}`}
+          >
+            <div className="text-base mb-0.5">{t.emoji}</div>
+            <div className="text-white text-xs font-semibold">${Math.round(t.sales * 39 * 0.3)}/mo</div>
+            <div className="text-zinc-500 text-[10px]">{t.label}</div>
+          </button>
+        ))}
+      </div>
+
+      <p className="text-zinc-600 text-[10px] mt-3 text-center">Based on avg $39 sale × 30% commission</p>
+    </div>
+  )
+}
 
 export default function AffiliatePage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
+    email: '',
     platform: '',
     handle: '',
     audienceSize: '',
     contentType: '',
   })
 
+  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, [key]: e.target.value }))
+
+  // Generate slug from handle: @JohnDoe → johndoe
+  const slug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'DITBRUGERNAVN'
+  const refLink = `https://swipephotos.net/${slug}`
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError('')
     try {
-      await fetch('/api/affiliate/apply', {
+      const res = await fetch('/api/affiliate/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+      if (!res.ok) throw new Error('Failed')
       setSubmitted(true)
-    } catch {}
+    } catch {
+      setError('Something went wrong. Please try again.')
+    }
     setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <nav className="border-b border-white/5 px-6 h-16 flex items-center max-w-6xl mx-auto">
-        <Link href="/" className="flex items-center gap-0">
-          <span className="text-white font-bold text-xl">SwipePhotos</span>
-          <span className="text-blue-500 font-bold text-xl">.net</span>
+      <nav className="border-b border-white/5 px-6 h-14 flex items-center max-w-4xl mx-auto">
+        <Link href="/" className="flex items-center">
+          <span className="text-white font-bold text-lg">SwipePhotos</span>
+          <span className="text-blue-500 font-bold text-lg">.net</span>
         </Link>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-2 mb-6">
-            <span className="text-green-400 text-sm font-medium">30% commission per sale</span>
+      <main className="max-w-xl mx-auto px-4 py-12">
+
+        {/* Hero */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1.5 mb-5">
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+            <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Affiliate Program</span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-4">Become a SwipePhotos Affiliate</h1>
-          <p className="text-zinc-400 text-lg">
-            Earn 30% on every sale you refer. Payout at $50 minimum. Join dating coaches and
-            influencers already making money with SwipePhotos.
+          <h1 className="text-3xl font-bold text-white mb-3">Earn 30% on every sale</h1>
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
+            Share your link. Get paid. Join dating coaches and creators already earning with SwipePhotos.
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { label: 'Commission', value: '30%' },
-            { label: 'Avg order value', value: '$39' },
-            { label: 'Min payout', value: '$50' },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-white/3 border border-white/8 rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-white mb-1">{value}</div>
-              <div className="text-zinc-500 text-sm">{label}</div>
+            { value: '30%', label: 'Commission' },
+            { value: '$39', label: 'Avg sale' },
+            { value: '$50', label: 'Min payout' },
+          ].map(({ value, label }) => (
+            <div key={label} className="bg-[#111] border border-white/8 rounded-2xl p-4 text-center">
+              <div className="text-xl font-bold text-white mb-0.5">{value}</div>
+              <div className="text-zinc-500 text-xs">{label}</div>
             </div>
           ))}
         </div>
 
+        {/* Earnings calculator */}
+        <EarningsCalc />
+
+        {/* How it works */}
+        <div className="bg-[#111] border border-white/8 rounded-2xl p-5 mb-6">
+          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-3">How it works</p>
+          <div className="space-y-3">
+            {[
+              ['Share your link', 'Post it anywhere — TikTok, Instagram, YouTube, Reddit'],
+              ['Someone buys', 'They purchase any SwipePhotos subscription'],
+              ['You get paid', '30% sent monthly via PayPal or bank transfer'],
+            ].map(([title, desc], i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
+                <div>
+                  <p className="text-white text-sm font-medium">{title}</p>
+                  <p className="text-zinc-500 text-xs">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form or success */}
         {submitted ? (
-          <div className="text-center bg-green-500/10 border border-green-500/20 rounded-2xl p-12">
-            <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Application submitted!</h2>
-            <p className="text-zinc-400">
-              We review applications within 24 hours. You&apos;ll receive an email with your affiliate link once approved.
+          <div className="bg-green-500/8 border border-green-500/20 rounded-2xl p-8 text-center">
+            <div className="w-12 h-12 bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Application received!</h2>
+            <p className="text-zinc-400 text-sm">
+              Vi godkender inden for 24 timer. Dit affiliate-link bliver:<br />
+              <code className="text-blue-400 text-sm mt-2 block">{refLink}</code>
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-[#111] border border-white/8 rounded-2xl p-8 space-y-5">
-            <h2 className="text-xl font-semibold text-white mb-2">Apply to become an affiliate</h2>
+          <form onSubmit={handleSubmit} className="bg-[#111] border border-white/8 rounded-2xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-white mb-1">Apply now</h2>
 
-            {[
-              { key: 'name', label: 'Full Name', placeholder: 'John Doe', type: 'text' },
-              { key: 'platform', label: 'Primary Platform', placeholder: 'YouTube, TikTok, Instagram...', type: 'text' },
-              { key: 'handle', label: 'Handle / Channel', placeholder: '@yourhandle', type: 'text' },
-              { key: 'audienceSize', label: 'Audience Size', placeholder: '10k, 50k, 500k...', type: 'text' },
-            ].map(({ key, label, placeholder, type }) => (
-              <div key={key}>
-                <label className="block text-zinc-400 text-sm mb-2">{label}</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Full name *</label>
                 <input
-                  type={type}
-                  value={form[key as keyof typeof form]}
-                  onChange={(e) => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={placeholder}
+                  type="text" value={form.name} onChange={set('name')} placeholder="John Doe"
                   required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
-            ))}
-
-            <div>
-              <label className="block text-zinc-400 text-sm mb-2">Content Type</label>
-              <select
-                value={form.contentType}
-                onChange={(e) => setForm(prev => ({ ...prev, contentType: e.target.value }))}
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="" className="bg-zinc-900">Select content type...</option>
-                <option value="dating-advice" className="bg-zinc-900">Dating advice / coaching</option>
-                <option value="self-improvement" className="bg-zinc-900">Self improvement / men&apos;s lifestyle</option>
-                <option value="ai-tech" className="bg-zinc-900">AI / technology</option>
-                <option value="lifestyle" className="bg-zinc-900">General lifestyle</option>
-                <option value="other" className="bg-zinc-900">Other</option>
-              </select>
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Email *</label>
+                <input
+                  type="email" value={form.email} onChange={set('email')} placeholder="you@email.com"
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Platform *</label>
+                <input
+                  type="text" value={form.platform} onChange={set('platform')} placeholder="TikTok, YouTube..."
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Handle *</label>
+                <input
+                  type="text" value={form.handle} onChange={set('handle')} placeholder="@yourhandle"
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Audience size *</label>
+                <input
+                  type="text" value={form.audienceSize} onChange={set('audienceSize')} placeholder="10k, 50k..."
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Content type *</label>
+                <select
+                  value={form.contentType} onChange={set('contentType')} required
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="">Select...</option>
+                  <option value="dating-advice">Dating advice</option>
+                  <option value="self-improvement">Self improvement</option>
+                  <option value="ai-tech">AI / Tech</option>
+                  <option value="lifestyle">Lifestyle</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {error && <p className="text-red-400 text-xs">{error}</p>}
+
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-full transition-all"
+              type="submit" disabled={loading}
+              className="w-full bg-blue-600 hover:brightness-110 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm"
             >
               {loading ? 'Submitting...' : 'Submit Application →'}
             </button>
@@ -123,20 +244,18 @@ export default function AffiliatePage() {
         )}
 
         {/* Marketing kit */}
-        <div className="mt-12 bg-white/3 border border-white/8 rounded-2xl p-6">
-          <h3 className="text-white font-semibold mb-4">Marketing Kit</h3>
-          <div className="space-y-3 text-sm text-zinc-400">
-            <p className="font-medium text-zinc-300">Hook examples:</p>
-            <ul className="space-y-2 ml-4">
-              <li>• &ldquo;POV: you upload selfies and get back photos that look like a professional took them&rdquo;</li>
-              <li>• &ldquo;How I went from 2 matches a week to 20+ with one simple change&rdquo;</li>
-              <li>• &ldquo;The AI tool that passes every AI detector (tested it myself)&rdquo;</li>
-            </ul>
-            <p className="font-medium text-zinc-300 mt-4">Your link format:</p>
-            <code className="block bg-white/5 rounded-lg px-3 py-2 text-blue-400">
-              https://swipephotos.net/?ref=YOURCODE
-            </code>
-          </div>
+        <div className="mt-6 bg-[#111] border border-white/8 rounded-2xl p-5">
+          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-3">Marketing Kit</p>
+          <p className="text-zinc-500 text-xs mb-2">Hook examples that convert:</p>
+          <ul className="space-y-1.5 text-xs text-zinc-400 mb-4">
+            <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;POV: you upload selfies and get photos that look like a pro took them&rdquo;</li>
+            <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;How I went from 2 matches a week to 20+ with one simple change&rdquo;</li>
+            <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;The AI tool that passes every AI detector (I tested it myself)&rdquo;</li>
+          </ul>
+          <p className="text-zinc-500 text-xs mb-1.5">Dit link (efter godkendelse):</p>
+          <code className="block bg-white/5 rounded-lg px-3 py-2 text-blue-400 text-xs">
+            {refLink}
+          </code>
         </div>
       </main>
     </div>
