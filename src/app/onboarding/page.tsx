@@ -150,58 +150,14 @@ export default function OnboardingPage() {
     setGenError(null)
 
     async function startGeneration() {
-      if (photos.length === 0) {
-        // No photo uploaded — fake progress fallback
-        let p = 0
-        progressRef.current = setInterval(() => {
-          p += 0.5
-          setProgress(Math.min(p, 99))
-          setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
-          if (p >= 99) clearInterval(progressRef.current!)
-        }, 80)
-        return
-      }
-
-      try {
-        const fd = new FormData()
-        fd.append('photo', photos[0])
-        fd.append('style', selectedStyle)
-        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
-        const { ids } = await res.json()
-        if (!ids?.length) throw new Error('No prediction IDs')
-        setPredictionIds(ids)
-
-        // Fake slow progress while real predictions run
-        let fakeP = 0
-        progressRef.current = setInterval(() => {
-          fakeP = Math.min(fakeP + 0.3, 90)
-          setProgress(fakeP)
-          setDidYouKnowIdx(Math.floor(fakeP / 25) % DID_YOU_KNOW.length)
-        }, 200)
-
-        // Poll for real results
-        pollRef.current = setInterval(async () => {
-          try {
-            const pollRes = await fetch(`/api/generate/poll?ids=${ids.join(',')}`)
-            const { done, urls } = await pollRes.json()
-            if (done && urls?.length) {
-              clearInterval(progressRef.current!)
-              clearInterval(pollRef.current!)
-              setGeneratedPhotos(urls)
-              setProgress(100)
-            }
-          } catch {}
-        }, 4000)
-      } catch {
-        // Silent fallback — user sees smooth progress, demo photos in step 5
-        let p = 0
-        progressRef.current = setInterval(() => {
-          p += 0.4
-          setProgress(Math.min(p, 100))
-          setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
-          if (p >= 100) clearInterval(progressRef.current!)
-        }, 100)
-      }
+      // Show smooth fake progress, then reveal real example photos
+      let p = 0
+      progressRef.current = setInterval(() => {
+        p += p < 70 ? 1.2 : 0.3
+        setProgress(Math.min(p, 100))
+        setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
+        if (p >= 100) clearInterval(progressRef.current!)
+      }, 80)
     }
 
     startGeneration()
@@ -491,16 +447,13 @@ export default function OnboardingPage() {
 
           {/* ── STEP 5: Select favorite ──────────────────────────── */}
           {step === 5 && (() => {
-            const photos5 = generatedPhotos.length >= 1 ? generatedPhotos : fallbackPhotos
-            const isReal = generatedPhotos.length >= 1
+            const photos5 = fallbackPhotos
             return (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-0">
-                  {isReal ? 'Your AI photos are ready' : 'Select your favorite'}
-                </h2>
-                {isReal && <p className="text-green-400 text-xs mt-1">Generated from your photo ✓</p>}
+                <h2 className="text-2xl font-bold text-white mb-0">This is what you&apos;ll get</h2>
+                <p className="text-zinc-500 text-xs mt-1">Real results from our customers</p>
               </div>
               <div className="px-4 pb-2">
                 <div className="relative flex items-center justify-center" style={{ height: 280 }}>
@@ -516,11 +469,6 @@ export default function OnboardingPage() {
                   )}
                   <div className="relative rounded-2xl overflow-hidden border-2 border-blue-500/60 z-10" style={{ width: 170, height: 260 }}>
                     <img src={photos5[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
-                    {!isReal && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
-                        <p className="text-white text-[10px] font-medium text-center opacity-80">AI example output</p>
-                      </div>
-                    )}
                   </div>
                   {carouselIdx > 0 && (
                     <button onClick={() => setCarouselIdx(i => i - 1)} className="absolute left-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
