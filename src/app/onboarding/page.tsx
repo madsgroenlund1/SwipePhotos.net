@@ -71,8 +71,8 @@ const DID_YOU_KNOW = [
 ]
 
 const PACKAGES = [
-  { id: 'starter', name: 'Starter', monthlyPrice: '€29', yearlyPrice: '€14.5', yearlyTotal: '€174', photos: '30 photos/mo', popular: false },
-  { id: 'premium', name: 'Premium', monthlyPrice: '€99', yearlyPrice: '€49', yearlyTotal: '€588', photos: '200 photos/mo', popular: true },
+  { id: 'starter', name: 'Starter', price: '$19', photos: '20 AI photos', popular: false },
+  { id: 'popular', name: 'Popular', price: '$39', photos: '40 AI photos', popular: true },
 ]
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -111,8 +111,7 @@ export default function OnboardingPage() {
   const [carouselIdx, setCarouselIdx] = useState(0)
   const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
   const [cleanedCount, setCleanedCount] = useState(0)
-  const [selectedPackage, setSelectedPackage] = useState<string>('premium')
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
+  const [selectedPackage, setSelectedPackage] = useState<string>('popular')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
@@ -672,14 +671,6 @@ export default function OnboardingPage() {
                     </div>
                   ))}
                 </div>
-                {/* Billing toggle */}
-                <div className="flex items-center gap-2 bg-zinc-900 rounded-xl p-1 mb-3">
-                  <button onClick={() => setBillingCycle('monthly')} className={cn('flex-1 py-1.5 rounded-lg text-sm font-medium transition-all', billingCycle === 'monthly' ? 'bg-zinc-700 text-white' : 'text-zinc-500')}>Monthly</button>
-                  <button onClick={() => setBillingCycle('yearly')} className={cn('flex-1 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5', billingCycle === 'yearly' ? 'bg-zinc-700 text-white' : 'text-zinc-500')}>
-                    Yearly
-                    <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">50% OFF</span>
-                  </button>
-                </div>
                 {/* Packages */}
                 <div className="space-y-2 mb-4">
                   {PACKAGES.map(pkg => (
@@ -695,9 +686,8 @@ export default function OnboardingPage() {
                         <span className="text-zinc-500 text-xs">{pkg.photos}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-white font-bold">{billingCycle === 'monthly' ? pkg.monthlyPrice : pkg.yearlyPrice}</span>
-                        <span className="text-zinc-500 text-xs">/mo</span>
-                        {billingCycle === 'yearly' && <p className="text-zinc-600 text-[10px]">{pkg.yearlyTotal}/yr</p>}
+                        <span className="text-white font-bold">{pkg.price}</span>
+                        <span className="text-zinc-500 text-xs"> one-time</span>
                       </div>
                     </div>
                   ))}
