@@ -114,16 +114,18 @@ export default function OnboardingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [generatedPhotos, setGeneratedPhotos] = useState<string[]>([])
+  const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
-  const [predictionIds, setPredictionIds] = useState<string[]>([])
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
-  // The selected AI-generated photo (or fallback to carousel demo photo)
+  const STYLE_ORDER = ['restaurant', 'formal', 'rooftop', 'beach']
+  const STYLE_LABELS: Record<string, string> = { restaurant: 'Italian Restaurant', formal: 'Smart Formal', rooftop: 'Rooftop Bar', beach: 'Beach Club' }
   const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
-  const selectedAiPhoto = generatedPhotos.length > 0
-    ? (generatedPhotos[carouselIdx] ?? generatedPhotos[0])
+  // Build ordered array from generated results (all 4 styles)
+  const generatedArray = STYLE_ORDER.map(s => generatedPhotos[s]).filter(Boolean) as string[]
+  const hasGenerated = generatedArray.length > 0
+  const selectedAiPhoto = hasGenerated
+    ? (generatedArray[carouselIdx] ?? generatedArray[0])
     : fallbackPhotos[carouselIdx % fallbackPhotos.length]
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -146,24 +148,50 @@ export default function OnboardingPage() {
     if (step !== 4) return
     setProgress(0)
     setDidYouKnowIdx(0)
-    setGeneratedPhotos([])
+    setGeneratedPhotos({})
     setGenError(null)
 
     async function startGeneration() {
-      // Show smooth fake progress, then reveal real example photos
+      if (photos.length === 0) {
+        let p = 0
+        progressRef.current = setInterval(() => {
+          p += 1.5
+          setProgress(Math.min(p, 100))
+          setDidYouKnowIdx(Math.min(Math.floor(p / 25), DID_YOU_KNOW.length - 1))
+          if (p >= 100) clearInterval(progressRef.current!)
+        }, 80)
+        return
+      }
+
+      // Slow progress while fal.ai generates 4 photos (~15-25s)
       let p = 0
       progressRef.current = setInterval(() => {
-        p += p < 70 ? 1.2 : 0.3
-        setProgress(Math.min(p, 100))
+        p += p < 80 ? 0.6 : 0.1
+        setProgress(Math.min(p, 95))
         setDidYouKnowIdx(Math.min(Math.floor(p / 25), DID_YOU_KNOW.length - 1))
-        if (p >= 100) clearInterval(progressRef.current!)
-      }, 80)
+      }, 200)
+
+      try {
+        const fd = new FormData()
+        fd.append('photo', photos[0])
+        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
+        const data = await res.json()
+        clearInterval(progressRef.current!)
+        setProgress(100)
+        setDidYouKnowIdx(DID_YOU_KNOW.length - 1)
+        if (data.photos && Object.keys(data.photos).length > 0) {
+          setGeneratedPhotos(data.photos)
+        }
+      } catch {
+        clearInterval(progressRef.current!)
+        setProgress(100)
+        setDidYouKnowIdx(DID_YOU_KNOW.length - 1)
+      }
     }
 
     startGeneration()
     return () => {
       if (progressRef.current) clearInterval(progressRef.current!)
-      if (pollRef.current) clearInterval(pollRef.current!)
     }
   }, [step])
 
@@ -447,13 +475,19 @@ export default function OnboardingPage() {
 
           {/* ── STEP 5: Select favorite ──────────────────────────── */}
           {step === 5 && (() => {
-            const photos5 = fallbackPhotos
+            const photos5 = hasGenerated ? generatedArray : fallbackPhotos
+            const currentLabel = hasGenerated ? STYLE_LABELS[STYLE_ORDER[carouselIdx]] : undefined
             return (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-0">This is what you&apos;ll get</h2>
-                <p className="text-zinc-400 text-sm mt-2 leading-relaxed">Your photos will be in this style — generated just for you. Takes ~1 hour, then sent to your email and ready to download in your profile.</p>
+                <h2 className="text-2xl font-bold text-white mb-0">
+                  {hasGenerated ? 'Your AI photos are ready' : 'This is what you\'ll get'}
+                </h2>
+                {hasGenerated
+                  ? <p className="text-green-400 text-xs mt-1">Generated from your photo ✓ — swipe through all 4 styles</p>
+                  : <p className="text-zinc-400 text-sm mt-2 leading-relaxed">Your photos will be in these styles — generated just for you. Takes ~1 hour, then sent to your email and ready to download in your profile.</p>
+                }
               </div>
               <div className="px-4 pb-2">
                 <div className="relative flex items-center justify-center" style={{ height: 280 }}>
@@ -469,6 +503,11 @@ export default function OnboardingPage() {
                   )}
                   <div className="relative rounded-2xl overflow-hidden border-2 border-blue-500/60 z-10" style={{ width: 170, height: 260 }}>
                     <img src={photos5[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                    {currentLabel && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6">
+                        <p className="text-white text-[11px] font-semibold text-center">{currentLabel}</p>
+                      </div>
+                    )}
                   </div>
                   {carouselIdx > 0 && (
                     <button onClick={() => setCarouselIdx(i => i - 1)} className="absolute left-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
