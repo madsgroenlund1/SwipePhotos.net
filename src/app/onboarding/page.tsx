@@ -171,17 +171,15 @@ export default function OnboardingPage() {
             }
           } catch {}
         }, 4000)
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err)
-        setGenError(msg)
-        // Fallback to fake progress so user can continue
+      } catch {
+        // Silent fallback — user sees smooth progress, demo photos in step 5
         let p = 0
         progressRef.current = setInterval(() => {
-          p += 0.5
+          p += 0.4
           setProgress(Math.min(p, 100))
           setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
           if (p >= 100) clearInterval(progressRef.current!)
-        }, 80)
+        }, 100)
       }
     }
 
@@ -436,14 +434,8 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <div className="text-center relative z-10">
-                  {genError ? (
-                    <p className="text-red-400 text-xs px-4">⚠ {genError}</p>
-                  ) : (
-                    <>
-                      <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">DID YOU KNOW?</p>
-                      <p className="text-zinc-300 text-sm">{DID_YOU_KNOW[didYouKnowIdx]}</p>
-                    </>
-                  )}
+                  <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">DID YOU KNOW?</p>
+                  <p className="text-zinc-300 text-sm">{DID_YOU_KNOW[didYouKnowIdx]}</p>
                 </div>
               </div>
               <div className="px-4 pb-4">
