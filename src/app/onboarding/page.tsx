@@ -67,7 +67,7 @@ const DID_YOU_KNOW = [
   'Better photos = less texting needed',
   "We're the ONLY generator with anti-AI-detection",
   'SwipePhotos photos pass every AI scanner',
-  '🔥 Men using SwipePhotos get 10x more matches',
+  '🔥 SwipePhotos users get 10x more matches',
 ]
 
 const PACKAGES = [
