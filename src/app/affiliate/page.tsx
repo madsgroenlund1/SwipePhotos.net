@@ -7,12 +7,7 @@ function EarningsCalc() {
   const [sales, setSales] = useState(100)
   const earning = Math.round(sales * 39 * 0.3)
   const pct = ((sales - 10) / (10000 - 10)) * 100
-  const tiers = [
-    { label: 'Side hustle', sales: 50, emoji: '☕' },
-    { label: 'Part-time', sales: 200, emoji: '💸' },
-    { label: 'Full-time', sales: 600, emoji: '🚀' },
-  ]
-  return (
+return (
     <div className="bg-gradient-to-br from-blue-600/10 to-blue-500/5 border border-blue-500/20 rounded-2xl p-5 mb-6">
       <p className="text-blue-400 text-xs font-semibold uppercase tracking-wide mb-1">Earnings calculator</p>
       <p className="text-white text-sm mb-4">Drag to see your potential monthly income</p>
@@ -34,22 +29,7 @@ function EarningsCalc() {
         </div>
       </div>
 
-      {/* Quick tiers */}
-      <div className="grid grid-cols-3 gap-2">
-        {tiers.map(t => (
-          <button
-            key={t.label}
-            onClick={() => setSales(t.sales)}
-            className={`rounded-xl p-2.5 text-center transition-all border ${sales === t.sales ? 'border-blue-500 bg-blue-500/10' : 'border-white/8 bg-white/3 hover:border-white/20'}`}
-          >
-            <div className="text-base mb-0.5">{t.emoji}</div>
-            <div className="text-white text-xs font-semibold">${Math.round(t.sales * 39 * 0.3).toLocaleString()}/mo</div>
-            <div className="text-zinc-500 text-[10px]">{t.label}</div>
-          </button>
-        ))}
-      </div>
-
-      <p className="text-zinc-600 text-[10px] mt-3 text-center">Based on avg $39 sale × 30% commission</p>
+      <p className="text-zinc-600 text-[10px] mt-1 text-center">Based on avg $39 sale × 30% commission</p>
     </div>
   )
 }
