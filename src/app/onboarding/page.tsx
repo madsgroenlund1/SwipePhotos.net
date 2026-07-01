@@ -398,20 +398,23 @@ export default function OnboardingPage() {
               </div>
               <div className="px-4 pb-2">
                 <div className="relative flex items-center justify-center" style={{ height: 280 }}>
-                  {/* Side previews */}
-                  {!userPhotoUrl && carouselIdx > 0 && (
+                  {/* Side previews — always demo photos */}
+                  {carouselIdx > 0 && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
                       <img src={CAROUSEL_PHOTOS[carouselIdx - 1]} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   )}
-                  {!userPhotoUrl && carouselIdx < CAROUSEL_PHOTOS.length - 1 && (
+                  {carouselIdx < CAROUSEL_PHOTOS.length - 1 && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
                       <img src={CAROUSEL_PHOTOS[carouselIdx + 1]} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   )}
-                  {/* Main card */}
+                  {/* Main card — always demo photos */}
                   <div className="relative rounded-2xl overflow-hidden border-2 border-blue-500/60 z-10" style={{ width: 170, height: 260 }}>
-                    <img src={userPhotoUrl || CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                    <img src={CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
+                      <p className="text-white text-[10px] font-medium text-center opacity-80">AI example output</p>
+                    </div>
                   </div>
                   {/* Nav arrows */}
                   {carouselIdx > 0 && (
