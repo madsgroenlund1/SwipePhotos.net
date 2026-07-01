@@ -43,9 +43,9 @@ export async function trainModel(imageUrls: string[], orderId: string) {
       destination: `${username}/${modelName}` as `${string}/${string}`,
       input: {
         input_images: imageUrls,
-        steps: 1000,
+        steps: 1500,
         trigger_word: 'TOK',
-        learning_rate: 0.0004,
+        learning_rate: 0.0003,
         batch_size: 1,
         resolution: '512,768,1024',
         autocaption: true,
