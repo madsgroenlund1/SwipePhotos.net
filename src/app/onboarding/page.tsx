@@ -105,6 +105,10 @@ export default function OnboardingPage() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
+  // The selected AI-generated photo (or fallback to carousel demo photo)
+  const selectedAiPhoto = generatedPhotos.length > 0
+    ? (generatedPhotos[carouselIdx] ?? generatedPhotos[0])
+    : CAROUSEL_PHOTOS[carouselIdx]
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -517,7 +521,7 @@ export default function OnboardingPage() {
                         <span className="text-zinc-400 text-[10px] font-medium truncate">{tool.name}</span>
                       </div>
                       <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
-                        <img src={userPhotoUrl || CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                       </div>
                       <div className="text-center">
                         <span className="text-red-400 text-[10px] font-bold">✗ AI Detected</span>
@@ -590,7 +594,7 @@ export default function OnboardingPage() {
                         <span className="text-zinc-400 text-[10px] font-medium truncate">{tool.name}</span>
                       </div>
                       <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
-                        <img src={userPhotoUrl || CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                       </div>
                       <div className="text-center">
                         <span className="text-green-400 text-[10px] font-bold">✓ Human</span>
@@ -615,7 +619,7 @@ export default function OnboardingPage() {
               <div className="relative flex justify-center pt-2 pb-4">
                 <div className="relative">
                   <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-blue-500/30">
-                    <img src={userPhotoUrl || CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                    <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                   </div>
                   {[
                     { icon: '🔥', pos: '-top-3 -left-4', label: '99+' },
