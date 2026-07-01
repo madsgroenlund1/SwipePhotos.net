@@ -3,14 +3,27 @@ import Replicate from 'replicate'
 
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! })
 
-const PULID_VERSION = '43d309c37ab4e62361e5e29b8e9e867fb2dcbcec77ae91206a8d95ac5dd451a0'
-
 const SCENES = [
-  'candid iPhone photo of a man sitting at an outdoor restaurant, Mediterranean street, white linen shirt, relaxed closed-mouth smile, looking slightly to the side, pizza on table, natural daylight, bokeh background, real photo',
-  'photo of a man standing outdoors on a European city street, golden hour, light shirt, serious confident expression, neutral face, not smiling, looking straight at camera, candid lifestyle photo shot on iPhone, real photo',
-  'candid iPhone photo of a man at an outdoor cafe terrace, summer, laughing with mouth open showing teeth, natural light, white shirt, people and street in blurry background, real photo',
-  'photo of a man outdoors, leaning against a wall or railing in a European city, casual linen shirt, calm composed expression, slight squint, not smiling, looking off to the side, golden light, shot on iPhone, real photo',
-  'candid photo of a man at an outdoor restaurant or bar, warm evening light, relaxed half-smile no teeth visible, white or light shirt, shallow depth of field, real photo shot on iPhone',
+  {
+    prompt: 'photo of a man sitting at an outdoor Italian restaurant, Mediterranean cobblestone street, white linen shirt, relaxed genuine smile, wine glass on table, warm sunlight, candid lifestyle photo, 35mm f2.0, photorealistic',
+    negative: 'cartoon, anime, illustration, painting, 3d render, cgi, unrealistic, plastic skin, nsfw, blurry, bad quality',
+  },
+  {
+    prompt: 'candid photo of a man on a European city street at golden hour, light casual shirt, confident neutral expression, not smiling, looking straight at camera, shallow depth of field, street photography, photorealistic',
+    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
+  },
+  {
+    prompt: 'photo of a man at a rooftop bar at night, city lights bokeh background, striped casual shirt, relaxed confident pose, calm cool expression, ambient warm light, photorealistic portrait',
+    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
+  },
+  {
+    prompt: 'candid photo of a man at a beach club, macrame umbrellas, white open linen shirt, sunglasses, holding cocktail, summer vibes, relaxed look, photorealistic, shot on iPhone',
+    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
+  },
+  {
+    prompt: 'photo of a man at an outdoor cafe terrace, summer, people in blurry background, light shirt, laughing natural expression, warm daylight, candid lifestyle photography, photorealistic',
+    negative: 'cartoon, anime, illustration, 3d render, fake, plastic, nsfw, blurry',
+  },
 ]
 
 export async function POST(req: NextRequest) {
@@ -23,20 +36,20 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
 
-    // Sequential with delay to avoid rate limits on low-credit accounts
     const ids: string[] = []
-    for (const prompt of SCENES) {
+    for (const scene of SCENES) {
       const p = await replicate.predictions.create({
-        version: PULID_VERSION,
+        model: 'zsxkib/instant-id',
         input: {
-          main_face_image: dataUrl,
-          prompt,
-          negative_prompt: 'cgi, render, 3d, digital art, illustration, painting, drawing, anime, cartoon, unrealistic skin, plastic, doll, AI generated look, fake, overly smooth skin, studio lighting, nsfw, bad quality, blurry, deformed',
-          num_steps: 30,
-          start_step: 0,
-          guidance_scale: 1.5,
-          id_weight: 0.85,
-          num_outputs: 1,
+          image: dataUrl,
+          prompt: scene.prompt,
+          negative_prompt: scene.negative,
+          num_inference_steps: 30,
+          guidance_scale: 5,
+          ip_adapter_scale: 0.8,
+          controlnet_conditioning_scale: 0.8,
+          width: 832,
+          height: 1216,
         },
       })
       ids.push(p.id)
