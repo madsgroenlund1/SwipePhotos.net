@@ -7,29 +7,42 @@ function EarningsCalc() {
   const [sales, setSales] = useState(100)
   const earning = Math.round(sales * 39 * 0.3)
   const pct = ((sales - 10) / (10000 - 10)) * 100
-return (
-    <div className="bg-gradient-to-br from-blue-600/10 to-blue-500/5 border border-blue-500/20 rounded-2xl p-5 mb-6">
-      <p className="text-blue-400 text-xs font-semibold uppercase tracking-wide mb-1">Earnings calculator</p>
-      <p className="text-white text-sm mb-4">Drag to see your potential monthly income</p>
+  const yearly = earning * 12
+  const label = earning < 500 ? 'Side income' : earning < 2000 ? 'Part-time income' : earning < 5000 ? 'Full-time income' : 'Life-changing income'
+  const labelColor = earning < 500 ? 'text-zinc-400' : earning < 2000 ? 'text-blue-400' : earning < 5000 ? 'text-green-400' : 'text-yellow-400'
 
-      {/* Slider */}
-      <div className="mb-4">
-        <div className="flex justify-between items-end mb-2">
-          <span className="text-zinc-400 text-xs">{sales.toLocaleString()} sales/month</span>
-          <span className="text-2xl font-bold text-white">${earning.toLocaleString()}<span className="text-zinc-400 text-sm font-normal">/mo</span></span>
+  return (
+    <div className="relative overflow-hidden rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, #0f1f3d 0%, #0a0a0a 60%)' }}>
+      <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, #3b82f6 0%, transparent 60%)' }} />
+      <div className="relative p-6">
+        <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-5">Earnings calculator</p>
+
+        {/* Big number */}
+        <div className="text-center mb-6">
+          <p className={`text-xs font-semibold mb-2 ${labelColor}`}>{label}</p>
+          <div className="text-6xl font-black text-white tracking-tight leading-none mb-2">
+            ${earning.toLocaleString()}
+          </div>
+          <p className="text-zinc-500 text-sm">per month · <span className="text-zinc-300 font-medium">${yearly.toLocaleString()}/yr</span></p>
         </div>
-        <input
-          type="range" min={10} max={10000} step={10} value={sales}
-          onChange={e => setSales(Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer"
-          style={{ background: `linear-gradient(to right, #3b82f6 ${pct}%, #27272a ${pct}%)` }}
-        />
-        <div className="flex justify-between text-zinc-600 text-[10px] mt-1">
-          <span>10</span><span>2,500</span><span>5,000</span><span>7,500</span><span>10,000</span>
+
+        {/* Slider */}
+        <div>
+          <div className="flex justify-between text-zinc-500 text-xs mb-3">
+            <span>{sales.toLocaleString()} sales/month</span>
+            <span>30% commission</span>
+          </div>
+          <input
+            type="range" min={10} max={10000} step={10} value={sales}
+            onChange={e => setSales(Number(e.target.value))}
+            className="w-full h-3 rounded-full appearance-none cursor-pointer"
+            style={{ background: `linear-gradient(to right, #3b82f6 ${pct}%, #1e293b ${pct}%)` }}
+          />
+          <div className="flex justify-between text-zinc-700 text-[10px] mt-2">
+            <span>10</span><span>2,500</span><span>5,000</span><span>7,500</span><span>10,000</span>
+          </div>
         </div>
       </div>
-
-      <p className="text-zinc-600 text-[10px] mt-1 text-center">Based on avg $39 sale × 30% commission</p>
     </div>
   )
 }
