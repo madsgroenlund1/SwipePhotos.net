@@ -55,8 +55,8 @@ const DID_YOU_KNOW = [
 ]
 
 const PACKAGES = [
-  { id: 'starter', name: 'Starter', monthlyPrice: '$19', yearlyPrice: '$8', yearlyTotal: '$99', photos: '30 photos/mo', popular: false },
-  { id: 'premium', name: 'Premium', monthlyPrice: '$99', yearlyPrice: '$49', yearlyTotal: '$591', photos: '200 photos/mo', popular: true },
+  { id: 'starter', name: 'Starter', monthlyPrice: '€29', yearlyPrice: '€14.5', yearlyTotal: '€174', photos: '30 photos/mo', popular: false },
+  { id: 'premium', name: 'Premium', monthlyPrice: '€99', yearlyPrice: '€49', yearlyTotal: '€588', photos: '200 photos/mo', popular: true },
 ]
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
@@ -95,6 +95,7 @@ export default function OnboardingPage() {
   const [carouselIdx, setCarouselIdx] = useState(0)
   const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
   const [cleanedCount, setCleanedCount] = useState(0)
+  const [selectedPackage, setSelectedPackage] = useState<string>('premium')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -585,9 +586,9 @@ export default function OnboardingPage() {
                 {/* Packages */}
                 <div className="space-y-2 mb-4">
                   {PACKAGES.map(pkg => (
-                    <div key={pkg.id} className={cn('flex items-center gap-3 p-3 rounded-2xl border', pkg.popular ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/3')}>
-                      <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', pkg.popular ? 'border-blue-500 bg-blue-500' : 'border-zinc-600')}>
-                        {pkg.popular && <div className="w-2 h-2 bg-white rounded-full" />}
+                    <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)} className={cn('flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all', selectedPackage === pkg.id ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20')}>
+                      <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', selectedPackage === pkg.id ? 'border-blue-500 bg-blue-500' : 'border-zinc-600')}>
+                        {selectedPackage === pkg.id && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
