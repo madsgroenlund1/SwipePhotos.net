@@ -64,7 +64,7 @@ export default function AffiliatePage() {
     setForm(prev => ({ ...prev, [key]: e.target.value }))
 
   // Generate slug from handle: @JohnDoe → johndoe
-  const slug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'DITBRUGERNAVN'
+  const slug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'yourusername'
   const refLink = `https://swipephotos.net/${slug}`
 
   async function handleSubmit(e: React.FormEvent) {
@@ -192,9 +192,9 @@ export default function AffiliatePage() {
                 />
               </div>
               <div>
-                <label className="text-zinc-400 text-xs mb-1.5 block">Handle *</label>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Social media brugernavn *</label>
                 <input
-                  type="text" value={form.handle} onChange={set('handle')} placeholder="@yourhandle"
+                  type="text" value={form.handle} onChange={set('handle')} placeholder="@ditbrugernavn"
                   required
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
                 />
