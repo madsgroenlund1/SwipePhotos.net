@@ -99,7 +99,10 @@ export default function OnboardingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
+  const [generatedPhotos, setGeneratedPhotos] = useState<string[]>([])
+  const [predictionIds, setPredictionIds] = useState<string[]>([])
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -117,19 +120,71 @@ export default function OnboardingPage() {
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
-  // Progress animation for step 4
+  // Step 4: start real AI generation + poll for results
   useEffect(() => {
-    if (step === 4) {
-      setProgress(0)
-      setDidYouKnowIdx(0)
-      let p = 0
-      progressRef.current = setInterval(() => {
-        p += 0.5
-        setProgress(Math.min(p, 100))
-        setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
-        if (p >= 100) clearInterval(progressRef.current!)
-      }, 80)
-      return () => { if (progressRef.current) clearInterval(progressRef.current!) }
+    if (step !== 4) return
+    setProgress(0)
+    setDidYouKnowIdx(0)
+    setGeneratedPhotos([])
+
+    async function startGeneration() {
+      if (photos.length === 0) {
+        // No photo uploaded — fake progress fallback
+        let p = 0
+        progressRef.current = setInterval(() => {
+          p += 0.5
+          setProgress(Math.min(p, 99))
+          setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
+          if (p >= 99) clearInterval(progressRef.current!)
+        }, 80)
+        return
+      }
+
+      try {
+        const fd = new FormData()
+        fd.append('photo', photos[0])
+        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
+        const { ids } = await res.json()
+        if (!ids?.length) throw new Error('No prediction IDs')
+        setPredictionIds(ids)
+
+        // Fake slow progress while real predictions run
+        let fakeP = 0
+        progressRef.current = setInterval(() => {
+          fakeP = Math.min(fakeP + 0.3, 90)
+          setProgress(fakeP)
+          setDidYouKnowIdx(Math.floor(fakeP / 25) % DID_YOU_KNOW.length)
+        }, 200)
+
+        // Poll for real results
+        pollRef.current = setInterval(async () => {
+          try {
+            const pollRes = await fetch(`/api/generate/poll?ids=${ids.join(',')}`)
+            const { done, urls } = await pollRes.json()
+            if (done && urls?.length) {
+              clearInterval(progressRef.current!)
+              clearInterval(pollRef.current!)
+              setGeneratedPhotos(urls)
+              setProgress(100)
+            }
+          } catch {}
+        }, 4000)
+      } catch {
+        // Fallback to fake progress if API fails
+        let p = 0
+        progressRef.current = setInterval(() => {
+          p += 0.5
+          setProgress(Math.min(p, 100))
+          setDidYouKnowIdx(Math.floor(p / 25) % DID_YOU_KNOW.length)
+          if (p >= 100) clearInterval(progressRef.current!)
+        }, 80)
+      }
+    }
+
+    startGeneration()
+    return () => {
+      if (progressRef.current) clearInterval(progressRef.current!)
+      if (pollRef.current) clearInterval(pollRef.current!)
     }
   }, [step])
 
@@ -390,51 +445,56 @@ export default function OnboardingPage() {
           )}
 
           {/* ── STEP 5: Select favorite ──────────────────────────── */}
-          {step === 5 && (
+          {step === 5 && (() => {
+            const photos5 = generatedPhotos.length >= 3 ? generatedPhotos : CAROUSEL_PHOTOS
+            const isReal = generatedPhotos.length >= 3
+            return (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-0">Select your favorite</h2>
+                <h2 className="text-2xl font-bold text-white mb-0">
+                  {isReal ? 'Your AI photos are ready' : 'Select your favorite'}
+                </h2>
+                {isReal && <p className="text-green-400 text-xs mt-1">Generated from your photo ✓</p>}
               </div>
               <div className="px-4 pb-2">
                 <div className="relative flex items-center justify-center" style={{ height: 280 }}>
-                  {/* Side previews — always demo photos */}
                   {carouselIdx > 0 && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
-                      <img src={CAROUSEL_PHOTOS[carouselIdx - 1]} alt="" className="w-full h-full object-cover object-top" />
+                      <img src={photos5[carouselIdx - 1]} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   )}
-                  {carouselIdx < CAROUSEL_PHOTOS.length - 1 && (
+                  {carouselIdx < photos5.length - 1 && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 rounded-2xl overflow-hidden opacity-40" style={{ width: 110, height: 220 }}>
-                      <img src={CAROUSEL_PHOTOS[carouselIdx + 1]} alt="" className="w-full h-full object-cover object-top" />
+                      <img src={photos5[carouselIdx + 1]} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   )}
-                  {/* Main card — always demo photos */}
                   <div className="relative rounded-2xl overflow-hidden border-2 border-blue-500/60 z-10" style={{ width: 170, height: 260 }}>
-                    <img src={CAROUSEL_PHOTOS[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
-                      <p className="text-white text-[10px] font-medium text-center opacity-80">AI example output</p>
-                    </div>
+                    <img src={photos5[carouselIdx]} alt="" className="w-full h-full object-cover object-top" />
+                    {!isReal && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6">
+                        <p className="text-white text-[10px] font-medium text-center opacity-80">AI example output</p>
+                      </div>
+                    )}
                   </div>
-                  {/* Nav arrows */}
                   {carouselIdx > 0 && (
                     <button onClick={() => setCarouselIdx(i => i - 1)} className="absolute left-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                     </button>
                   )}
-                  {carouselIdx < CAROUSEL_PHOTOS.length - 1 && (
+                  {carouselIdx < photos5.length - 1 && (
                     <button onClick={() => setCarouselIdx(i => i + 1)} className="absolute right-8 z-20 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                   )}
                 </div>
-                <p className="text-center text-zinc-600 text-sm mt-3">{carouselIdx + 1}/{CAROUSEL_PHOTOS.length}</p>
+                <p className="text-center text-zinc-600 text-sm mt-3">{carouselIdx + 1}/{photos5.length}</p>
               </div>
               <div className="px-4 pb-4">
                 <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
               </div>
             </div>
-          )}
+          )})()}
 
           {/* ── STEP 6: DON'T USE YET ───────────────────────────── */}
           {step === 6 && (
