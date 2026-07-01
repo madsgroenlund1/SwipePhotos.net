@@ -1,12 +1,16 @@
 import { Resend } from 'resend'
 
-export const resend = new Resend(process.env.RESEND_API_KEY!)
+let _resend: Resend | null = null
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY!)
+  return _resend
+}
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'photos@swipephotos.net'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
 export async function sendWelcomeEmail(email: string, orderId: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: 'Your SwipePhotos photos are being generated 📸',
@@ -33,7 +37,7 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
 }
 
 export async function sendReadyEmail(email: string, orderId: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: 'Your SwipePhotos photos are ready 🎯',
@@ -57,7 +61,7 @@ export async function sendReadyEmail(email: string, orderId: string) {
 }
 
 export async function sendAffiliateApprovedEmail(email: string, refCode: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: "You're approved as a SwipePhotos affiliate! 🚀",
