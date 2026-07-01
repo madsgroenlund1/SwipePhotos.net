@@ -60,7 +60,7 @@ body {
 }
 
 .animate-ticker {
-  animation: marquee-left 30s linear infinite;
+  animation: marquee-left 80s linear infinite;
 }
 
 .animate-fade-in-up {

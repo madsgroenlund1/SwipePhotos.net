@@ -3,9 +3,14 @@ import { cn } from '@/lib/utils'
 interface IPhoneMockupProps {
   children: React.ReactNode
   className?: string
+  darkStatusBar?: boolean
 }
 
-export function IPhoneMockup({ children, className }: IPhoneMockupProps) {
+export function IPhoneMockup({ children, className, darkStatusBar = false }: IPhoneMockupProps) {
+  const iconColor = darkStatusBar ? 'rgba(0,0,0,0.85)' : 'white'
+  const iconOpacity60 = darkStatusBar ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)'
+  const iconOpacity30 = darkStatusBar ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.45)'
+
   return (
     <div
       className={cn(
@@ -25,67 +30,63 @@ export function IPhoneMockup({ children, className }: IPhoneMockupProps) {
         style={{ top: 10, width: 88, height: 30 }}
       />
 
-      {/* Status bar — flanks the Dynamic Island */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center px-5" style={{ height: 50 }}>
-        {/* Time — left of island */}
+      {/* Status bar */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center" style={{ height: 50, paddingLeft: 20, paddingRight: 14 }}>
         <span
           style={{
             fontFamily: '-apple-system, "SF Pro Display", BlinkMacSystemFont, sans-serif',
             fontSize: 13,
             fontWeight: 600,
-            color: 'white',
+            color: iconColor,
             letterSpacing: '-0.3px',
           }}
         >
           9:41
         </span>
 
-        {/* Icons — right of island */}
-        <div className="flex items-center gap-[5px]">
-          {/* Cellular signal — 4 bars */}
-          <svg width="17" height="12" viewBox="0 0 17 12" fill="white">
-            <rect x="0" y="8" width="3" height="4" rx="1" />
-            <rect x="4.5" y="5.5" width="3" height="6.5" rx="1" />
-            <rect x="9" y="3" width="3" height="9" rx="1" />
-            <rect x="13.5" y="0" width="3" height="12" rx="1" />
+        <div className="flex items-center gap-[6px]">
+          {/* Cellular — 4 bars, iOS style */}
+          <svg width="18" height="12" viewBox="0 0 18 12" fill={iconColor}>
+            <rect x="0" y="8.5" width="3" height="3.5" rx="1"/>
+            <rect x="5" y="6"   width="3" height="6"   rx="1" opacity="0.5"/>
+            <rect x="10" y="3"  width="3" height="9"   rx="1" opacity="0.75"/>
+            <rect x="15" y="0"  width="3" height="12"  rx="1"/>
           </svg>
 
-          {/* WiFi */}
-          <svg width="15" height="11" viewBox="0 0 15 11" fill="white">
-            <path d="M7.5 8.2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />
-            <path d="M7.5 5.5c1.4 0 2.7.57 3.63 1.5l1.2-1.2A6.5 6.5 0 0 0 7.5 3.8a6.5 6.5 0 0 0-4.83 2l1.2 1.2A4.6 4.6 0 0 1 7.5 5.5z" opacity=".7"/>
-            <path d="M7.5 2.1c2.5 0 4.75.98 6.4 2.57L15 3.6A9.9 9.9 0 0 0 7.5 0 9.9 9.9 0 0 0 0 3.6l1.1 1.07A8.4 8.4 0 0 1 7.5 2.1z" opacity=".4"/>
+          {/* WiFi — stroke arcs + dot, iOS style */}
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke={iconColor} strokeLinecap="round">
+            <circle cx="8" cy="10.5" r="1.4" fill={iconColor} stroke="none"/>
+            <path d="M4.6 7.5a4.8 4.8 0 0 1 6.8 0" strokeWidth="1.5" opacity="0.75"/>
+            <path d="M1.5 4.5a9.5 9.5 0 0 1 13 0" strokeWidth="1.5" opacity="0.4"/>
           </svg>
 
-          {/* Battery */}
-          <div className="flex items-center" style={{ gap: 0 }}>
-            <div
-              style={{
-                width: 22,
-                height: 11,
-                borderRadius: 3,
-                border: '1.5px solid rgba(255,255,255,0.7)',
-                padding: '1.5px',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ width: '80%', height: '100%', background: 'white', borderRadius: 1.5 }} />
-            </div>
-            <div style={{ width: 2, height: 5, background: 'rgba(255,255,255,0.45)', borderRadius: '0 1px 1px 0' }} />
-          </div>
+          {/* Battery — iOS style pill with nub */}
+          <svg width="27" height="13" viewBox="0 0 27 13" fill="none">
+            {/* Shell */}
+            <rect x="0.5" y="0.5" width="22" height="12" rx="3.5" stroke={iconOpacity60} strokeWidth="1"/>
+            {/* Fill ~80% */}
+            <rect x="2" y="2" width="16.5" height="9" rx="2" fill={iconColor}/>
+            {/* Nub */}
+            <path d="M23.5 4.5 C24.5 4.5 25.5 5.2 25.5 6.5 C25.5 7.8 24.5 8.5 23.5 8.5" stroke={iconOpacity30} strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+          </svg>
         </div>
       </div>
 
-      {/* Content below status bar */}
-      <div className="absolute inset-0 flex flex-col" style={{ paddingTop: 50 }}>
+      {/* Content fills full phone — screens must add their own paddingTop: 50 */}
+      <div className="absolute inset-0 flex flex-col">
         {children}
       </div>
 
       {/* Home indicator */}
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ bottom: 6, width: 100, height: 4, background: 'rgba(255,255,255,0.22)', borderRadius: 2 }}
+        style={{
+          bottom: 6,
+          width: 100,
+          height: 4,
+          background: darkStatusBar ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)',
+          borderRadius: 2,
+        }}
       />
     </div>
   )

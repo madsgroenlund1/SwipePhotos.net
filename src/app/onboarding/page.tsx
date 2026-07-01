@@ -213,12 +213,23 @@ export default function OnboardingPage() {
     if (!email.includes('@')) return
     setLoading(true)
     try {
+      // 1. Create order + get Stripe URL and orderId
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packageId: selectedPackage, email }),
       })
       const data = await res.json()
+
+      // 2. Upload photos to Supabase so training can start after payment
+      if (data.orderId && photos.length > 0) {
+        const fd = new FormData()
+        fd.append('orderId', data.orderId)
+        for (const photo of photos) fd.append('files', photo)
+        await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+      }
+
+      // 3. Redirect to Stripe
       if (data.url) {
         window.location.href = data.url
         return
@@ -308,7 +319,7 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload 1–2 photos of yourself</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload 10–20 photos of yourself</h2>
               </div>
 
               <div className="px-4 pb-2">
@@ -402,10 +413,16 @@ export default function OnboardingPage() {
               </div>
 
               <div className="px-4 pb-4">
+                {photos.length > 0 && photos.length < 10 && (
+                  <p className="text-amber-400 text-xs text-center mb-2">{photos.length}/10 minimum — upload {10 - photos.length} more</p>
+                )}
+                {photos.length >= 10 && (
+                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos ready</p>
+                )}
                 <button
                   onClick={next}
-                  disabled={photos.length === 0 && hasTattoos === null}
-                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length > 0 || hasTattoos !== null ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
+                  disabled={photos.length < 10}
+                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 10 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
                 >
                   Continue →
                 </button>

@@ -31,10 +31,10 @@ export default function PrivacyPage() {
             </ul>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-2">Your Photos</h3>
-            <p>The photos you upload are used exclusively to train a personal AI model for your order. They are stored securely and never shared with third parties. You can request deletion at any time by emailing privacy@swipephotos.net.</p>
+            <p>The photos you upload are used exclusively to train a personal AI model for your order. They are stored securely and never shared with third parties. You can request deletion at any time by emailing support@swipephotos.net.</p>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-2">GDPR Rights</h3>
-            <p>If you are located in the European Economic Area, you have the right to access, update, or delete your personal information. Contact us at privacy@swipephotos.net.</p>
+            <p>If you are located in the European Economic Area, you have the right to access, update, or delete your personal information. Contact us at support@swipephotos.net.</p>
           </section>
 
           <section>
@@ -50,14 +50,14 @@ export default function PrivacyPage() {
             </ul>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-2">Refund Policy</h3>
-            <p>We offer a 30-day money-back guarantee. If you&apos;re not satisfied with your photos, contact support@swipephotos.net within 30 days of your order.</p>
+            <p>All purchases are final. Due to the nature of AI-generated content and the computational costs involved in training personal models, we do not offer automatic refunds. However, if you are dissatisfied with your results, we encourage you to reach out to us at <a href="mailto:support@swipephotos.net" className="text-blue-400">support@swipephotos.net</a> and we will do our best to find a satisfactory resolution on a case-by-case basis.</p>
 
             <h3 className="text-lg font-semibold text-white mt-6 mb-2">Intellectual Property</h3>
             <p>You retain full ownership of your generated photos. You grant SwipePhotos.net a limited license to process and store them for the purpose of delivering the service.</p>
           </section>
 
           <p className="text-zinc-500 text-sm">
-            Questions? Email us at <a href="mailto:legal@swipephotos.net" className="text-blue-400">legal@swipephotos.net</a>
+            Questions? Email us at <a href="mailto:support@swipephotos.net" className="text-blue-400">support@swipephotos.net</a>
           </p>
         </div>
       </main>

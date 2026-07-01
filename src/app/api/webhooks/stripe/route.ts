@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendWelcomeEmail, sendReadyEmail } from '@/lib/resend'
-import { trainModel, generatePhoto } from '@/lib/replicate'
+import { trainModel, generatePhotos } from '@/lib/replicate'
 import Stripe from 'stripe'
 
 export const runtime = 'nodejs'
@@ -99,17 +99,13 @@ async function startPipeline(orderId: string, email: string, presets: string[]) 
     // Update status to generating
     await supabase.from('orders').update({ status: 'generating' }).eq('id', orderId)
 
-    // Generate photos for each preset
-    const defaultPresets = presets.length ? presets : ['outdoor-adventure', 'city-life']
-    for (const preset of defaultPresets) {
-      const photoUrls = await generatePhoto(loraUrl, preset)
-      for (const url of photoUrls) {
-        await supabase.from('generated_photos').insert({
-          order_id: orderId,
-          file_url: url,
-          preset,
-        })
-      }
+    // Generate all scene photos with the trained LoRA
+    const photoUrls = await generatePhotos(loraUrl)
+    for (const url of photoUrls) {
+      await supabase.from('generated_photos').insert({
+        order_id: orderId,
+        file_url: url,
+      })
     }
 
     // Mark as ready

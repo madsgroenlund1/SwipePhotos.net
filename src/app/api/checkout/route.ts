@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       automatic_tax: { enabled: true },
     })
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url, orderId: order?.id })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
