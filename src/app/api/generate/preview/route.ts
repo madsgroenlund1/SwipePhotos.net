@@ -6,11 +6,11 @@ const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! })
 const PULID_VERSION = '43d309c37ab4e62361e5e29b8e9e867fb2dcbcec77ae91206a8d95ac5dd451a0'
 
 const SCENES = [
-  'candid photo of a man sitting at a nice restaurant, warm ambient lighting, white tablecloth, wine glass, natural smile, shot on iPhone, real person, not AI',
-  'casual photo of a man outdoors at golden hour, park or street background, soft bokeh, natural daylight, candid moment, shot on iPhone, real photo',
-  'photo of a man at a rooftop bar, evening city lights behind him, relaxed confident pose, natural expression, shallow depth of field, shot on Canon, real photo',
-  'candid photo of a man at a coffee shop, sitting by window, warm natural light, casual outfit, genuine laugh, shallow focus, shot on iPhone, real photo',
-  'photo of a man at the beach or outdoor setting, summer, relaxed natural pose, ocean or nature in background, golden hour light, shot on iPhone, real photo',
+  'candid iPhone photo of a man sitting at an outdoor Italian restaurant, sunny Mediterranean street behind him, white linen shirt, big genuine laugh, pizza on table, natural daylight, people in background, shallow depth of field, real photo',
+  'candid photo of a man at an outdoor cafe terrace, European city street, summer, sunlight, natural smile, casual outfit, shot on iPhone, real photo, bokeh background',
+  'photo of a man sitting at a restaurant table outdoors, warm golden hour sunlight, relaxed and happy expression, white shirt, food and drinks on table, candid moment, real photo shot on iPhone',
+  'candid iPhone photo of a man at a bar or restaurant, laughing with friends, warm evening light, casual setting, natural expression, shallow focus, real photo',
+  'photo of a man outdoors in a European city, sunny day, casual white or light shirt, relaxed confident smile, street or square in background, candid lifestyle photo shot on iPhone',
 ]
 
 export async function POST(req: NextRequest) {
