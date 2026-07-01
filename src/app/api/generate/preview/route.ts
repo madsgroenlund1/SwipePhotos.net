@@ -3,12 +3,14 @@ import Replicate from 'replicate'
 
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! })
 
+const PULID_VERSION = '43d309c37ab4e62361e5e29b8e9e867fb2dcbcec77ae91206a8d95ac5dd451a0'
+
 const SCENES = [
-  'photo of a man sitting at an outdoor Italian restaurant, Mediterranean cobblestone street, white linen shirt, relaxed natural smile, pizza on table, warm sunlight, bokeh background, candid lifestyle photo',
-  'photo of a man on a European city street at golden hour, light casual shirt, confident neutral expression, not smiling, looking at camera, shallow depth of field, street photography',
-  'photo of a man at a rooftop bar at night, city lights bokeh behind him, striped casual shirt, relaxed arm on chair, calm cool expression, ambient warm lighting',
-  'photo of a man at a beach club, macrame umbrellas background, white open linen shirt, sunglasses, holding cocktail, summer vibes, relaxed confident look',
-  'photo of a man at an outdoor cafe terrace, summer, people blurred in background, light shirt, laughing natural expression, warm daylight, candid lifestyle',
+  'photo of a man sitting at an outdoor Italian restaurant, Mediterranean cobblestone street, white linen shirt, relaxed natural smile, pizza on table, warm sunlight, bokeh background, real candid lifestyle photo, photorealistic',
+  'photo of a man standing on a European city street at golden hour, light casual shirt, confident neutral expression, not smiling, looking straight at camera, shallow depth of field, photorealistic',
+  'photo of a man at a rooftop bar at night, city lights bokeh background, casual shirt, relaxed pose, calm expression, ambient warm light, photorealistic portrait',
+  'photo of a man at a beach club, macrame umbrellas, white open linen shirt, sunglasses, holding cocktail, summer vibes, relaxed look, photorealistic',
+  'photo of a man at an outdoor cafe terrace, summer, people blurred in background, light shirt, laughing natural expression, warm daylight, candid lifestyle, photorealistic',
 ]
 
 export async function POST(req: NextRequest) {
@@ -24,19 +26,16 @@ export async function POST(req: NextRequest) {
     const ids: string[] = []
     for (const prompt of SCENES) {
       const p = await replicate.predictions.create({
-        model: 'fofr/flux-pulid',
+        version: PULID_VERSION,
         input: {
           main_face_image: dataUrl,
           prompt,
-          num_outputs: 1,
-          num_inference_steps: 20,
-          guidance_scale: 4,
-          true_cfg: 1,
-          id_weight: 1.0,
-          negative_prompt: 'bad quality, blurry, deformed, cartoon, illustration, painting, 3d render, nsfw, plastic skin, fake',
-          output_format: 'webp',
-          output_quality: 90,
+          negative_prompt: 'cartoon, anime, illustration, painting, 3d render, cgi, fake, plastic skin, nsfw, blurry, bad quality, deformed, doll',
+          num_steps: 25,
           start_step: 4,
+          guidance_scale: 1.5,
+          id_weight: 1.0,
+          num_outputs: 1,
         },
       })
       ids.push(p.id)
