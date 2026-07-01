@@ -453,7 +453,7 @@ export default function OnboardingPage() {
               <div className="p-6 pb-4">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-0">This is what you&apos;ll get</h2>
-                <p className="text-zinc-500 text-xs mt-1">Real results from our customers</p>
+                <p className="text-zinc-400 text-sm mt-2 leading-relaxed">Your photos will be in this style — generated just for you. Takes ~1 hour, then sent to your email and ready to download in your profile.</p>
               </div>
               <div className="px-4 pb-2">
                 <div className="relative flex items-center justify-center" style={{ height: 280 }}>
