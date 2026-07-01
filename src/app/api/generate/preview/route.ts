@@ -6,11 +6,11 @@ const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! })
 const PULID_VERSION = '43d309c37ab4e62361e5e29b8e9e867fb2dcbcec77ae91206a8d95ac5dd451a0'
 
 const SCENES = [
-  'candid iPhone photo of a man sitting at an outdoor Italian restaurant, sunny Mediterranean street behind him, white linen shirt, big genuine laugh, pizza on table, natural daylight, people in background, shallow depth of field, real photo',
-  'candid photo of a man at an outdoor cafe terrace, European city street, summer, sunlight, natural smile, casual outfit, shot on iPhone, real photo, bokeh background',
-  'photo of a man sitting at a restaurant table outdoors, warm golden hour sunlight, relaxed and happy expression, white shirt, food and drinks on table, candid moment, real photo shot on iPhone',
-  'candid iPhone photo of a man at a bar or restaurant, laughing with friends, warm evening light, casual setting, natural expression, shallow focus, real photo',
-  'photo of a man outdoors in a European city, sunny day, casual white or light shirt, relaxed confident smile, street or square in background, candid lifestyle photo shot on iPhone',
+  'candid iPhone photo of a man sitting at an outdoor restaurant, Mediterranean street, white linen shirt, relaxed closed-mouth smile, looking slightly to the side, pizza on table, natural daylight, bokeh background, real photo',
+  'photo of a man standing outdoors on a European city street, golden hour, light shirt, serious confident expression, neutral face, not smiling, looking straight at camera, candid lifestyle photo shot on iPhone, real photo',
+  'candid iPhone photo of a man at an outdoor cafe terrace, summer, laughing with mouth open showing teeth, natural light, white shirt, people and street in blurry background, real photo',
+  'photo of a man outdoors, leaning against a wall or railing in a European city, casual linen shirt, calm composed expression, slight squint, not smiling, looking off to the side, golden light, shot on iPhone, real photo',
+  'candid photo of a man at an outdoor restaurant or bar, warm evening light, relaxed half-smile no teeth visible, white or light shirt, shallow depth of field, real photo shot on iPhone',
 ]
 
 export async function POST(req: NextRequest) {
