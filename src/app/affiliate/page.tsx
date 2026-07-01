@@ -4,12 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 function EarningsCalc() {
-  const [sales, setSales] = useState(10)
+  const [sales, setSales] = useState(100)
   const earning = Math.round(sales * 39 * 0.3)
+  const pct = ((sales - 10) / (10000 - 10)) * 100
   const tiers = [
-    { label: 'Side hustle', sales: 5, emoji: '☕' },
-    { label: 'Part-time', sales: 20, emoji: '💸' },
-    { label: 'Full-time', sales: 60, emoji: '🚀' },
+    { label: 'Side hustle', sales: 50, emoji: '☕' },
+    { label: 'Part-time', sales: 200, emoji: '💸' },
+    { label: 'Full-time', sales: 600, emoji: '🚀' },
   ]
   return (
     <div className="bg-gradient-to-br from-blue-600/10 to-blue-500/5 border border-blue-500/20 rounded-2xl p-5 mb-6">
@@ -19,17 +20,17 @@ function EarningsCalc() {
       {/* Slider */}
       <div className="mb-4">
         <div className="flex justify-between items-end mb-2">
-          <span className="text-zinc-400 text-xs">{sales} sales/month</span>
+          <span className="text-zinc-400 text-xs">{sales.toLocaleString()} sales/month</span>
           <span className="text-2xl font-bold text-white">${earning.toLocaleString()}<span className="text-zinc-400 text-sm font-normal">/mo</span></span>
         </div>
         <input
-          type="range" min={1} max={100} value={sales}
+          type="range" min={10} max={10000} step={10} value={sales}
           onChange={e => setSales(Number(e.target.value))}
           className="w-full h-2 rounded-full appearance-none cursor-pointer"
-          style={{ background: `linear-gradient(to right, #3b82f6 ${sales}%, #27272a ${sales}%)` }}
+          style={{ background: `linear-gradient(to right, #3b82f6 ${pct}%, #27272a ${pct}%)` }}
         />
         <div className="flex justify-between text-zinc-600 text-[10px] mt-1">
-          <span>1</span><span>25</span><span>50</span><span>75</span><span>100</span>
+          <span>10</span><span>2,500</span><span>5,000</span><span>7,500</span><span>10,000</span>
         </div>
       </div>
 
@@ -42,7 +43,7 @@ function EarningsCalc() {
             className={`rounded-xl p-2.5 text-center transition-all border ${sales === t.sales ? 'border-blue-500 bg-blue-500/10' : 'border-white/8 bg-white/3 hover:border-white/20'}`}
           >
             <div className="text-base mb-0.5">{t.emoji}</div>
-            <div className="text-white text-xs font-semibold">${Math.round(t.sales * 39 * 0.3)}/mo</div>
+            <div className="text-white text-xs font-semibold">${Math.round(t.sales * 39 * 0.3).toLocaleString()}/mo</div>
             <div className="text-zinc-500 text-[10px]">{t.label}</div>
           </button>
         ))}
