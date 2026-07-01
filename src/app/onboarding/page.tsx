@@ -39,13 +39,28 @@ const DETECTION_TOOLS = [
   { name: 'bfac', before: 'AI-Generated', after: 'Human', logo: 'BF' },
 ]
 
-const CAROUSEL_PHOTOS = [
-  '/photos/before-after/julius/after/1.jpg',
-  '/photos/before-after/alex/after/1.jpg',
-  '/photos/before-after/benni/after/1.jpg',
-  '/photos/before-after/black/after/1.jpg',
-  '/photos/before-after/jason/after/1.jpg',
-]
+const CAROUSEL_PHOTOS: Record<string, string[]> = {
+  restaurant: [
+    '/photos/before-after/julius/after/1.jpg',
+    '/photos/before-after/alex/after/1.jpg',
+    '/photos/before-after/benni/after/1.jpg',
+  ],
+  formal: [
+    '/photos/before-after/andreas/after/1.jpg',
+    '/photos/before-after/jason/after/1.jpg',
+    '/photos/before-after/black/after/1.jpg',
+  ],
+  rooftop: [
+    '/photos/before-after/benni/after/1.jpg',
+    '/photos/before-after/julius/after/1.jpg',
+    '/photos/before-after/alex/after/1.jpg',
+  ],
+  beach: [
+    '/photos/before-after/black/after/1.jpg',
+    '/photos/before-after/jason/after/1.jpg',
+    '/photos/before-after/benni/after/1.jpg',
+  ],
+}
 
 const DID_YOU_KNOW = [
   'Better photos = less texting needed',
@@ -106,9 +121,10 @@ export default function OnboardingPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
   // The selected AI-generated photo (or fallback to carousel demo photo)
+  const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
   const selectedAiPhoto = generatedPhotos.length > 0
     ? (generatedPhotos[carouselIdx] ?? generatedPhotos[0])
-    : CAROUSEL_PHOTOS[carouselIdx]
+    : fallbackPhotos[carouselIdx % fallbackPhotos.length]
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -149,6 +165,7 @@ export default function OnboardingPage() {
       try {
         const fd = new FormData()
         fd.append('photo', photos[0])
+        fd.append('style', selectedStyle)
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
         const { ids } = await res.json()
         if (!ids?.length) throw new Error('No prediction IDs')
@@ -474,8 +491,8 @@ export default function OnboardingPage() {
 
           {/* ── STEP 5: Select favorite ──────────────────────────── */}
           {step === 5 && (() => {
-            const photos5 = generatedPhotos.length >= 3 ? generatedPhotos : CAROUSEL_PHOTOS
-            const isReal = generatedPhotos.length >= 3
+            const photos5 = generatedPhotos.length >= 1 ? generatedPhotos : fallbackPhotos
+            const isReal = generatedPhotos.length >= 1
             return (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
