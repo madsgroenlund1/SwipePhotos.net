@@ -288,6 +288,12 @@ export default function OnboardingPage() {
       const data = await res.json()
       console.log('[checkout response]', data)
 
+      if (!res.ok || data.error) {
+        alert(`Payment error: ${data.error || res.status}`)
+        setLoading(false)
+        return
+      }
+
       // 2. Upload photos
       if (data.orderId && photos.length > 0) {
         const fd = new FormData()
@@ -302,9 +308,9 @@ export default function OnboardingPage() {
         return
       }
 
-      console.error('[checkout] No URL in response:', data)
+      alert('No payment URL received. Please try again.')
     } catch (err) {
-      console.error('Checkout error:', err)
+      alert(`Error: ${err}`)
     }
     setLoading(false)
   }
