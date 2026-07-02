@@ -6,7 +6,7 @@ function getResend() {
   return _resend
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL || 'support@swipephotos.net'
+const FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
 function baseLayout(content: string) {

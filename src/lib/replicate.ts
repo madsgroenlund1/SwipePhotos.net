@@ -16,7 +16,7 @@ export const SCENE_PROMPTS = [
   'photo of TOK man at home, clean modern interior, natural window light, casual outfit, warm smile, lifestyle, photorealistic',
 ]
 
-export async function trainModel(imageUrls: string[], orderId: string) {
+export async function trainModel(imageUrls: string[], orderId: string, webhookUrl?: string) {
   const username = process.env.REPLICATE_USERNAME!
   const modelName = `user-${orderId.slice(0, 12)}`
 
@@ -41,6 +41,8 @@ export async function trainModel(imageUrls: string[], orderId: string) {
     versionId,
     {
       destination: `${username}/${modelName}` as `${string}/${string}`,
+      webhook: webhookUrl,
+      webhook_events_filter: webhookUrl ? ['completed'] : undefined,
       input: {
         input_images: imageUrls,
         steps: 1500,
@@ -51,7 +53,7 @@ export async function trainModel(imageUrls: string[], orderId: string) {
         autocaption: true,
         autocaption_prefix: 'a photo of TOK man,',
       },
-    }
+    } as Parameters<typeof replicate.trainings.create>[3]
   )
 
   return training

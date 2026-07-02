@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendWelcomeEmail, sendReadyEmail } from '@/lib/resend'
-import { trainModel, generatePhotos } from '@/lib/replicate'
+import { sendWelcomeEmail } from '@/lib/resend'
+import { trainModel } from '@/lib/replicate'
 import Stripe from 'stripe'
 
 export const runtime = 'nodejs'
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const { orderId, email, presets } = session.metadata || {}
+    const { orderId, email } = session.metadata || {}
 
     if (!orderId) return NextResponse.json({ ok: true })
 
@@ -34,89 +34,33 @@ export async function POST(req: NextRequest) {
       .eq('id', orderId)
 
     // Send welcome email
-    if (email) {
-      await sendWelcomeEmail(email, orderId).catch(console.error)
+    if (email) await sendWelcomeEmail(email, orderId).catch(console.error)
+
+    // Fetch uploaded photos
+    const { data: uploads } = await supabase
+      .from('uploads')
+      .select('file_url')
+      .eq('order_id', orderId)
+
+    if (!uploads?.length) {
+      console.error('[stripe webhook] No uploads for order', orderId)
+      return NextResponse.json({ ok: true })
     }
 
-    // Start Replicate pipeline in background
-    startPipeline(orderId, email, JSON.parse(presets || '[]')).catch(console.error)
+    const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+    const webhookUrl = `${appUrl}/api/webhooks/replicate?orderId=${orderId}&email=${encodeURIComponent(email || '')}`
+
+    // Start training — Replicate calls our webhook when done (no polling needed)
+    try {
+      await supabase.from('orders').update({ status: 'training' }).eq('id', orderId)
+      const training = await trainModel(imageUrls, orderId, webhookUrl)
+      await supabase.from('orders').update({ replicate_training_id: training.id }).eq('id', orderId)
+    } catch (err) {
+      console.error('[stripe webhook] Training start failed:', err)
+      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
+    }
   }
 
   return NextResponse.json({ ok: true })
-}
-
-async function startPipeline(orderId: string, email: string, presets: string[]) {
-  const supabase = await createAdminClient()
-
-  // Fetch uploaded photos
-  const { data: uploads } = await supabase
-    .from('uploads')
-    .select('file_url')
-    .eq('order_id', orderId)
-
-  if (!uploads?.length) {
-    console.error('No uploads found for order', orderId)
-    return
-  }
-
-  const imageUrls = uploads.map(u => u.file_url)
-
-  // Update status to training
-  await supabase.from('orders').update({ status: 'training' }).eq('id', orderId)
-
-  try {
-    const training = await trainModel(imageUrls, orderId)
-
-    await supabase
-      .from('orders')
-      .update({ replicate_training_id: training.id })
-      .eq('id', orderId)
-
-    // Poll training status
-    let trainingDone = false
-    let loraUrl = ''
-    for (let i = 0; i < 60; i++) {
-      await new Promise(r => setTimeout(r, 60000))
-      const t = await fetch(`https://api.replicate.com/v1/trainings/${training.id}`, {
-        headers: { Authorization: `Token ${process.env.REPLICATE_API_TOKEN}` },
-      }).then(r => r.json())
-
-      if (t.status === 'succeeded') {
-        loraUrl = t.output?.weights || ''
-        trainingDone = true
-        break
-      } else if (t.status === 'failed') {
-        await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
-        return
-      }
-    }
-
-    if (!trainingDone) {
-      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
-      return
-    }
-
-    // Update status to generating
-    await supabase.from('orders').update({ status: 'generating' }).eq('id', orderId)
-
-    // Generate all scene photos with the trained LoRA
-    const photoUrls = await generatePhotos(loraUrl)
-    for (const url of photoUrls) {
-      await supabase.from('generated_photos').insert({
-        order_id: orderId,
-        file_url: url,
-      })
-    }
-
-    // Mark as ready
-    await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
-
-    // Send ready email
-    if (email) {
-      await sendReadyEmail(email, orderId).catch(console.error)
-    }
-  } catch (err) {
-    console.error('Pipeline error:', err)
-    await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
-  }
 }
