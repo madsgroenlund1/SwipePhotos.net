@@ -45,17 +45,44 @@ export default function SignInPage() {
           <span className="text-white font-bold text-2xl">SwipePhotos</span>
           <span className="text-blue-500 font-bold text-2xl">.net</span>
         </Link>
-        <div className="w-full max-w-sm bg-[#111] border border-white/8 rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 bg-blue-600/15 rounded-full flex items-center justify-center mx-auto mb-5">
-            <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
+        <div className="w-full max-w-sm">
+          {/* Animated checkmark ring */}
+          <div className="flex justify-center mb-8">
+            <div className="relative w-20 h-20">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-9 h-9 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </div>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Check your inbox</h2>
-          <p className="text-zinc-400 text-sm leading-relaxed mb-1">We sent a sign-in link to</p>
-          <p className="text-white font-semibold text-sm mb-5">{email}</p>
-          <p className="text-zinc-600 text-xs">Click the link in the email to access your account. The link expires after 1 hour.</p>
-          <button onClick={() => setSent(false)} className="mt-6 text-zinc-500 hover:text-zinc-300 text-xs transition-colors">
+
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-3">Check your inbox</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              We sent a sign-in link to
+            </p>
+            <p className="text-white font-semibold mt-1">{email}</p>
+          </div>
+
+          {/* Steps */}
+          <div className="bg-[#111] border border-white/8 rounded-2xl p-5 mb-6 space-y-4">
+            {[
+              { n: 1, text: 'Open your email app' },
+              { n: 2, text: 'Find the email from SwipePhotos' },
+              { n: 3, text: 'Click the sign-in link' },
+            ].map(({ n, text }) => (
+              <div key={n} className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue-600/15 border border-blue-500/20 text-blue-400 text-xs font-bold flex items-center justify-center flex-shrink-0">{n}</div>
+                <span className="text-zinc-300 text-sm">{text}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-zinc-600 text-xs text-center mb-6">Link expires after 1 hour. Check your spam folder if you don&apos;t see it.</p>
+
+          <button onClick={() => setSent(false)} className="w-full text-zinc-500 hover:text-white text-sm border border-white/8 hover:border-white/20 py-3 rounded-xl transition-all">
             Use a different email
           </button>
         </div>
