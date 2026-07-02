@@ -170,18 +170,25 @@ export default function OnboardingPage() {
     targetProgressRef.current = 0
     displayProgressRef.current = 0
 
-    // Smooth animation: creep display progress toward target
+    // Time-based progress: always moves forward over ~110 seconds, never stops
+    const START_TIME = Date.now()
+    const DURATION_MS = 110_000 // 110 seconds to reach 95% on its own
     let didYouKnowTick = 0
+
     progressRef.current = setInterval(() => {
       didYouKnowTick++
       setDidYouKnowIdx(Math.floor(didYouKnowTick / 20) % DID_YOU_KNOW.length)
 
-      const target = targetProgressRef.current
+      const elapsed = Date.now() - START_TIME
+      // Ease-out curve: fast start, slows near 95%
+      const timePct = Math.min(95, (elapsed / DURATION_MS) * 100 * (1 - elapsed / DURATION_MS / 3))
+      const target = Math.max(targetProgressRef.current, timePct)
+      targetProgressRef.current = target
+
       const current = displayProgressRef.current
       if (current < target) {
-        // Fast when far away, slow when close
         const diff = target - current
-        const step = Math.max(0.3, diff * 0.04)
+        const step = Math.max(0.15, diff * 0.06)
         const next = Math.min(target, current + step)
         displayProgressRef.current = next
         setProgress(next)
@@ -193,9 +200,6 @@ export default function OnboardingPage() {
         targetProgressRef.current = 100
         return
       }
-
-      // Natural crawl to ~8% while submitting
-      targetProgressRef.current = 8
 
       try {
         const fd = new FormData()
@@ -213,9 +217,6 @@ export default function OnboardingPage() {
         const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
         const total = styles.length
 
-        // Crawl to ~12% to show something is happening
-        targetProgressRef.current = 12
-
         pollingRef.current = setInterval(async () => {
           try {
             const pollRes = await fetch(
@@ -232,10 +233,7 @@ export default function OnboardingPage() {
               setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
             }
 
-            // Map real completion to 15–100% range so bar never jumps to 0
-            const realPct = (poll.completedCount / total) * 88 + 12
-            targetProgressRef.current = Math.max(targetProgressRef.current, realPct)
-
+            // When jobs finish, jump target to 100
             if (poll.done) {
               targetProgressRef.current = 100
               clearInterval(pollingRef.current!)
@@ -559,7 +557,7 @@ export default function OnboardingPage() {
                   </button>
                 ) : (
                   <button disabled className="w-full py-4 rounded-2xl font-semibold text-base bg-white/5 text-zinc-600 cursor-not-allowed">
-                    Generating... {progress > 0 ? `${progress}%` : ''}
+                    Generating... {progress > 0 ? `${Math.floor(progress)}%` : ''}
                   </button>
                 )}
               </div>
