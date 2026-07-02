@@ -1047,6 +1047,11 @@ export default function OnboardingPage() {
                         body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '' }),
                       })
                       const data = await res.json()
+                      if (!res.ok || data.error) {
+                        alert(`Payment error: ${data.error || res.status}`)
+                        setLoading(false)
+                        return
+                      }
                       if (data.orderId && photos.length > 0) {
                         const fd = new FormData()
                         fd.append('orderId', data.orderId)
@@ -1061,8 +1066,7 @@ export default function OnboardingPage() {
                           options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
                         })
                       } else {
-                        console.error('[checkout] No URL:', data)
-                        alert('Something went wrong. Please use email instead or try again.')
+                        alert(`No payment URL received. Response: ${JSON.stringify(data)}`)
                         setLoading(false)
                       }
                     } catch (err) {
