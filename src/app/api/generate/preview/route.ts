@@ -1,42 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
-
-// Preset scene images — used as pose/composition reference so output matches exactly
-const SCENE_IMAGES: Record<string, string> = {
-  restaurant: `${APP_URL}/photos/presets/scene-restaurant.jpg`,
-  formal:     `${APP_URL}/photos/presets/scene-formal.jpg`,
-  rooftop:    `${APP_URL}/photos/presets/scene-rooftop.jpg`,
-  beach:      `${APP_URL}/photos/presets/scene-beach.jpg`,
-  park:       `${APP_URL}/photos/presets/scene-restaurant.jpg`,
-}
-
-// Minimal prompts — scene image handles composition, prompt just confirms person + quality
-const STYLE_PROMPT: Record<string, string> = {
-  restaurant: 'RAW photo, real person, photorealistic, natural skin texture, same background and setting as reference image, 8k, high quality',
-  formal:     'RAW photo, real person, photorealistic, natural skin texture, same background and setting as reference image, 8k, high quality',
-  rooftop:    'RAW photo, real person, photorealistic, natural skin texture, same background and setting as reference image, 8k, high quality',
-  beach:      'RAW photo, real person, photorealistic, natural skin texture, same background and setting as reference image, 8k, high quality',
-  park:       'RAW photo, real person, photorealistic, natural skin texture, same background and setting as reference image, 8k, high quality',
-}
-
 const NEGATIVE = [
-  'cartoon, anime, illustration, painting, drawing, cgi, digital art',
-  'plastic skin, waxy skin, airbrushed, oversaturated',
-  'deformed, disfigured, bad anatomy, extra fingers, missing fingers',
-  'blurry, out of focus, watermark, text, logo',
-  'duplicate head, two faces, extra person',
-  'nsfw, nudity, mannequin, dummy, plastic body',
+  'cartoon, anime, painting, illustration, 3d render, cgi, digital art, fake',
+  'plastic skin, waxy, airbrushed, oversaturated, overexposed, HDR, unreal',
+  'deformed, disfigured, bad anatomy, extra fingers, missing limbs, fused hands',
+  'blurry, out of focus, motion blur, grainy, low quality, watermark, text',
+  'red skin, green skin, wrong skin color, color cast, weird tint',
+  'duplicate face, two people, clone, extra person',
+  'sitting cross-legged on floor, mannequin pose, stiff, unnatural body',
+  'nsfw, nudity',
 ].join(', ')
 
-// 5 expression variations
+// Rich cinematic prompts — no pose reference, pure text drives the scene
+const STYLE_PROMPTS: Record<string, string> = {
+  restaurant: [
+    'professional portrait photo of a young man at an elegant Italian restaurant terrace in Rome',
+    'seated at a round table with white tablecloth, wine glass and candle on table',
+    'wearing a relaxed white linen shirt, sleeves slightly rolled',
+    'warm golden hour sunlight, cobblestone street and ivy walls softly blurred in background',
+    'natural relaxed posture, realistic hands resting on table',
+    'shot on Sony A7R V 85mm f/1.4, shallow depth of field, natural skin tones, photorealistic, 4k',
+  ].join(', '),
+
+  formal: [
+    'professional portrait photo of a young man wearing a slim-fit dark navy blazer over white shirt',
+    'standing confidently in a modern upscale hotel lobby or luxury apartment living room',
+    'warm ambient lamp light, cream coloured sofa visible, subtle art on wall in background',
+    'natural relaxed posture, one hand in pocket, looking directly at camera',
+    'shot on Canon EOS R5 85mm f/1.2L, warm tones, natural skin texture, photorealistic, 4k',
+  ].join(', '),
+
+  rooftop: [
+    'professional portrait photo of a young man at a rooftop bar in New York City at golden hour',
+    'wearing a fitted navy casual shirt, holding a whiskey glass naturally',
+    'leaning relaxed against a glass railing, city skyline and warm orange sky softly blurred behind him',
+    'warm directional sunset light on face, natural shadow, realistic skin tones',
+    'shot on Nikon Z9 85mm f/1.4, shallow depth of field, photorealistic, cinematic, 4k',
+  ].join(', '),
+
+  beach: [
+    'professional portrait photo of a young man at a luxury beach club in Mykonos Greece',
+    'wearing an open white linen shirt and light chinos, relaxed natural posture',
+    'turquoise sea and white sun umbrellas softly blurred in background',
+    'warm Mediterranean afternoon sun at 45 degrees, flattering natural light on face',
+    'shot on Sony A7C II 85mm f/1.8, shallow depth of field, natural skin tones, photorealistic, 4k',
+  ].join(', '),
+
+  park: [
+    'professional portrait photo of a young man in a leafy urban park on a sunny afternoon',
+    'wearing a smart casual olive shirt, leaning gently against a wooden fence',
+    'dappled golden sunlight through trees, green bokeh leaves in background',
+    'warm natural backlighting creating rim light on hair, natural shadow on face',
+    'shot on Canon EOS R5 85mm f/1.4, shallow depth of field, photorealistic, 4k',
+  ].join(', '),
+}
+
+// 5 varied expressions — natural, dateable
 const EXPRESSIONS = [
-  'genuine big smile showing teeth, looking directly at camera',
-  'relaxed natural closed-mouth smile, warm friendly eyes',
-  'calm serious expression, looking slightly off-camera',
-  'caught mid-laugh, candid joyful moment',
-  'subtle confident smirk, direct eye contact',
+  'genuine warm smile showing teeth, eyes slightly crinkled, relaxed and confident',
+  'relaxed natural closed-mouth smile, warm friendly eyes, slight casual head tilt',
+  'calm serious expression, strong jaw, looking slightly to the side, cool and composed',
+  'candid mid-laugh, genuine joyful moment, natural and spontaneous',
+  'subtle confident smirk, direct eye contact, charming and self-assured',
 ]
 
 export const maxDuration = 30
@@ -48,10 +74,7 @@ export async function POST(req: NextRequest) {
     const style = (formData.get('style') as string) || 'restaurant'
     if (!file) return NextResponse.json({ error: 'No photo' }, { status: 400 })
 
-    const sceneImageUrl = SCENE_IMAGES[style] ?? SCENE_IMAGES.restaurant
-    const basePrompt = STYLE_PROMPT[style] ?? STYLE_PROMPT.restaurant
-
-    // Upload user's face photo to fal CDN
+    const basePrompt = STYLE_PROMPTS[style] ?? STYLE_PROMPTS.restaurant
     const faceImageUrl = await fal.storage.upload(file)
 
     const jobs = await Promise.all(
@@ -59,13 +82,12 @@ export async function POST(req: NextRequest) {
         fal.queue.submit('fal-ai/instantid', {
           input: {
             face_image_url: faceImageUrl,
-            pose_image_url: sceneImageUrl,   // ← exact scene as composition reference
             prompt: `${basePrompt}, ${expression}`,
             negative_prompt: NEGATIVE,
-            num_inference_steps: 35,
-            guidance_scale: 6,
-            ip_adapter_scale: 0.9,
-            controlnet_conditioning_scale: 1.0, // max — stick as close as possible to scene
+            num_inference_steps: 40,
+            guidance_scale: 5,
+            ip_adapter_scale: 0.8,
+            controlnet_conditioning_scale: 0.7,
             image_size: { width: 576, height: 768 },
             num_images: 1,
           },
