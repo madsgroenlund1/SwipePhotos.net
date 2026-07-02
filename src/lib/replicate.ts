@@ -5,15 +5,23 @@ export const replicate = new Replicate({
 })
 
 // Dating-style scene prompts — TOK is the trigger word for the trained face
+// 4 core settings × 2 shots each = 8 photos
 export const SCENE_PROMPTS = [
-  'candid photo of TOK man at an outdoor Italian restaurant, cobblestone street, white linen shirt, relaxed natural smile, warm sunlight, bokeh background, photorealistic',
-  'photo of TOK man standing on European city street at golden hour, light casual shirt, confident expression, looking at camera, shallow depth of field, photorealistic',
-  'photo of TOK man at a rooftop bar at night, city lights bokeh, casual shirt, relaxed pose, ambient warm light, photorealistic portrait',
-  'photo of TOK man at beach club, white open linen shirt, sunglasses, holding cocktail, summer vibes, photorealistic',
-  'candid photo of TOK man at outdoor cafe terrace, people blurred in background, light shirt, natural laughing expression, warm daylight, photorealistic',
-  'photo of TOK man in a cozy coffee shop, natural window light, casual smart outfit, genuine smile, candid lifestyle, photorealistic',
-  'photo of TOK man walking along marina, boats in background, sunny day, casual summer outfit, photorealistic',
-  'photo of TOK man at home, clean modern interior, natural window light, casual outfit, warm smile, lifestyle, photorealistic',
+  // Setting 1: Outdoor Italian restaurant (cobblestone street, pizza, white linen shirt)
+  'candid photo of TOK man sitting at outdoor Italian restaurant on cobblestone street, white linen shirt open collar, pizza on table in foreground, warm golden sunlight, relaxed confident smile, shallow depth of field, bokeh background of old stone buildings, photorealistic, 35mm film look',
+  'photo of TOK man at outdoor cafe on European cobblestone street, white linen shirt, leaning back in chair, warm afternoon light, candid lifestyle, people blurred in background, photorealistic portrait',
+
+  // Setting 2: Luxury rooftop pool bar at night (infinity pool, city lights, striped shirt)
+  'photo of TOK man relaxing at luxury rooftop infinity pool bar at dusk, striped casual button-up shirt, wine glass on table, city lights and sea in background, blue hour sky, relaxed elegant pose, photorealistic',
+  'photo of TOK man at upscale outdoor restaurant by infinity pool at night, pastel striped shirt, champagne flutes on table, ambient warm lighting, Mediterranean hillside lights bokeh background, photorealistic',
+
+  // Setting 3: Beach club (white linen shirt, sunglasses, cocktail, macrame umbrellas)
+  'candid photo of TOK man at exclusive beach club, white open linen shirt, stylish sunglasses, holding cocktail, macrame beach umbrellas in background, sun loungers, relaxed summer vibe, photorealistic',
+  'photo of TOK man at beach club lounge, white linen shirt, one arm resting back, fresh fruit platter on table, luxury beach setting, bright sunny day, confident relaxed expression, photorealistic',
+
+  // Setting 4: Formal interior bar / luxury apartment (black suit, whiskey, moody lighting)
+  'photo of TOK man sitting on luxury sofa in upscale apartment, black blazer white shirt, holding whiskey glass, warm ambient pendant lighting, modern art on wall behind, confident relaxed pose, photorealistic portrait',
+  'photo of TOK man in black suit jacket and white shirt, sitting in elegant lounge interior, holding glass of whiskey, luxury hotel bar aesthetic, moody warm light, photorealistic',
 ]
 
 export async function trainModel(imageUrls: string[], orderId: string, webhookUrl?: string) {
