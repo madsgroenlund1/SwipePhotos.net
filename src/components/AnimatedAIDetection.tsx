@@ -116,7 +116,7 @@ export function AnimatedAIDetection() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 px-3 py-3 flex flex-col gap-2.5 justify-end overflow-hidden">
+                <div className="flex-1 px-3 pt-3 pb-6 flex flex-col gap-2.5 justify-end overflow-hidden">
                   {phase >= 1 && (
                     <div className="self-end rounded-2xl rounded-br-sm overflow-hidden border border-gray-200 shadow-sm anim-fade-up">
                       <div className="relative w-[110px] h-[130px]">

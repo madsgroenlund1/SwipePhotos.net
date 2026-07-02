@@ -68,11 +68,9 @@ export async function trainModel(imageUrls: string[], orderId: string, webhookUr
 }
 
 export async function generatePhotos(loraUrl: string): Promise<string[]> {
-  const results: string[] = []
-
-  for (const prompt of SCENE_PROMPTS) {
-    try {
-      const output = await replicate.run(
+  const settled = await Promise.allSettled(
+    SCENE_PROMPTS.map(prompt =>
+      replicate.run(
         'black-forest-labs/flux-dev-lora' as `${string}/${string}`,
         {
           input: {
@@ -88,12 +86,16 @@ export async function generatePhotos(loraUrl: string): Promise<string[]> {
           },
         }
       )
-      const urls = Array.isArray(output) ? output : [output]
-      results.push(...urls.filter(Boolean))
-    } catch (err) {
-      console.error('Generation failed for prompt:', prompt, err)
-    }
-  }
+    )
+  )
 
-  return results
+  return settled.flatMap((r, i) => {
+    if (r.status === 'rejected') {
+      console.error('Generation failed for prompt index', i, r.reason)
+      return []
+    }
+    const output = r.value
+    const urls = Array.isArray(output) ? output : [output]
+    return (urls as string[]).filter(Boolean)
+  })
 }
