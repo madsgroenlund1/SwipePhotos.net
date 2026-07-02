@@ -30,10 +30,12 @@ export async function GET(req: NextRequest) {
         if (s === 'COMPLETED') {
           completedCount++
           const result = await fal.queue.result(MODEL, { requestId }) as {
+            data?: { image?: { url: string }; images?: Array<{ url: string }> }
             images?: Array<{ url: string }>
             image?: { url: string }
           }
-          const url = result?.images?.[0]?.url || result?.image?.url
+          const d = result?.data ?? result as typeof result['data']
+          const url = d?.image?.url || d?.images?.[0]?.url
           if (url) photos[style] = url
         } else if (s === 'FAILED') {
           completedCount++ // count as done even if failed
