@@ -701,44 +701,16 @@ export default function OnboardingPage() {
 
               {/* What's included */}
               <div className="px-4 pb-4">
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="flex gap-0 mb-4 bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden divide-x divide-white/8">
                   {[
-                    {
-                      icon: (
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                          <rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/>
-                        </svg>
-                      ),
-                      gradient: 'from-blue-500 to-blue-700',
-                      value: '40+', label: 'AI photos',
-                    },
-                    {
-                      icon: (
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                          <path d="M13 2L4.09 12.26a1 1 0 00.78 1.63L11 14l-2 8 8.91-10.26a1 1 0 00-.78-1.63L11 10l2-8z"/>
-                        </svg>
-                      ),
-                      gradient: 'from-amber-400 to-orange-500',
-                      value: '~1hr', label: 'Delivery',
-                    },
-                    {
-                      icon: (
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                          <path d="M12 2l7 4v5c0 5-3.5 9.3-7 11C8.5 20.3 5 16 5 11V6l7-4z"/><path d="M9 12l2 2 4-4"/>
-                        </svg>
-                      ),
-                      gradient: 'from-emerald-400 to-green-600',
-                      value: '100%', label: 'Undetectable',
-                    },
-                  ].map(({ icon, gradient, value, label }) => (
-                    <div key={label} className="bg-white/[0.04] border border-white/8 rounded-2xl p-3 text-center flex flex-col items-center gap-2">
-                      <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                        {icon}
-                      </div>
-                      <div>
-                        <div className="text-white text-base font-bold leading-none">{value}</div>
-                        <div className="text-zinc-500 text-[10px] mt-0.5 font-medium">{label}</div>
-                      </div>
+                    { value: '40+', label: 'AI Photos', sub: 'per order' },
+                    { value: '~1hr', label: 'Delivery', sub: 'avg. time' },
+                    { value: '100%', label: 'Undetectable', sub: 'guaranteed' },
+                  ].map(({ value, label, sub }) => (
+                    <div key={label} className="flex-1 py-3.5 text-center">
+                      <div className="text-white text-xl font-bold tracking-tight leading-none">{value}</div>
+                      <div className="text-zinc-300 text-[11px] font-semibold mt-1">{label}</div>
+                      <div className="text-zinc-600 text-[9px] mt-0.5">{sub}</div>
                     </div>
                   ))}
                 </div>
