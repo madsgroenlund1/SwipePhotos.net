@@ -4,6 +4,25 @@ import { useState } from 'react'
 import { Download, Copy, Check, X, Clock, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+async function downloadAll(photos: Photo[]) {
+  for (let i = 0; i < photos.length; i++) {
+    const url = photos[i].file_url
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `swipephoto-${i + 1}.webp`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      // Small delay between downloads so browser doesn't block them
+      await new Promise(r => setTimeout(r, 300))
+    } catch {
+      window.open(url, '_blank')
+    }
+  }
+}
+
 type Photo = { file_url: string }
 type Order = {
   id: string
@@ -86,7 +105,7 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
                   {STATUS_CONFIG[latestOrder.status]?.desc || 'Working on your order...'}
                 </p>
                 {latestOrder.status === 'training' && (
-                  <p className="text-zinc-500 text-sm mt-1">We&apos;ll email you at support@swipephotos.net when ready. You can close this tab.</p>
+                  <p className="text-zinc-500 text-sm mt-1">We&apos;ll email you when ready. You can close this tab.</p>
                 )}
               </div>
               <span className={cn('ml-auto text-xs font-medium px-3 py-1.5 rounded-full border flex items-center gap-1.5 flex-shrink-0', STATUS_CONFIG[latestOrder.status]?.color)}>
@@ -104,13 +123,13 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
                   <h2 className="text-2xl font-bold text-white">Your Photos</h2>
                   <p className="text-zinc-500 text-sm mt-0.5">{latestOrder.generated_photos.length} photos generated</p>
                 </div>
-                <a
-                  href={`/api/orders/${latestOrder.id}/download`}
+                <button
+                  onClick={() => downloadAll(latestOrder.generated_photos)}
                   className="flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all"
                 >
                   <Download className="w-4 h-4" />
                   Download All
-                </a>
+                </button>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -157,9 +176,9 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
                       {cfg.icon}{cfg.label}
                     </span>
                     {order.status === 'ready' && (
-                      <a href={`/api/orders/${order.id}/download`} className="text-zinc-400 hover:text-white transition-colors">
+                      <button onClick={() => downloadAll(order.generated_photos)} className="text-zinc-400 hover:text-white transition-colors">
                         <Download className="w-4 h-4" />
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>
