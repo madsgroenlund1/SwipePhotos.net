@@ -1057,12 +1057,19 @@ export default function OnboardingPage() {
                         await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
                       }
                       if (data.url) {
-                        localStorage.setItem('sw_pending_checkout', data.url)
                         const supabase = createClient()
-                        await supabase.auth.signInWithOAuth({
-                          provider: 'google',
-                          options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
-                        })
+                        const { data: { user } } = await supabase.auth.getUser()
+                        if (user) {
+                          // Already logged in — go straight to Stripe
+                          window.location.href = data.url
+                        } else {
+                          // Not logged in — OAuth then redirect to Stripe
+                          localStorage.setItem('sw_pending_checkout', data.url)
+                          await supabase.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
+                          })
+                        }
                       } else {
                         alert(`No payment URL received. Response: ${JSON.stringify(data)}`)
                         setLoading(false)
