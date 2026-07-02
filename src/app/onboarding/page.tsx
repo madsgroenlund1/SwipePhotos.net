@@ -134,6 +134,8 @@ export default function OnboardingPage() {
   const [genError, setGenError] = useState<string | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const targetProgressRef = useRef(0)
+  const displayProgressRef = useRef(0)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
   const STYLE_ORDER = ['restaurant', 'formal', 'rooftop', 'beach']
   const STYLE_LABELS: Record<string, string> = { restaurant: 'Italian Restaurant', formal: 'Smart Formal', rooftop: 'Rooftop Bar', beach: 'Beach Club' }
@@ -167,23 +169,37 @@ export default function OnboardingPage() {
     setDidYouKnowIdx(0)
     setGeneratedPhotos({})
     setGenError(null)
+    targetProgressRef.current = 0
+    displayProgressRef.current = 0
 
-    // Rotate "did you know" facts
-    let tick = 0
+    // Smooth animation: creep display progress toward target
+    let didYouKnowTick = 0
     progressRef.current = setInterval(() => {
-      tick++
-      setDidYouKnowIdx(Math.floor(tick / 20) % DID_YOU_KNOW.length)
-    }, 200)
+      didYouKnowTick++
+      setDidYouKnowIdx(Math.floor(didYouKnowTick / 20) % DID_YOU_KNOW.length)
+
+      const target = targetProgressRef.current
+      const current = displayProgressRef.current
+      if (current < target) {
+        // Fast when far away, slow when close
+        const diff = target - current
+        const step = Math.max(0.3, diff * 0.04)
+        const next = Math.min(target, current + step)
+        displayProgressRef.current = next
+        setProgress(next)
+      }
+    }, 100)
 
     async function startGeneration() {
-      // If no photos uploaded, skip to examples immediately
       if (photos.length === 0) {
-        setProgress(100)
+        targetProgressRef.current = 100
         return
       }
 
+      // Natural crawl to ~8% while submitting
+      targetProgressRef.current = 8
+
       try {
-        // Submit generation jobs — returns instantly with request IDs
         const fd = new FormData()
         fd.append('photo', photos[0])
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
@@ -191,14 +207,16 @@ export default function OnboardingPage() {
 
         if (!data.requestIds?.length) {
           console.warn('[preview] No request IDs, falling back to examples')
-          setProgress(100)
+          targetProgressRef.current = 100
           return
         }
 
         const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
         const total = styles.length
 
-        // Poll every 3 seconds for completed photos
+        // Crawl to ~12% to show something is happening
+        targetProgressRef.current = 12
+
         pollingRef.current = setInterval(async () => {
           try {
             const pollRes = await fetch(
@@ -215,11 +233,12 @@ export default function OnboardingPage() {
               setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
             }
 
-            // Progress based on completed jobs
-            const pct = Math.round((poll.completedCount / total) * 100)
-            setProgress(pct)
+            // Map real completion to 15–100% range so bar never jumps to 0
+            const realPct = (poll.completedCount / total) * 88 + 12
+            targetProgressRef.current = Math.max(targetProgressRef.current, realPct)
 
             if (poll.done) {
+              targetProgressRef.current = 100
               clearInterval(pollingRef.current!)
             }
           } catch (err) {
@@ -228,7 +247,7 @@ export default function OnboardingPage() {
         }, 3000)
       } catch (err) {
         console.error('[preview] Submit error:', err)
-        setProgress(100) // Fall back to showing example photos
+        targetProgressRef.current = 100
       }
     }
 
@@ -516,11 +535,11 @@ export default function OnboardingPage() {
                   <div className="h-10 bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-300 flex items-center justify-end pr-3"
-                      style={{ width: `${Math.max(progress, 5)}%`, background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)' }}
+                      style={{ width: `${Math.max(progress, 5)}%`, background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)', transition: 'width 0.3s ease-out' }}
                     >
-                      {progress > 15 && <span className="text-white text-sm font-bold">{progress.toFixed(1)}%</span>}
+                      {progress > 15 && <span className="text-white text-sm font-bold">{Math.floor(progress)}%</span>}
                     </div>
-                    {progress <= 15 && <span className="absolute inset-0 flex items-center justify-center text-zinc-400 text-sm font-bold">{progress.toFixed(1)}%</span>}
+                    {progress <= 15 && <span className="absolute inset-0 flex items-center justify-center text-zinc-400 text-sm font-bold">{Math.floor(progress)}%</span>}
                   </div>
                 </div>
                 <div className="text-center relative z-10">
