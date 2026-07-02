@@ -132,13 +132,9 @@ export default function HomePage() {
         </div>
         <p className="text-zinc-600 text-sm mb-1">© 2026 SwipePhotos.net</p>
         <p className="text-zinc-700 text-xs mb-3">Grønlund Investments EMV · CVR: DK42292028</p>
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center">
           <Link href="/privacy" className="text-zinc-500 hover:text-zinc-400 text-sm transition-colors">
             Privacy Policy &amp; Terms
-          </Link>
-          <span className="text-zinc-700">·</span>
-          <Link href="/auth/signin" className="text-zinc-500 hover:text-zinc-400 text-sm transition-colors">
-            Sign in
           </Link>
         </div>
       </footer>

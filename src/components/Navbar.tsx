@@ -26,20 +26,12 @@ export function Navbar() {
           <span className="text-blue-500 font-bold text-xl">.net</span>
         </Link>
 
-        <div className="flex items-center gap-4">
-          <Link
-            href="/auth/signin"
-            className="text-zinc-400 hover:text-white text-sm font-medium transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/onboarding"
-            className="bg-blue-600 hover:brightness-110 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
-          >
-            Get Started →
-          </Link>
-        </div>
+        <Link
+          href="/auth/signin"
+          className="text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all"
+        >
+          Sign in
+        </Link>
       </div>
     </nav>
   )
