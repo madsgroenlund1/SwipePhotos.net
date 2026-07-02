@@ -4,7 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
+type Mode = 'signin' | 'forgot'
+
 export default function SignInPage() {
+  const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -44,11 +47,11 @@ export default function SignInPage() {
     })
   }
 
+  // Sent confirmation screen
   if (sent) {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-6 relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/6 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative w-full max-w-sm">
           <div className="text-center mb-10">
@@ -67,8 +70,12 @@ export default function SignInPage() {
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#111] animate-pulse" />
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Check your inbox</h2>
-            <p className="text-zinc-500 text-sm mb-1">We sent a sign-in link to</p>
+            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
+              {mode === 'forgot' ? 'Check your inbox' : 'Check your inbox'}
+            </h2>
+            <p className="text-zinc-500 text-sm mb-1">
+              {mode === 'forgot' ? 'We sent an access link to' : 'We sent a sign-in link to'}
+            </p>
             <p className="text-white font-semibold text-sm mb-8">{email}</p>
 
             <div className="space-y-2.5 text-left mb-8">
@@ -86,7 +93,7 @@ export default function SignInPage() {
 
             <p className="text-zinc-700 text-xs mb-5">Link expires in 1 hour · Check spam if missing</p>
 
-            <button onClick={() => setSent(false)} className="w-full text-zinc-500 hover:text-white text-sm py-3 rounded-xl border border-white/8 hover:border-white/20 transition-all">
+            <button onClick={() => { setSent(false); setMode('signin') }} className="w-full text-zinc-500 hover:text-white text-sm py-3 rounded-xl border border-white/8 hover:border-white/20 transition-all">
               Use a different email
             </button>
           </div>
@@ -95,13 +102,75 @@ export default function SignInPage() {
     )
   }
 
+  // Forgot access mode
+  if (mode === 'forgot') {
+    return (
+      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative w-full max-w-sm">
+          <div className="text-center mb-10">
+            <Link href="/" className="inline-flex items-center gap-0">
+              <span className="text-white font-bold text-2xl tracking-tight">SwipePhotos</span>
+              <span className="text-blue-500 font-bold text-2xl tracking-tight">.net</span>
+            </Link>
+            <p className="text-zinc-600 text-xs mt-2">AI Dating Photos for Men</p>
+          </div>
+
+          <div className="bg-[#111]/80 backdrop-blur-sm border border-white/8 rounded-3xl p-8 shadow-2xl shadow-black/50">
+            {/* Key icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/10 border border-amber-500/20 flex items-center justify-center">
+                <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                </svg>
+              </div>
+            </div>
+
+            <h1 className="text-2xl font-bold text-white mb-1 text-center tracking-tight">Recover account access</h1>
+            <p className="text-zinc-500 text-sm text-center mb-7 leading-relaxed">
+              Enter your email and we&apos;ll send you a secure link to sign back in — no password needed.
+            </p>
+
+            <form onSubmit={handleMagicLink} className="space-y-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                autoFocus
+                className="w-full bg-white/[0.05] border border-white/10 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.07] transition-all text-sm"
+              />
+              {error && <p className="text-red-400 text-xs px-1">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-3.5 rounded-2xl transition-all disabled:opacity-60 text-sm"
+              >
+                {loading ? 'Sending link...' : 'Send Access Link →'}
+              </button>
+            </form>
+
+            <button
+              onClick={() => { setMode('signin'); setError('') }}
+              className="w-full text-zinc-600 hover:text-zinc-400 text-sm py-3 mt-3 rounded-xl border border-white/6 hover:border-white/12 transition-all"
+            >
+              ← Back to sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Main sign-in
   return (
     <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-6 relative overflow-hidden">
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-indigo-600/4 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-0">
             <span className="text-white font-bold text-2xl tracking-tight">SwipePhotos</span>
@@ -110,7 +179,6 @@ export default function SignInPage() {
           <p className="text-zinc-600 text-xs mt-2">AI Dating Photos for Men</p>
         </div>
 
-        {/* Card */}
         <div className="bg-[#111]/80 backdrop-blur-sm border border-white/8 rounded-3xl p-8 shadow-2xl shadow-black/50">
           <h1 className="text-2xl font-bold text-white mb-1 text-center tracking-tight">Welcome back</h1>
           <p className="text-zinc-500 text-sm text-center mb-7">Sign in to access your photos</p>
@@ -130,14 +198,12 @@ export default function SignInPage() {
             {googleLoading ? 'Redirecting...' : 'Continue with Google'}
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-white/8" />
             <span className="text-zinc-700 text-xs font-medium">or sign in with email</span>
             <div className="flex-1 h-px bg-white/8" />
           </div>
 
-          {/* Email form */}
           <form onSubmit={handleMagicLink} className="space-y-3">
             <input
               type="email"
@@ -157,15 +223,17 @@ export default function SignInPage() {
             </button>
           </form>
 
-          {/* No-password / forgot access note */}
-          <div className="mt-5 px-4 py-3 bg-white/[0.02] border border-white/6 rounded-xl">
-            <p className="text-zinc-600 text-xs text-center leading-relaxed">
-              <span className="text-zinc-500 font-medium">No password needed.</span>{' '}
-              Enter your email above to get a secure sign-in link — this also works if you&apos;ve lost access to your account.
-            </p>
+          {/* Forgot access */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => { setMode('forgot'); setError('') }}
+              className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors underline underline-offset-2"
+            >
+              Forgot access to your account?
+            </button>
           </div>
 
-          <p className="text-center text-zinc-700 text-xs mt-5">
+          <p className="text-center text-zinc-700 text-xs mt-4">
             Don&apos;t have an account?{' '}
             <Link href="/onboarding" className="text-blue-400 hover:text-blue-300 font-medium">Get started free</Link>
           </p>
