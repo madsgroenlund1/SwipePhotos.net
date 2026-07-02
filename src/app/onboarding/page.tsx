@@ -137,11 +137,9 @@ export default function OnboardingPage() {
   const targetProgressRef = useRef(0)
   const displayProgressRef = useRef(0)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
-  const STYLE_ORDER = ['restaurant', 'formal', 'rooftop', 'beach']
-  const STYLE_LABELS: Record<string, string> = { restaurant: 'Italian Restaurant', formal: 'Smart Formal', rooftop: 'Rooftop Bar', beach: 'Beach Club' }
+  const PREVIEW_INDICES = ['v0', 'v1', 'v2', 'v3', 'v4']
   const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
-  // Build ordered array from generated results (all 4 styles)
-  const generatedArray = STYLE_ORDER.map(s => generatedPhotos[s]).filter(Boolean) as string[]
+  const generatedArray = PREVIEW_INDICES.map(k => generatedPhotos[k]).filter(Boolean) as string[]
   const hasGenerated = generatedArray.length > 0
   const selectedAiPhoto = hasGenerated
     ? (generatedArray[carouselIdx] ?? generatedArray[0])
@@ -202,6 +200,7 @@ export default function OnboardingPage() {
       try {
         const fd = new FormData()
         fd.append('photo', photos[0])
+        fd.append('style', selectedStyle)
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
         const data = await res.json()
 
@@ -561,7 +560,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 5: Preview grid ──────────────────────────────── */}
+          {/* ── STEP 5: Preview carousel ──────────────────────────── */}
           {step === 5 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-3">
@@ -570,32 +569,81 @@ export default function OnboardingPage() {
                   {hasGenerated ? 'Your preview photos are ready!' : 'This is what you\'ll get'}
                 </h2>
                 {hasGenerated
-                  ? <p className="text-green-400 text-xs mt-1">✓ Generated from your photo — unlock 40+ premium styles</p>
+                  ? <p className="text-green-400 text-xs mt-1">✓ {generatedArray.length} photos generated from your selfie</p>
                   : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Undetectable AI photos in 40+ styles, delivered to your email.</p>
                 }
               </div>
 
-              {/* 4 style previews */}
+              {/* Main carousel photo */}
               <div className="px-4 pb-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {STYLE_ORDER.map((style) => {
-                    const src = hasGenerated ? generatedPhotos[style] : STYLE_OPTIONS.find(s => s.id === style)?.src
-                    if (!src) return null
-                    return (
-                      <div key={style} className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                        <img src={src} alt={STYLE_LABELS[style]} className="w-full h-full object-cover object-top" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6">
-                          <p className="text-white text-[10px] font-semibold text-center">{STYLE_LABELS[style]}</p>
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                  {/* Main image */}
+                  <img
+                    key={carouselIdx}
+                    src={hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : fallbackPhotos[carouselIdx % fallbackPhotos.length]}
+                    alt={`Preview ${carouselIdx + 1}`}
+                    className="w-full h-full object-cover object-top"
+                    style={{ animation: 'fadeIn 0.3s ease-out' }}
+                  />
+
+                  {/* Left/Right tap zones */}
+                  <button
+                    onClick={() => setCarouselIdx(i => Math.max(0, i - 1))}
+                    className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
+                    aria-label="Previous"
+                  />
+                  <button
+                    onClick={() => setCarouselIdx(i => Math.min((hasGenerated ? generatedArray.length : fallbackPhotos.length) - 1, i + 1))}
+                    className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
+                    aria-label="Next"
+                  />
+
+                  {/* Dot indicators */}
+                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+                    {(hasGenerated ? generatedArray : fallbackPhotos).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCarouselIdx(i)}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Style label badge */}
+                  <div className="absolute top-3 left-3 z-20">
+                    <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
+                      {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
+                    </span>
+                  </div>
+
+                  {/* Photo counter */}
+                  <div className="absolute top-3 right-3 z-20">
+                    <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+                      {carouselIdx + 1} / {hasGenerated ? generatedArray.length : fallbackPhotos.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thumbnail strip */}
+              <div className="px-4 pb-3">
+                <div className="flex gap-2">
+                  {(hasGenerated ? generatedArray : fallbackPhotos).map((src, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCarouselIdx(i)}
+                      className={`flex-1 rounded-xl overflow-hidden transition-all ${i === carouselIdx ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                      style={{ aspectRatio: '3/4' }}
+                    >
+                      <img src={src} alt="" className="w-full h-full object-cover object-top" />
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* More styles teaser */}
               <div className="px-4 pb-3">
-                <div className="relative overflow-hidden rounded-2xl" style={{ height: 72 }}>
+                <div className="relative overflow-hidden rounded-2xl" style={{ height: 64 }}>
                   <div className="flex gap-1.5 h-full">
                     {[
                       '/photos/presets/scene-beach.jpg',
@@ -604,7 +652,7 @@ export default function OnboardingPage() {
                       '/photos/presets/scene-formal.jpg',
                       '/photos/presets/scene-beach.jpg',
                     ].map((src, i) => (
-                      <div key={i} className="flex-shrink-0 w-14 rounded-xl overflow-hidden opacity-60">
+                      <div key={i} className="flex-shrink-0 w-12 rounded-xl overflow-hidden opacity-50">
                         <img src={src} alt="" className="w-full h-full object-cover object-top" />
                       </div>
                     ))}
