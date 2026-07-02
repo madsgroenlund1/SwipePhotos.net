@@ -22,6 +22,7 @@ export function ProcessingPageClient() {
   const [stageIdx, setStageIdx] = useState(0)
   const [failed, setFailed] = useState(false)
   const [displayProgress, setDisplayProgress] = useState(0)
+  const [actuallyReady, setActuallyReady] = useState(false)
 
   useEffect(() => {
     let stage = 0
@@ -84,7 +85,7 @@ export function ProcessingPageClient() {
       try {
         const res = await fetch(`/api/orders/${orderId}/status`)
         const data = await res.json()
-        if (data.status === 'ready') { clearInterval(poll); router.push(`/dashboard?order=${orderId}`) }
+        if (data.status === 'ready') { clearInterval(poll); setActuallyReady(true); router.push(`/dashboard?order=${orderId}`) }
         else if (data.status === 'failed') { clearInterval(poll); setFailed(true) }
       } catch {}
       if (attempts > 180) { clearInterval(poll); setFailed(true) } // 30 min polling
@@ -94,7 +95,8 @@ export function ProcessingPageClient() {
   const stage = STAGES[stageIdx]
   const timeLeft = Math.max(0, (STAGES.length - stageIdx - 1) * 8)
   const minutesLeft = Math.floor(timeLeft / 60)
-  const isDone = stageIdx === STAGES.length - 1
+  const timerDone = stageIdx === STAGES.length - 1
+  const isDone = actuallyReady
 
   if (failed) return (
     <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-6 text-center">
@@ -138,7 +140,7 @@ export function ProcessingPageClient() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
             ) : (
-              <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
+              <div className={`w-10 h-10 rounded-full border-2 border-t-blue-400 animate-spin ${timerDone ? 'border-blue-500/60' : 'border-blue-500/30'}`} />
             )}
           </div>
           {/* Outer glow ring */}
@@ -150,7 +152,11 @@ export function ProcessingPageClient() {
           {isDone ? 'Photos are ready!' : 'Creating your photos'}
         </h1>
         <p className="text-zinc-500 text-base mb-10 text-center">
-          {isDone ? 'Redirecting you to your dashboard...' : 'Your personal AI model is being trained'}
+          {isDone
+            ? 'Redirecting you to your dashboard...'
+            : timerDone
+            ? 'Almost there — finishing up your photos...'
+            : 'Your personal AI model is being trained'}
         </p>
 
         {/* Progress bar */}
