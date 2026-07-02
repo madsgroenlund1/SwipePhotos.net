@@ -5,12 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const STAGES = [
-  { label: 'Uploading your photos securely...', pct: 10 },
-  { label: 'AI is analyzing your features...', pct: 30 },
-  { label: 'Training your personal AI model...', pct: 70 },
-  { label: 'Generating your photos...', pct: 90 },
-  { label: 'Applying finishing touches...', pct: 99 },
-  { label: 'Your photos are ready! 🎉', pct: 100 },
+  { label: 'Uploading your photos securely', icon: '☁️', pct: 10 },
+  { label: 'AI is analyzing your features', icon: '🔍', pct: 30 },
+  { label: 'Training your personal AI model', icon: '🧠', pct: 55 },
+  { label: 'Generating your photos', icon: '✨', pct: 80 },
+  { label: 'Applying finishing touches', icon: '🎨', pct: 95 },
+  { label: 'Your photos are ready!', icon: '🎉', pct: 100 },
 ]
 
 export function ProcessingPageClient() {
@@ -19,23 +19,43 @@ export function ProcessingPageClient() {
   const orderId = searchParams.get('order_id')
 
   const [stageIdx, setStageIdx] = useState(0)
-  const [progress, setProgress] = useState(0)
   const [failed, setFailed] = useState(false)
+  const [displayProgress, setDisplayProgress] = useState(0)
 
   useEffect(() => {
     let stage = 0
-    const interval = setInterval(() => {
+    let currentPct = 0
+    let targetPct = STAGES[0].pct
+
+    // Tick every 200ms — slowly creep toward the target pct, pause just below next stage
+    const ticker = setInterval(() => {
+      const ceiling = targetPct - 1 // stop just below target until stage advances
+      if (currentPct < ceiling) {
+        // Speed: faster early, slower near ceiling to build suspense
+        const gap = ceiling - currentPct
+        const speed = gap > 20 ? 0.5 : gap > 5 ? 0.2 : 0.05
+        currentPct = Math.min(currentPct + speed, ceiling)
+        setDisplayProgress(currentPct)
+      }
+    }, 200)
+
+    // Advance stages every 8s
+    const stager = setInterval(() => {
       if (stage < STAGES.length - 1) {
         stage++
         setStageIdx(stage)
-        setProgress(STAGES[stage].pct)
+        targetPct = STAGES[stage].pct
+        // Jump immediately to the stage target
+        currentPct = targetPct
+        setDisplayProgress(targetPct)
       } else {
-        clearInterval(interval)
+        clearInterval(stager)
+        clearInterval(ticker)
         pollOrder()
       }
     }, 8000)
 
-    return () => clearInterval(interval)
+    return () => { clearInterval(ticker); clearInterval(stager) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -47,70 +67,144 @@ export function ProcessingPageClient() {
       try {
         const res = await fetch(`/api/orders/${orderId}/status`)
         const data = await res.json()
-        if (data.status === 'ready') {
-          clearInterval(poll)
-          router.push(`/dashboard?order=${orderId}`)
-        } else if (data.status === 'failed') {
-          clearInterval(poll)
-          setFailed(true)
-        }
+        if (data.status === 'ready') { clearInterval(poll); router.push(`/dashboard?order=${orderId}`) }
+        else if (data.status === 'failed') { clearInterval(poll); setFailed(true) }
       } catch {}
-      if (attempts > 60) {
-        clearInterval(poll)
-        setFailed(true)
-      }
+      if (attempts > 60) { clearInterval(poll); setFailed(true) }
     }, 10000)
   }
 
   const stage = STAGES[stageIdx]
-  const minutesLeft = Math.max(0, Math.round((STAGES.length - stageIdx - 1) * 8 / 60))
+  const timeLeft = Math.max(0, (STAGES.length - stageIdx - 1) * 8)
+  const minutesLeft = Math.floor(timeLeft / 60)
+  const isDone = stageIdx === STAGES.length - 1
 
   if (failed) return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
-        <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-6 text-center">
+      <Link href="/" className="absolute top-6 left-6 flex items-center">
+        <span className="text-white font-bold text-lg">SwipePhotos</span>
+        <span className="text-blue-500 font-bold text-lg">.net</span>
+      </Link>
+      <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
+        <svg className="w-9 h-9 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
-      <p className="text-zinc-400 mb-8 max-w-sm">Your photos couldn&apos;t be generated. Please contact support and we&apos;ll fix it immediately.</p>
-      <a href="mailto:support@swipephotos.net" className="bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3 rounded-full transition-all">
+      <h1 className="text-2xl font-bold text-white mb-2">Generation failed</h1>
+      <p className="text-zinc-500 mb-8 max-w-sm text-sm leading-relaxed">Something went wrong with your photos. Contact us and we&apos;ll fix it or give you a full refund.</p>
+      <a href="mailto:support@swipephotos.net" className="bg-white text-black font-semibold px-8 py-3 rounded-full hover:bg-zinc-100 transition-all text-sm">
         Contact Support →
       </a>
-      <Link href="/dashboard" className="mt-4 text-zinc-500 hover:text-white text-sm transition-colors">Go to dashboard</Link>
+      <Link href="/dashboard" className="mt-4 text-zinc-600 hover:text-zinc-400 text-sm transition-colors">Go to dashboard</Link>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 text-center">
-      <Link href="/" className="absolute top-6 left-6 flex items-center gap-0">
-        <span className="text-white font-bold text-xl">SwipePhotos</span>
-        <span className="text-blue-500 font-bold text-xl">.net</span>
-      </Link>
-
-      <div className="w-20 h-20 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin mb-8" />
-
-      <h1 className="text-3xl font-bold text-white mb-2">
-        {stageIdx === STAGES.length - 1 ? 'Your photos are ready! 🎉' : 'Generating your photos'}
-      </h1>
-      <p className="text-zinc-400 text-lg mb-10">{stage.label}</p>
-
-      <div className="w-full max-w-md bg-white/5 rounded-full h-3 mb-4 overflow-hidden">
-        <div
-          className="h-full bg-blue-500 rounded-full transition-all duration-[3000ms] ease-out"
-          style={{ width: `${progress}%` }}
-        />
+    <div className="min-h-screen bg-[#080808] flex flex-col px-6">
+      {/* Header */}
+      <div className="flex items-center justify-between py-5 max-w-lg mx-auto w-full">
+        <Link href="/" className="flex items-center">
+          <span className="text-white font-bold text-lg">SwipePhotos</span>
+          <span className="text-blue-500 font-bold text-lg">.net</span>
+        </Link>
+        <span className="text-xs text-zinc-600 border border-white/8 rounded-full px-3 py-1">Order #{orderId?.slice(-6).toUpperCase()}</span>
       </div>
-      <p className="text-zinc-500 text-sm mb-2">{progress}% complete</p>
 
-      {minutesLeft > 0 && (
-        <p className="text-zinc-600 text-sm">Estimated time remaining: ~{minutesLeft} minutes</p>
-      )}
+      {/* Main */}
+      <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full pb-16">
 
-      <div className="mt-12 bg-white/3 border border-white/8 rounded-2xl p-6 max-w-md w-full">
-        <p className="text-zinc-400 text-sm">
-          📧 You&apos;ll also receive an email when your photos are ready. Feel free to close this tab.
+        {/* Animated orb */}
+        <div className="relative mb-10">
+          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-600/20 to-blue-900/10 border border-blue-500/20 flex items-center justify-center">
+            {isDone ? (
+              <svg className="w-12 h-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            ) : (
+              <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
+            )}
+          </div>
+          {/* Outer glow ring */}
+          <div className="absolute inset-0 rounded-full border border-blue-500/10 scale-125 animate-pulse" />
+        </div>
+
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-white mb-2 text-center tracking-tight">
+          {isDone ? 'Photos are ready!' : 'Creating your photos'}
+        </h1>
+        <p className="text-zinc-500 text-base mb-10 text-center">
+          {isDone ? 'Redirecting you to your dashboard...' : 'Your personal AI model is being trained'}
         </p>
+
+        {/* Progress bar */}
+        <div className="w-full mb-3">
+          <div className="flex justify-between text-xs text-zinc-600 mb-2">
+            <span>{stage.icon} {stage.label}</span>
+            <span>{Math.round(displayProgress)}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-none"
+              style={{
+                width: `${displayProgress}%`,
+                background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Stage steps */}
+        <div className="w-full mt-8 space-y-2">
+          {STAGES.slice(0, -1).map((s, i) => {
+            const done = i < stageIdx
+            const active = i === stageIdx
+            return (
+              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 ${active ? 'bg-blue-500/8 border border-blue-500/15' : 'opacity-40'}`}>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${done ? 'bg-blue-500 border-blue-500' : active ? 'border-blue-400' : 'border-white/20'}`}>
+                  {done ? (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  ) : active ? (
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+                  ) : (
+                    <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+                  )}
+                </div>
+                <span className={`text-sm font-medium ${done ? 'text-zinc-400' : active ? 'text-white' : 'text-zinc-600'}`}>
+                  {s.label}
+                </span>
+                {active && (
+                  <span className="ml-auto text-[10px] text-blue-400 font-medium animate-pulse">In progress</span>
+                )}
+                {done && (
+                  <span className="ml-auto text-[10px] text-zinc-600">Done</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ETA */}
+        {minutesLeft > 0 && (
+          <p className="text-zinc-600 text-xs mt-6">
+            Estimated time remaining: ~{minutesLeft} {minutesLeft === 1 ? 'minute' : 'minutes'}
+          </p>
+        )}
+
+        {/* Email notice */}
+        <div className="mt-10 w-full bg-white/[0.03] border border-white/8 rounded-2xl px-5 py-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-white text-sm font-medium mb-0.5">We&apos;ll email you when ready</p>
+            <p className="text-zinc-500 text-xs leading-relaxed">Feel free to close this tab — your photos will be waiting in your dashboard and inbox.</p>
+          </div>
+        </div>
+
       </div>
     </div>
   )

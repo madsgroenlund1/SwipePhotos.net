@@ -133,6 +133,7 @@ export default function OnboardingPage() {
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
   const STYLE_ORDER = ['restaurant', 'formal', 'rooftop', 'beach']
   const STYLE_LABELS: Record<string, string> = { restaurant: 'Italian Restaurant', formal: 'Smart Formal', rooftop: 'Rooftop Bar', beach: 'Beach Club' }
@@ -159,7 +160,7 @@ export default function OnboardingPage() {
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
-  // Step 4: start real AI generation + poll for results
+  // Step 4: submit preview jobs to fal.ai queue, then poll for results
   useEffect(() => {
     if (step !== 4) return
     setProgress(0)
@@ -167,30 +168,76 @@ export default function OnboardingPage() {
     setGeneratedPhotos({})
     setGenError(null)
 
-    async function startGeneration() {
-      // Slow realistic progress (~25s to reach 90%, then waits for API)
-      let p = 0
-      let apiDone = false
-      let ticks = 0
-      progressRef.current = setInterval(() => {
-        ticks++
-        // Speed: fast early, very slow near 90% (waits for real result)
-        const speed = p < 30 ? 0.8 : p < 60 ? 0.4 : p < 85 ? 0.15 : apiDone ? 2 : 0.02
-        p = Math.min(p + speed, apiDone ? 100 : 92)
-        setProgress(p)
-        // Rotate facts every ~20 ticks (4 seconds)
-        setDidYouKnowIdx(Math.floor(ticks / 20) % DID_YOU_KNOW.length)
-        if (p >= 100) clearInterval(progressRef.current!)
-      }, 200)
+    // Rotate "did you know" facts
+    let tick = 0
+    progressRef.current = setInterval(() => {
+      tick++
+      setDidYouKnowIdx(Math.floor(tick / 20) % DID_YOU_KNOW.length)
+    }, 200)
 
-      // Preview generation disabled — show example photos to avoid timeout
-      apiDone = true
+    async function startGeneration() {
+      // If no photos uploaded, skip to examples immediately
+      if (photos.length === 0) {
+        setProgress(100)
+        return
+      }
+
+      try {
+        // Submit generation jobs — returns instantly with request IDs
+        const fd = new FormData()
+        fd.append('photo', photos[0])
+        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
+        const data = await res.json()
+
+        if (!data.requestIds?.length) {
+          console.warn('[preview] No request IDs, falling back to examples')
+          setProgress(100)
+          return
+        }
+
+        const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
+        const total = styles.length
+
+        // Poll every 3 seconds for completed photos
+        pollingRef.current = setInterval(async () => {
+          try {
+            const pollRes = await fetch(
+              `/api/generate/preview/poll?ids=${requestIds.join(',')}&styles=${styles.join(',')}`
+            )
+            const poll = await pollRes.json() as {
+              photos: Record<string, string>
+              done: boolean
+              completedCount: number
+              total: number
+            }
+
+            if (Object.keys(poll.photos).length > 0) {
+              setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
+            }
+
+            // Progress based on completed jobs
+            const pct = Math.round((poll.completedCount / total) * 100)
+            setProgress(pct)
+
+            if (poll.done) {
+              clearInterval(pollingRef.current!)
+            }
+          } catch (err) {
+            console.error('[preview] Poll error:', err)
+          }
+        }, 3000)
+      } catch (err) {
+        console.error('[preview] Submit error:', err)
+        setProgress(100) // Fall back to showing example photos
+      }
     }
 
     startGeneration()
     return () => {
       if (progressRef.current) clearInterval(progressRef.current!)
+      if (pollingRef.current) clearInterval(pollingRef.current!)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
   // AI traces animation for step 7
@@ -482,9 +529,15 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="px-4 pb-4">
-                <button onClick={next} disabled={progress < 100} className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', progress >= 100 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
-                  Continue →
-                </button>
+                {progress >= 100 ? (
+                  <button onClick={next} className="w-full py-4 rounded-2xl font-semibold text-base transition-all bg-blue-600 hover:brightness-110 text-white">
+                    {Object.keys(generatedPhotos).length > 0 ? 'See your AI photos →' : 'Continue →'}
+                  </button>
+                ) : (
+                  <button disabled className="w-full py-4 rounded-2xl font-semibold text-base bg-white/5 text-zinc-600 cursor-not-allowed">
+                    Generating... {progress > 0 ? `${progress}%` : ''}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -495,10 +548,10 @@ export default function OnboardingPage() {
               <div className="p-6 pb-3">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-0">
-                  {hasGenerated ? 'Your AI photos are ready' : 'This is what you\'ll get'}
+                  {hasGenerated ? 'Your preview photos are ready!' : 'This is what you\'ll get'}
                 </h2>
                 {hasGenerated
-                  ? <p className="text-green-400 text-xs mt-1">✓ Generated from your selfie — 4 styles</p>
+                  ? <p className="text-green-400 text-xs mt-1">✓ Generated from your photo — unlock 40+ premium styles</p>
                   : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Undetectable AI photos in 40+ styles, delivered to your email.</p>
                 }
               </div>
@@ -548,25 +601,41 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {[
                     {
-                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/></svg>,
-                      color: 'text-blue-400', bg: 'bg-blue-500/10',
+                      icon: (
+                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/>
+                        </svg>
+                      ),
+                      gradient: 'from-blue-500 to-blue-700',
                       value: '40+', label: 'AI photos',
                     },
                     {
-                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor"><path d="M13 2L4.09 12.26a1 1 0 00.78 1.63L11 14l-2 8 8.91-10.26a1 1 0 00-.78-1.63L11 10l2-8z"/></svg>,
-                      color: 'text-yellow-400', bg: 'bg-yellow-500/10',
+                      icon: (
+                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                          <path d="M13 2L4.09 12.26a1 1 0 00.78 1.63L11 14l-2 8 8.91-10.26a1 1 0 00-.78-1.63L11 10l2-8z"/>
+                        </svg>
+                      ),
+                      gradient: 'from-amber-400 to-orange-500',
                       value: '~1hr', label: 'Delivery',
                     },
                     {
-                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M12 2l7 4v5c0 5-3.5 9.3-7 11C8.5 20.3 5 16 5 11V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>,
-                      color: 'text-green-400', bg: 'bg-green-500/10',
+                      icon: (
+                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <path d="M12 2l7 4v5c0 5-3.5 9.3-7 11C8.5 20.3 5 16 5 11V6l7-4z"/><path d="M9 12l2 2 4-4"/>
+                        </svg>
+                      ),
+                      gradient: 'from-emerald-400 to-green-600',
                       value: '100%', label: 'Undetectable',
                     },
-                  ].map(({ icon, color, bg, value, label }) => (
-                    <div key={label} className="bg-white/5 rounded-xl p-2.5 text-center">
-                      <div className={`w-7 h-7 ${bg} ${color} rounded-lg flex items-center justify-center mx-auto mb-1.5`}>{icon}</div>
-                      <div className="text-white text-sm font-bold">{value}</div>
-                      <div className="text-zinc-500 text-[10px]">{label}</div>
+                  ].map(({ icon, gradient, value, label }) => (
+                    <div key={label} className="bg-white/[0.04] border border-white/8 rounded-2xl p-3 text-center flex flex-col items-center gap-2">
+                      <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                        {icon}
+                      </div>
+                      <div>
+                        <div className="text-white text-base font-bold leading-none">{value}</div>
+                        <div className="text-zinc-500 text-[10px] mt-0.5 font-medium">{label}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -808,15 +877,19 @@ export default function OnboardingPage() {
                     <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
                   </div>
                   {[
-                    { pos: '-top-3 -left-4',  delay: '0s',   logo: 'tinder' },
-                    { pos: '-top-3 -right-4', delay: '0.4s', logo: 'hinge' },
+                    { pos: '-top-3 -left-4',     delay: '0s',   logo: 'tinder' },
+                    { pos: '-top-3 -right-4',    delay: '0.4s', logo: 'hinge' },
                     { pos: '-bottom-3 -left-6',  delay: '0.8s', logo: 'instagram' },
                     { pos: '-bottom-3 -right-6', delay: '1.2s', logo: 'bumble' },
                   ].map(({ pos, delay, logo }) => (
-                    <div key={pos} className={`absolute ${pos} w-10 h-10 rounded-xl overflow-hidden shadow-lg`}
+                    <div key={pos} className={`absolute ${pos}`}
                       style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
-                      <img src={`/logos/dating-app-logos/${logo}.png`} alt={logo} className="w-full h-full object-cover" />
-                      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full px-1">99+</span>
+                      <div className="relative w-10 h-10">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xl">
+                          <img src={`/logos/dating-app-logos/${logo}.png`} alt={logo} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-md border border-[#111]">99+</span>
+                      </div>
                     </div>
                   ))}
                 </div>
