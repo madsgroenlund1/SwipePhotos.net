@@ -60,12 +60,11 @@ export default function SignInPage() {
 
           <div className="bg-[#111]/80 backdrop-blur-sm border border-white/8 rounded-3xl p-8 text-center shadow-2xl shadow-black/50">
             <div className="relative flex justify-center mb-7">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-900/10 border border-blue-500/20 flex items-center justify-center shadow-lg shadow-blue-500/10">
-                <svg className="w-9 h-9 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.4}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
+              <div className="px-6 py-4 rounded-2xl bg-gradient-to-br from-blue-600/15 to-blue-900/10 border border-blue-500/20 shadow-lg shadow-blue-500/10 flex items-center">
+                <span className="text-white font-bold text-2xl tracking-tight">SwipePhotos</span>
+                <span className="text-blue-400 font-bold text-2xl tracking-tight">.net</span>
               </div>
-              <span className="absolute top-1 right-[calc(50%-44px)] w-3 h-3 bg-green-400 rounded-full border-2 border-[#111] animate-pulse" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[#111] animate-pulse" />
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Check your inbox</h2>
