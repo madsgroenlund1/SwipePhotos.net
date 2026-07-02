@@ -76,10 +76,16 @@ const DID_YOU_KNOW = [
   'Most dating coaches recommend quality photos above all',
 ]
 
-const PACKAGES = [
-  { id: 'starter', name: 'Starter', price: '$19', photos: '20 AI photos / month', popular: false },
-  { id: 'popular', name: 'Popular', price: '$39', photos: '40 AI photos / month', popular: true },
-]
+const PACKAGES = {
+  monthly: [
+    { id: 'starter', name: 'Starter', priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID, price: '$19', perMonth: '$19', photos: '20 AI photos / month', popular: false },
+    { id: 'popular', name: 'Popular', priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_PRICE_ID, price: '$39', perMonth: '$39', photos: '40 AI photos / month', popular: true },
+  ],
+  yearly: [
+    { id: 'starter_yearly', name: 'Starter', priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_YEARLY_PRICE_ID, price: '$114', perMonth: '$9.50', photos: '20 AI photos / month', popular: false },
+    { id: 'popular_yearly', name: 'Popular', priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_YEARLY_PRICE_ID, price: '$234', perMonth: '$19.50', photos: '40 AI photos / month', popular: true },
+  ],
+}
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -118,6 +124,7 @@ export default function OnboardingPage() {
   const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
   const [cleanedCount, setCleanedCount] = useState(0)
   const [selectedPackage, setSelectedPackage] = useState<string>('popular')
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -219,10 +226,12 @@ export default function OnboardingPage() {
     setLoading(true)
     try {
       // 1. Create order + get Stripe URL
+      const currentPkgs = PACKAGES[billing]
+      const pkg = currentPkgs.find(p => p.id === selectedPackage) || currentPkgs.find(p => p.popular) || currentPkgs[0]
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: selectedPackage, email }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email }),
       })
       const data = await res.json()
       console.log('[checkout response]', data)
@@ -834,14 +843,31 @@ export default function OnboardingPage() {
                 <div className="flex flex-col gap-1 mb-4">
                   {['100+ proven templates', 'Custom photos', "Don't get banned"].map(f => (
                     <div key={f} className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       <span className="text-zinc-300 text-sm">{f}</span>
                     </div>
                   ))}
                 </div>
+
+                {/* Billing toggle */}
+                <div className="flex bg-white/5 rounded-2xl p-1 mb-3">
+                  <button
+                    onClick={() => { setBilling('monthly'); setSelectedPackage('popular') }}
+                    className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all', billing === 'monthly' ? 'bg-white text-black' : 'text-zinc-400')}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => { setBilling('yearly'); setSelectedPackage('popular_yearly') }}
+                    className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', billing === 'yearly' ? 'bg-white text-black' : 'text-zinc-400')}
+                  >
+                    Yearly <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', billing === 'yearly' ? 'bg-green-500 text-white' : 'bg-green-500/20 text-green-400')}>50% OFF</span>
+                  </button>
+                </div>
+
                 {/* Packages */}
                 <div className="space-y-2 mb-4">
-                  {PACKAGES.map(pkg => (
+                  {PACKAGES[billing].map(pkg => (
                     <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)} className={cn('flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all', selectedPackage === pkg.id ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20')}>
                       <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', selectedPackage === pkg.id ? 'border-blue-500 bg-blue-500' : 'border-zinc-600')}>
                         {selectedPackage === pkg.id && <div className="w-2 h-2 bg-white rounded-full" />}
@@ -854,15 +880,15 @@ export default function OnboardingPage() {
                         <span className="text-zinc-500 text-xs">{pkg.photos}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-white font-bold">{pkg.price}</span>
-                        <span className="text-zinc-500 text-xs">/month</span>
+                        <div><span className="text-white font-bold">{pkg.perMonth}</span><span className="text-zinc-500 text-xs">/mo</span></div>
+                        {billing === 'yearly' && <div className="text-zinc-600 text-[10px]">{pkg.price}/yr</div>}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="px-4 pb-4">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Get started →</button>
+                <button onClick={next} className="w-full bg-gradient-to-r from-[#fd267a] to-[#ff6036] hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all text-base shadow-lg shadow-pink-500/20">Get started →</button>
               </div>
             </div>
           )}
@@ -882,10 +908,12 @@ export default function OnboardingPage() {
                   onClick={async () => {
                     setLoading(true)
                     try {
+                      const currentPkgsG = PACKAGES[billing]
+                      const pkgG = currentPkgsG.find(p => p.id === selectedPackage) || currentPkgsG[0]
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ packageId: selectedPackage, email: '' }),
+                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '' }),
                       })
                       const data = await res.json()
                       if (data.orderId && photos.length > 0) {

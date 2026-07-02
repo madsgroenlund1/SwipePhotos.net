@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       cancel_at_period_end: true,
     })
 
-    return NextResponse.json({ ok: true, cancelAt: subscriptions.data[0].current_period_end })
+    return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[cancel-subscription]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })

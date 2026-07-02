@@ -4,11 +4,13 @@ import { createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { packageId, email, presets } = await req.json()
+    const { packageId, priceId: customPriceId, email, presets } = await req.json()
     console.log('[checkout] packageId:', packageId, 'email:', email)
 
+    // Allow custom priceId (for yearly billing), fall back to PACKAGES lookup
     const pkg = PACKAGES[packageId as PackageId]
-    if (!pkg) {
+    const resolvedPriceId = customPriceId || pkg?.priceId
+    if (!resolvedPriceId) {
       console.error('[checkout] Invalid package:', packageId, 'Valid:', Object.keys(PACKAGES))
       return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
     }
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
       locale: 'en',
       customer: customerId,
       customer_email: customerId ? undefined : (email || undefined),
-      line_items: [{ price: pkg.priceId, quantity: 1 }],
+      line_items: [{ price: resolvedPriceId, quantity: 1 }],
       allow_promotion_codes: true,
       subscription_data: {
         metadata: {
