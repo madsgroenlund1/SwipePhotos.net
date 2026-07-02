@@ -21,9 +21,9 @@ function EarningsCalc() {
         <div className="text-center mb-6">
           <p className={`text-xs font-semibold mb-2 ${labelColor}`}>{label}</p>
           <div className="text-6xl font-black text-white tracking-tight leading-none mb-2">
-            ${earning.toLocaleString()}
+            ${earning.toLocaleString('en-US')}
           </div>
-          <p className="text-zinc-500 text-sm">per month · <span className="text-zinc-300 font-medium">${yearly.toLocaleString()}/yr</span></p>
+          <p className="text-zinc-500 text-sm">per month · <span className="text-zinc-300 font-medium">${yearly.toLocaleString('en-US')}/yr</span></p>
         </div>
 
         {/* Slider */}
@@ -52,6 +52,7 @@ export default function AffiliatePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [savedSlug, setSavedSlug] = useState('')
+  const [mounted, setMounted] = useState(false)
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -63,6 +64,7 @@ export default function AffiliatePage() {
 
   // Load saved slug from localStorage on mount
   useEffect(() => {
+    setMounted(true)
     const stored = localStorage.getItem('sw_affiliate_slug')
     if (stored) {
       setSavedSlug(stored)
@@ -158,8 +160,10 @@ export default function AffiliatePage() {
           </div>
         </div>
 
-        {/* Form or success */}
-        {submitted ? (
+        {/* Form or success — only render after mount to avoid SSR/localStorage hydration mismatch */}
+        {!mounted ? (
+          <div className="bg-[#111] border border-white/8 rounded-2xl p-6 h-48 animate-pulse" />
+        ) : submitted ? (
           <div className="bg-green-500/8 border border-green-500/20 rounded-2xl p-8 text-center">
             <div className="w-12 h-12 bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
