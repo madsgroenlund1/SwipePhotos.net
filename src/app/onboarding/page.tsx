@@ -183,21 +183,8 @@ export default function OnboardingPage() {
         if (p >= 100) clearInterval(progressRef.current!)
       }, 200)
 
-      if (photos.length === 0) return // demo mode: let timer run, no API call
-
-      try {
-        const fd = new FormData()
-        fd.append('photo', photos[0])
-        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
-        const data = await res.json()
-        if (data.photos && Object.keys(data.photos).length > 0) {
-          setGeneratedPhotos(data.photos)
-        }
-      } catch (err) {
-        console.error('Preview generation failed:', err)
-      } finally {
-        apiDone = true
-      }
+      // Preview generation disabled — show example photos to avoid timeout
+      apiDone = true
     }
 
     startGeneration()
