@@ -588,9 +588,39 @@ export default function OnboardingPage() {
                     key={carouselIdx}
                     src={hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : fallbackPhotos[carouselIdx % fallbackPhotos.length]}
                     alt={`Preview ${carouselIdx + 1}`}
-                    className="w-full h-full object-cover object-top"
+                    className="w-full h-full object-cover object-top select-none"
                     style={{ animation: 'fadeIn 0.3s ease-out' }}
+                    onContextMenu={e => e.preventDefault()}
+                    draggable={false}
                   />
+
+                  {/* Watermark overlay — diagonal repeating pattern */}
+                  <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ zIndex: 15 }}>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute whitespace-nowrap"
+                        style={{
+                          top: `${(i * 18) - 10}%`,
+                          left: '-20%',
+                          width: '140%',
+                          transform: 'rotate(-30deg)',
+                          transformOrigin: 'center',
+                        }}
+                      >
+                        <span className="text-white/18 font-bold text-sm tracking-widest" style={{ letterSpacing: '0.15em' }}>
+                          SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Corner watermark — more visible */}
+                  <div className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-none select-none" style={{ zIndex: 16 }}>
+                    <span className="text-white/30 font-bold text-xs tracking-widest px-3 py-1 rounded-full" style={{ backdropFilter: 'blur(2px)', background: 'rgba(0,0,0,0.15)' }}>
+                      SwipePhotos.net
+                    </span>
+                  </div>
 
                   {/* Left/Right tap zones */}
                   <button
