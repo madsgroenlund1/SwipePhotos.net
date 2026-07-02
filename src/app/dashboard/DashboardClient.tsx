@@ -25,6 +25,26 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink: string | null }) {
   const [copied, setCopied] = useState(false)
   const [lightbox, setLightbox] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelled, setCancelled] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+
+  async function handleCancelSubscription() {
+    setCancelling(true)
+    try {
+      const res = await fetch('/api/cancel-subscription', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        setCancelled(true)
+        setShowCancelConfirm(false)
+      } else {
+        alert(data.error || 'Could not cancel subscription. Please contact support.')
+      }
+    } catch {
+      alert('Something went wrong. Please try again.')
+    }
+    setCancelling(false)
+  }
 
   function copyRef() {
     if (!refLink) return
@@ -148,6 +168,49 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
           </div>
         </section>
       )}
+
+      {/* Manage Subscription */}
+      <section className="border border-white/8 rounded-2xl p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 className="text-white font-bold text-base mb-0.5">Subscription</h3>
+            <p className="text-zinc-500 text-sm">
+              {cancelled
+                ? 'Your subscription has been cancelled. You keep access until the end of the billing period.'
+                : 'Cancel anytime — you keep access until the end of your billing period.'}
+            </p>
+          </div>
+          {!cancelled && !showCancelConfirm && (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="text-zinc-400 hover:text-red-400 text-sm font-medium border border-white/10 hover:border-red-400/30 px-4 py-2 rounded-xl transition-all"
+            >
+              Cancel subscription
+            </button>
+          )}
+          {showCancelConfirm && !cancelled && (
+            <div className="flex items-center gap-3 w-full mt-2">
+              <p className="text-zinc-400 text-sm flex-1">Are you sure? You&apos;ll keep access until end of billing period.</p>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="text-zinc-400 hover:text-white text-sm px-3 py-1.5 rounded-lg border border-white/10 transition-all"
+              >
+                Keep plan
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={cancelling}
+                className="text-red-400 hover:text-white hover:bg-red-500 text-sm font-medium px-4 py-1.5 rounded-lg border border-red-400/30 transition-all disabled:opacity-50"
+              >
+                {cancelling ? 'Cancelling...' : 'Yes, cancel'}
+              </button>
+            </div>
+          )}
+          {cancelled && (
+            <span className="text-zinc-500 text-sm border border-white/8 px-3 py-1.5 rounded-xl">Cancelled</span>
+          )}
+        </div>
+      </section>
 
       {/* Refer & Earn */}
       <section className="bg-gradient-to-br from-blue-600/10 to-purple-600/5 border border-blue-500/20 rounded-2xl p-6">
