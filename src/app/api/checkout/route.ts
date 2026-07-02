@@ -32,7 +32,16 @@ export async function POST(req: NextRequest) {
       if (userRow) {
         userId = userRow.id
         if (userRow.stripe_customer_id) {
-          customerId = userRow.stripe_customer_id
+          // Verify customer exists in live mode — could be a stale test-mode ID
+          try {
+            await stripe.customers.retrieve(userRow.stripe_customer_id)
+            customerId = userRow.stripe_customer_id
+          } catch {
+            // Test-mode customer — create new live customer and overwrite
+            const customer = await stripe.customers.create({ email })
+            customerId = customer.id
+            await supabase.from('users').update({ stripe_customer_id: customerId }).eq('id', userId)
+          }
         } else {
           const customer = await stripe.customers.create({ email })
           customerId = customer.id
