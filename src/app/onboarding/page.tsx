@@ -987,10 +987,12 @@ export default function OnboardingPage() {
                         })
                       } else {
                         console.error('[checkout] No URL:', data)
+                        alert('Something went wrong. Please use email instead or try again.')
                         setLoading(false)
                       }
                     } catch (err) {
                       console.error('[checkout/google]', err)
+                      alert('Could not connect to payment. Please use email instead.')
                       setLoading(false)
                     }
                   }}
