@@ -560,12 +560,24 @@ export default function OnboardingPage() {
               <div className="px-4 pb-4">
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {[
-                    { icon: '📸', value: '40+', label: 'AI photos' },
-                    { icon: '⚡', value: '~1hr', label: 'Delivery' },
-                    { icon: '🛡️', value: '100%', label: 'Undetectable' },
-                  ].map(({ icon, value, label }) => (
+                    {
+                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/></svg>,
+                      color: 'text-blue-400', bg: 'bg-blue-500/10',
+                      value: '40+', label: 'AI photos',
+                    },
+                    {
+                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor"><path d="M13 2L4.09 12.26a1 1 0 00.78 1.63L11 14l-2 8 8.91-10.26a1 1 0 00-.78-1.63L11 10l2-8z"/></svg>,
+                      color: 'text-yellow-400', bg: 'bg-yellow-500/10',
+                      value: '~1hr', label: 'Delivery',
+                    },
+                    {
+                      icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M12 2l7 4v5c0 5-3.5 9.3-7 11C8.5 20.3 5 16 5 11V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>,
+                      color: 'text-green-400', bg: 'bg-green-500/10',
+                      value: '100%', label: 'Undetectable',
+                    },
+                  ].map(({ icon, color, bg, value, label }) => (
                     <div key={label} className="bg-white/5 rounded-xl p-2.5 text-center">
-                      <div className="text-lg mb-0.5">{icon}</div>
+                      <div className={`w-7 h-7 ${bg} ${color} rounded-lg flex items-center justify-center mx-auto mb-1.5`}>{icon}</div>
                       <div className="text-white text-sm font-bold">{value}</div>
                       <div className="text-zinc-500 text-[10px]">{label}</div>
                     </div>
