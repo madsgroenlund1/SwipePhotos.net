@@ -1,4 +1,6 @@
 import Replicate from 'replicate'
+import JSZip from 'jszip'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
@@ -24,15 +26,47 @@ export const SCENE_PROMPTS = [
   'photo of TOK man in black suit jacket and white shirt, sitting in elegant lounge interior, holding glass of whiskey, luxury hotel bar aesthetic, moody warm light, photorealistic',
 ]
 
+async function buildZipUrl(imageUrls: string[], orderId: string): Promise<string> {
+  const zip = new JSZip()
+
+  // Download each image and add to zip
+  await Promise.all(
+    imageUrls.map(async (url, i) => {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Failed to fetch image: ${url}`)
+      const buf = await res.arrayBuffer()
+      const ext = url.split('.').pop()?.split('?')[0] || 'jpg'
+      zip.file(`photo_${i + 1}.${ext}`, buf)
+    })
+  )
+
+  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' })
+
+  // Upload zip to Supabase storage
+  const supabase = await createAdminClient()
+  const zipPath = `${orderId}/training.zip`
+  const { error } = await supabase.storage
+    .from('uploads')
+    .upload(zipPath, zipBuffer, { contentType: 'application/zip', upsert: true })
+  if (error) throw new Error(`ZIP upload failed: ${error.message}`)
+
+  const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(zipPath)
+  return publicUrl
+}
+
 export async function trainModel(imageUrls: string[], orderId: string, webhookUrl?: string) {
   const username = process.env.REPLICATE_USERNAME!
   const modelName = `user-${orderId.slice(0, 12)}`
+
+  // Build ZIP of training images (Replicate requires a single zip URL)
+  const zipUrl = await buildZipUrl(imageUrls, orderId)
+  console.log('[trainModel] ZIP uploaded:', zipUrl)
 
   // Create destination model on Replicate
   try {
     await replicate.models.create(username, modelName, {
       visibility: 'private',
-      hardware: 'gpu-a40-large',
+      hardware: 'gpu-a100-large',
     })
   } catch {
     // Model may already exist — continue
@@ -52,7 +86,7 @@ export async function trainModel(imageUrls: string[], orderId: string, webhookUr
       webhook: webhookUrl,
       webhook_events_filter: webhookUrl ? ['completed'] : undefined,
       input: {
-        input_images: imageUrls,
+        input_images: zipUrl,
         steps: 1500,
         trigger_word: 'TOK',
         learning_rate: 0.0003,

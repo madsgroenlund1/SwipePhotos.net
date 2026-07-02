@@ -2,18 +2,39 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function GoCheckout() {
   const router = useRouter()
 
   useEffect(() => {
-    const url = localStorage.getItem('sw_pending_checkout')
-    if (url) {
+    async function run() {
+      const url = localStorage.getItem('sw_pending_checkout')
+      const orderId = localStorage.getItem('sw_pending_order_id')
+
+      if (!url) { router.replace('/dashboard'); return }
+
       localStorage.removeItem('sw_pending_checkout')
+      localStorage.removeItem('sw_pending_order_id')
+
+      // Patch the order with the Google user's email so the ready-email can be sent
+      if (orderId) {
+        try {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user?.email) {
+            await fetch(`/api/orders/${orderId}/set-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: user.email }),
+            }).catch(() => {})
+          }
+        } catch {}
+      }
+
       window.location.href = url
-    } else {
-      router.replace('/dashboard')
     }
+    run()
   }, [router])
 
   return (

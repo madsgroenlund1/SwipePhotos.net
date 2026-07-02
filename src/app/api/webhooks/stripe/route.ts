@@ -21,16 +21,24 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const { orderId, email } = session.metadata || {}
+    const { orderId } = session.metadata || {}
+    const email = session.metadata?.email || session.customer_details?.email || ''
 
     if (!orderId) return NextResponse.json({ ok: true })
 
     const supabase = await createAdminClient()
 
-    // Update order status
+    // Check if already handled (idempotency — verify endpoint may have run first)
+    const { data: existing } = await supabase.from('orders').select('status').eq('id', orderId).single()
+    if (existing && existing.status !== 'pending') {
+      console.log('[stripe webhook] Order already handled, status:', existing.status)
+      return NextResponse.json({ ok: true })
+    }
+
+    // Update order status + email
     await supabase
       .from('orders')
-      .update({ status: 'processing', stripe_session_id: session.id })
+      .update({ status: 'processing', stripe_session_id: session.id, ...(email ? { email } : {}) })
       .eq('id', orderId)
 
     // Send welcome email

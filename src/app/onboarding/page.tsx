@@ -137,7 +137,7 @@ export default function OnboardingPage() {
   const targetProgressRef = useRef(0)
   const displayProgressRef = useRef(0)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
-  const PREVIEW_INDICES = ['v0', 'v1', 'v2', 'v3', 'v4']
+  const PREVIEW_INDICES = ['restaurant', 'formal', 'rooftop', 'beach', 'v0', 'v1', 'v2', 'v3', 'v4']
   const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
   const generatedArray = PREVIEW_INDICES.map(k => generatedPhotos[k]).filter(Boolean) as string[]
   const hasGenerated = generatedArray.length > 0
@@ -159,6 +159,29 @@ export default function OnboardingPage() {
 
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
+
+  // Compress + resize image to max 1024px, JPEG 85% — keeps under Vercel's 4.5MB request limit
+  function compressImage(file: File, maxPx = 1024, quality = 0.85): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(blob => {
+          resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file)
+        }, 'image/jpeg', quality)
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+      img.src = url
+    })
+  }
 
   // Step 4: submit preview jobs to fal.ai queue, then poll for results
   useEffect(() => {
@@ -206,16 +229,29 @@ export default function OnboardingPage() {
         fd.append('photo', photos[0])
         fd.append('style', selectedStyle)
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
-        const data = await res.json()
+        const data = await res.json() as {
+          photos?: Record<string, string>
+          done?: boolean
+          requestIds?: string[]
+          styles?: string[]
+          error?: string
+        }
 
+        // New face-swap path: results come back directly
+        if (data.photos && Object.keys(data.photos).length > 0) {
+          setGeneratedPhotos(data.photos)
+          targetProgressRef.current = 100
+          return
+        }
+
+        // Legacy InstantID polling path (fallback)
         if (!data.requestIds?.length) {
-          console.warn('[preview] No request IDs, falling back to examples')
+          console.warn('[preview] No results, falling back to examples')
           targetProgressRef.current = 100
           return
         }
 
         const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
-        const total = styles.length
 
         pollingRef.current = setInterval(async () => {
           try {
@@ -233,7 +269,6 @@ export default function OnboardingPage() {
               setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
             }
 
-            // When jobs finish, jump target to 100
             if (poll.done) {
               targetProgressRef.current = 100
               clearInterval(pollingRef.current!)
@@ -292,11 +327,12 @@ export default function OnboardingPage() {
         return
       }
 
-      // 2. Upload photos
+      // 2. Upload photos (compressed to stay under Vercel's 4.5MB body limit)
       if (data.orderId && photos.length > 0) {
+        const compressed = await Promise.all(photos.map(p => compressImage(p)))
         const fd = new FormData()
         fd.append('orderId', data.orderId)
-        for (const photo of photos) fd.append('files', photo)
+        for (const photo of compressed) fd.append('files', photo)
         await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
       }
 
@@ -646,7 +682,7 @@ export default function OnboardingPage() {
                   {/* Style label badge */}
                   <div className="absolute top-3 left-3 z-20">
                     <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-                      {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
+                      {STYLE_OPTIONS.find(s => s.id === (PREVIEW_INDICES[carouselIdx] ?? selectedStyle))?.label ?? STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
                     </span>
                   </div>
 
@@ -699,15 +735,16 @@ export default function OnboardingPage() {
 
               {/* What's included */}
               <div className="px-4 pb-4">
-                <div className="flex gap-0 mb-4 bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden divide-x divide-white/8">
+                <div className="grid grid-cols-3 gap-2 mb-4">
                   {[
-                    { value: '40+', label: 'AI Photos', sub: 'per order' },
-                    { value: '~1hr', label: 'Delivery', sub: 'avg. time' },
-                    { value: '100%', label: 'Undetectable', sub: 'guaranteed' },
-                  ].map(({ value, label, sub }) => (
-                    <div key={label} className="flex-1 py-3.5 text-center">
-                      <div className="text-white text-xl font-bold tracking-tight leading-none">{value}</div>
-                      <div className="text-zinc-300 text-[11px] font-semibold mt-1">{label}</div>
+                    { value: '40+', label: 'AI Photos', sub: 'per order', icon: '🖼️', color: '#3b82f6', glow: 'rgba(59,130,246,0.15)' },
+                    { value: '~1hr', label: 'Delivery', sub: 'avg. time', icon: '⚡', color: '#a855f7', glow: 'rgba(168,85,247,0.15)' },
+                    { value: '100%', label: 'Undetectable', sub: 'guaranteed', icon: '🛡️', color: '#22c55e', glow: 'rgba(34,197,94,0.15)' },
+                  ].map(({ value, label, sub, icon, color, glow }) => (
+                    <div key={label} className="relative rounded-2xl overflow-hidden p-3.5 text-center flex flex-col items-center" style={{ background: `linear-gradient(145deg, ${glow} 0%, rgba(255,255,255,0.02) 100%)`, border: `1px solid ${color}30` }}>
+                      <div className="text-lg leading-none mb-1.5">{icon}</div>
+                      <div className="font-black tracking-tight leading-none text-xl" style={{ color }}>{value}</div>
+                      <div className="text-white text-[11px] font-semibold mt-1">{label}</div>
                       <div className="text-zinc-600 text-[9px] mt-0.5">{sub}</div>
                     </div>
                   ))}
@@ -1051,20 +1088,29 @@ export default function OnboardingPage() {
                         return
                       }
                       if (data.orderId && photos.length > 0) {
+                        const compressed = await Promise.all(photos.map(p => compressImage(p)))
                         const fd = new FormData()
                         fd.append('orderId', data.orderId)
-                        for (const photo of photos) fd.append('files', photo)
+                        for (const photo of compressed) fd.append('files', photo)
                         await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
                       }
                       if (data.url) {
                         const supabase = createClient()
                         const { data: { user } } = await supabase.auth.getUser()
                         if (user) {
-                          // Already logged in — go straight to Stripe
+                          // Already logged in — patch email on order then go to Stripe
+                          if (data.orderId && user.email) {
+                            await fetch(`/api/orders/${data.orderId}/set-email`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ email: user.email }),
+                            }).catch(() => {})
+                          }
                           window.location.href = data.url
                         } else {
                           // Not logged in — OAuth then redirect to Stripe
                           localStorage.setItem('sw_pending_checkout', data.url)
+                          if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
                           await supabase.auth.signInWithOAuth({
                             provider: 'google',
                             options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },

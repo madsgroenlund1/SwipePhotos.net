@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 function EarningsCalc() {
@@ -51,6 +51,7 @@ export default function AffiliatePage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [savedSlug, setSavedSlug] = useState('')
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -60,11 +61,20 @@ export default function AffiliatePage() {
     contentType: '',
   })
 
+  // Load saved slug from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('sw_affiliate_slug')
+    if (stored) {
+      setSavedSlug(stored)
+      setSubmitted(true)
+    }
+  }, [])
+
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
 
-  // Generate slug from handle: @JohnDoe → johndoe
-  const slug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'yourusername'
+  // Use saved slug if available, otherwise derive from handle field
+  const slug = savedSlug || form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'yourusername'
   const refLink = `https://swipephotos.net/${slug}`
 
   async function handleSubmit(e: React.FormEvent) {
@@ -78,6 +88,9 @@ export default function AffiliatePage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) throw new Error('Failed')
+      const newSlug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '')
+      localStorage.setItem('sw_affiliate_slug', newSlug)
+      setSavedSlug(newSlug)
       setSubmitted(true)
     } catch {
       setError('Something went wrong. Please try again.')
@@ -154,10 +167,16 @@ export default function AffiliatePage() {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Application received!</h2>
-            <p className="text-zinc-400 text-sm">
-              Vi godkender inden for 24 timer. Dit affiliate-link bliver:<br />
-              <code className="text-blue-400 text-sm mt-2 block">{refLink}</code>
+            <p className="text-zinc-400 text-sm mb-4">
+              Vi godkender inden for 24 timer. Dit affiliate-link:
             </p>
+            <button
+              onClick={() => { navigator.clipboard.writeText(refLink); }}
+              className="w-full bg-[#0A0A0A] border border-blue-500/30 rounded-xl px-4 py-3 text-left group hover:border-blue-500/60 transition-colors"
+            >
+              <code className="text-blue-400 text-sm break-all">{refLink}</code>
+              <span className="text-zinc-600 text-xs block mt-1 group-hover:text-zinc-400 transition-colors">Klik for at kopiere</span>
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-[#111] border border-white/8 rounded-2xl p-6 space-y-4">

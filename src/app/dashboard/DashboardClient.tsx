@@ -231,6 +231,8 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
         </div>
       </section>
 
+      <div className="h-4" />
+
       {/* Refer & Earn */}
       <section className="bg-gradient-to-br from-blue-600/10 to-purple-600/5 border border-blue-500/20 rounded-2xl p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">

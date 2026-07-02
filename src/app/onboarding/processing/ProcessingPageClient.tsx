@@ -17,6 +17,7 @@ export function ProcessingPageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const orderId = searchParams.get('order_id')
+  const sessionId = searchParams.get('session_id')
 
   const [stageIdx, setStageIdx] = useState(0)
   const [failed, setFailed] = useState(false)
@@ -39,7 +40,7 @@ export function ProcessingPageClient() {
       }
     }, 200)
 
-    // Advance stages every 8s
+    // Advance stages every 4 min (real training takes ~20 min total)
     const stager = setInterval(() => {
       if (stage < STAGES.length - 1) {
         stage++
@@ -53,7 +54,7 @@ export function ProcessingPageClient() {
         clearInterval(ticker)
         pollOrder()
       }
-    }, 8000)
+    }, 240000) // 4 min per stage
 
     return () => { clearInterval(ticker); clearInterval(stager) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,6 +62,22 @@ export function ProcessingPageClient() {
 
   async function pollOrder() {
     if (!orderId) return
+
+    // Fallback: if Stripe webhook never fired, trigger pipeline now via session_id
+    if (sessionId) {
+      try {
+        const res = await fetch('/api/checkout/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, orderId }),
+        })
+        const data = await res.json()
+        console.log('[processing] verify result:', data)
+      } catch (err) {
+        console.error('[processing] verify failed:', err)
+      }
+    }
+
     let attempts = 0
     const poll = setInterval(async () => {
       attempts++
@@ -70,7 +87,7 @@ export function ProcessingPageClient() {
         if (data.status === 'ready') { clearInterval(poll); router.push(`/dashboard?order=${orderId}`) }
         else if (data.status === 'failed') { clearInterval(poll); setFailed(true) }
       } catch {}
-      if (attempts > 60) { clearInterval(poll); setFailed(true) }
+      if (attempts > 180) { clearInterval(poll); setFailed(true) } // 30 min polling
     }, 10000)
   }
 
