@@ -9,7 +9,13 @@ export default function SignInPage() {
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('error') === 'auth_failed') return 'Google sign-in failed. Check Google Cloud Console redirect URIs.'
+    }
+    return ''
+  })
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault()

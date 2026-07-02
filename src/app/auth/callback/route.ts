@@ -13,12 +13,16 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     // Google OAuth / PKCE flow
-    const { data } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log('[auth/callback] OAuth code exchange:', error ? `ERROR: ${error.message}` : 'OK', 'user:', data.user?.email)
     user = data.user
   } else if (token_hash && type) {
     // Magic link / email OTP flow
-    const { data } = await supabase.auth.verifyOtp({ token_hash, type })
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash, type })
+    console.log('[auth/callback] OTP verify:', error ? `ERROR: ${error.message}` : 'OK', 'user:', data.user?.email)
     user = data.user
+  } else {
+    console.log('[auth/callback] No code or token_hash. Params:', Object.fromEntries(searchParams.entries()))
   }
 
   // Ensure a row exists in the users table
@@ -28,7 +32,9 @@ export async function GET(request: NextRequest) {
       { id: user.id, email: user.email },
       { onConflict: 'id', ignoreDuplicates: true }
     )
+    return NextResponse.redirect(`${origin}${next}`)
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  // Auth failed — redirect back to sign in with error
+  return NextResponse.redirect(`${origin}/auth/signin?error=auth_failed`)
 }
