@@ -503,10 +503,12 @@ export default function OnboardingPage() {
                 </h2>
                 {hasGenerated
                   ? <p className="text-green-400 text-xs mt-1">✓ Generated from your selfie — 4 styles</p>
-                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Your photos will be generated in these 4 styles. Takes ~1 hour, then sent to your email.</p>
+                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Undetectable AI photos in 40+ styles, delivered to your email.</p>
                 }
               </div>
-              <div className="px-4 pb-2">
+
+              {/* 4 style previews */}
+              <div className="px-4 pb-3">
                 <div className="grid grid-cols-2 gap-2">
                   {STYLE_ORDER.map((style) => {
                     const src = hasGenerated ? generatedPhotos[style] : STYLE_OPTIONS.find(s => s.id === style)?.src
@@ -522,7 +524,44 @@ export default function OnboardingPage() {
                   })}
                 </div>
               </div>
-              <div className="px-4 pb-4 pt-3">
+
+              {/* More styles teaser */}
+              <div className="px-4 pb-3">
+                <div className="relative overflow-hidden rounded-2xl" style={{ height: 72 }}>
+                  <div className="flex gap-1.5 h-full">
+                    {[
+                      '/photos/presets/scene-beach.jpg',
+                      '/photos/presets/scene-rooftop.jpg',
+                      '/photos/presets/scene-restaurant.jpg',
+                      '/photos/presets/scene-formal.jpg',
+                      '/photos/presets/scene-beach.jpg',
+                    ].map((src, i) => (
+                      <div key={i} className="flex-shrink-0 w-14 rounded-xl overflow-hidden opacity-60">
+                        <img src={src} alt="" className="w-full h-full object-cover object-top" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] flex items-center justify-end pr-3">
+                    <span className="text-white text-xs font-semibold bg-black/60 rounded-full px-2.5 py-1">+40 styles</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* What's included */}
+              <div className="px-4 pb-4">
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { icon: '📸', value: '40+', label: 'AI photos' },
+                    { icon: '⚡', value: '~1hr', label: 'Delivery' },
+                    { icon: '🛡️', value: '100%', label: 'Undetectable' },
+                  ].map(({ icon, value, label }) => (
+                    <div key={label} className="bg-white/5 rounded-xl p-2.5 text-center">
+                      <div className="text-lg mb-0.5">{icon}</div>
+                      <div className="text-white text-sm font-bold">{value}</div>
+                      <div className="text-zinc-500 text-[10px]">{label}</div>
+                    </div>
+                  ))}
+                </div>
                 <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
               </div>
             </div>
