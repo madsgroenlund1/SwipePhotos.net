@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
 
+fal.config({ credentials: process.env.FAL_KEY })
+
 const MODEL = 'fal-ai/pulid'
 
 export const maxDuration = 30

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
 
+fal.config({ credentials: process.env.FAL_KEY })
+
 // 5 scene variations per setting — PuLID preserves identity, prompt drives the scene
 const SCENE_PROMPTS: Record<string, string[]> = {
   restaurant: [
