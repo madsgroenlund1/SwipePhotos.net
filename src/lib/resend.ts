@@ -62,7 +62,7 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
     </td></tr></table>
 
     <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#fff;text-align:center;letter-spacing:-0.5px;">Your order is confirmed!</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">Our AI is now training a custom model on your photos.</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">AI is now generating your professional dating photos. This takes about 1 minute.</p>
 
     <!-- Timeline -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
@@ -71,8 +71,8 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
           <table cellpadding="0" cellspacing="0"><tr>
             <td style="width:32px;height:32px;background:#1d4ed8;border-radius:50%;text-align:center;vertical-align:middle;font-size:14px;color:#fff;font-weight:700;">1</td>
             <td style="padding-left:12px;">
-              <div style="color:#fff;font-size:14px;font-weight:600;">Training your AI model</div>
-              <div style="color:#71717a;font-size:13px;margin-top:2px;">~20 minutes — AI learns your unique features</div>
+              <div style="color:#fff;font-size:14px;font-weight:600;">Swapping your face into model photos</div>
+              <div style="color:#71717a;font-size:13px;margin-top:2px;">~1 minute — AI places your face into 21 professional scenes</div>
             </td>
             <td align="right"><span style="background:#1d4ed8;color:#93c5fd;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;">In Progress</span></td>
           </tr></table>
@@ -83,8 +83,8 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
           <table cellpadding="0" cellspacing="0"><tr>
             <td style="width:32px;height:32px;background:#27272a;border-radius:50%;text-align:center;vertical-align:middle;font-size:14px;color:#71717a;font-weight:700;">2</td>
             <td style="padding-left:12px;">
-              <div style="color:#71717a;font-size:14px;font-weight:600;">Generating your photos</div>
-              <div style="color:#3f3f46;font-size:13px;margin-top:2px;">~10 minutes — creating 8 unique dating shots</div>
+              <div style="color:#71717a;font-size:14px;font-weight:600;">Finishing touches</div>
+              <div style="color:#3f3f46;font-size:13px;margin-top:2px;">Quality check on all 21 photos</div>
             </td>
             <td align="right"><span style="background:#27272a;color:#52525b;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;">Up next</span></td>
           </tr></table>

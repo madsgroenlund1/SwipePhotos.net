@@ -16,11 +16,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from('affiliates')
     .update({ status: 'approved' })
     .eq('id', id)
-    .select('*, users(email, referral_code)')
+    .select('metadata, referral_code')
     .single()
 
-  if (aff?.users?.email && aff?.users?.referral_code) {
-    await sendAffiliateApprovedEmail(aff.users.email, aff.users.referral_code).catch(console.error)
+  const email = aff?.metadata?.email
+  const refCode = aff?.referral_code || aff?.metadata?.slug
+
+  if (email && refCode) {
+    await sendAffiliateApprovedEmail(email, refCode).catch(console.error)
   }
 
   return NextResponse.json({ ok: true })

@@ -66,7 +66,7 @@ export default function PresetsPage() {
                 <h3 className="text-white font-semibold mb-1">{preset.name}</h3>
                 <p className="text-zinc-500 text-sm mb-4 leading-relaxed">{preset.desc}</p>
                 <Link
-                  href={preset.premium ? '/onboarding#step-5' : '/onboarding'}
+                  href="/onboarding"
                   className="flex items-center justify-center w-full py-2.5 rounded-full text-sm font-medium border border-white/10 text-zinc-300 hover:border-blue-500 hover:text-blue-400 transition-colors"
                 >
                   {preset.premium ? 'Upgrade to unlock →' : 'Try this preset →'}

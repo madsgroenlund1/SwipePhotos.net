@@ -21,7 +21,7 @@ export default async function AdminPage() {
       .limit(50),
     supabase
       .from('affiliates')
-      .select('*, users(email)')
+      .select('*')
       .order('created_at', { ascending: false }),
     supabase
       .from('orders')

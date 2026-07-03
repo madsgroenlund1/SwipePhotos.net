@@ -5,13 +5,16 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const STAGES = [
-  { label: 'Uploading your photos securely', icon: '☁️', pct: 10 },
-  { label: 'AI is analyzing your features', icon: '🔍', pct: 30 },
-  { label: 'Training your personal AI model', icon: '🧠', pct: 55 },
-  { label: 'Generating your photos', icon: '✨', pct: 80 },
-  { label: 'Applying finishing touches', icon: '🎨', pct: 95 },
+  { label: 'Uploading your photos securely', icon: '☁️', pct: 15 },
+  { label: 'Analyzing your features', icon: '🔍', pct: 35 },
+  { label: 'Swapping face into model photos', icon: '🧠', pct: 60 },
+  { label: 'Applying finishing touches', icon: '✨', pct: 85 },
   { label: 'Your photos are ready!', icon: '🎉', pct: 100 },
 ]
+
+// Face-swap takes ~30-60 sec per job. Advance stages every 12 sec so animation
+// completes around the time real jobs finish, then poll until actually ready.
+const STAGE_INTERVAL_MS = 12000
 
 export function ProcessingPageClient() {
   const searchParams = useSearchParams()
@@ -24,77 +27,88 @@ export function ProcessingPageClient() {
   const [displayProgress, setDisplayProgress] = useState(0)
   const [actuallyReady, setActuallyReady] = useState(false)
 
+  // Start polling for order status immediately — face-swap is fast (~30-60 sec)
+  useEffect(() => {
+    if (!orderId) return
+
+    let stopped = false
+    let attempts = 0
+
+    // Fallback: if Stripe webhook never fired, trigger pipeline via session_id
+    if (sessionId) {
+      fetch('/api/checkout/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, orderId }),
+      }).catch(console.error)
+    }
+
+    const poll = setInterval(async () => {
+      if (stopped) return
+      attempts++
+      try {
+        // Poll the face-swap jobs first so they get saved
+        await fetch(`/api/orders/${orderId}/poll`).catch(() => {})
+
+        const res = await fetch(`/api/orders/${orderId}/status`)
+        const data = await res.json()
+
+        if (data.status === 'ready') {
+          stopped = true
+          clearInterval(poll)
+          setActuallyReady(true)
+          router.push(`/dashboard?order=${orderId}`)
+        } else if (data.status === 'failed') {
+          stopped = true
+          clearInterval(poll)
+          setFailed(true)
+        }
+      } catch { /* ignore */ }
+
+      if (attempts > 180) { // 30 min max
+        stopped = true
+        clearInterval(poll)
+        setFailed(true)
+      }
+    }, 10000)
+
+    return () => { stopped = true; clearInterval(poll) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId])
+
+  // Visual animation — runs independently of actual polling
   useEffect(() => {
     let stage = 0
     let currentPct = 0
     let targetPct = STAGES[0].pct
 
-    // Tick every 200ms — slowly creep toward the target pct, pause just below next stage
     const ticker = setInterval(() => {
-      const ceiling = targetPct - 1 // stop just below target until stage advances
+      const ceiling = targetPct - 1
       if (currentPct < ceiling) {
-        // Speed: faster early, slower near ceiling to build suspense
         const gap = ceiling - currentPct
-        const speed = gap > 20 ? 0.5 : gap > 5 ? 0.2 : 0.05
+        const speed = gap > 20 ? 0.8 : gap > 5 ? 0.3 : 0.1
         currentPct = Math.min(currentPct + speed, ceiling)
         setDisplayProgress(currentPct)
       }
     }, 200)
 
-    // Advance stages every 4 min (real training takes ~20 min total)
     const stager = setInterval(() => {
       if (stage < STAGES.length - 1) {
         stage++
         setStageIdx(stage)
         targetPct = STAGES[stage].pct
-        // Jump immediately to the stage target
         currentPct = targetPct
         setDisplayProgress(targetPct)
       } else {
         clearInterval(stager)
         clearInterval(ticker)
-        pollOrder()
       }
-    }, 240000) // 4 min per stage
+    }, STAGE_INTERVAL_MS)
 
     return () => { clearInterval(ticker); clearInterval(stager) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function pollOrder() {
-    if (!orderId) return
-
-    // Fallback: if Stripe webhook never fired, trigger pipeline now via session_id
-    if (sessionId) {
-      try {
-        const res = await fetch('/api/checkout/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, orderId }),
-        })
-        const data = await res.json()
-        console.log('[processing] verify result:', data)
-      } catch (err) {
-        console.error('[processing] verify failed:', err)
-      }
-    }
-
-    let attempts = 0
-    const poll = setInterval(async () => {
-      attempts++
-      try {
-        const res = await fetch(`/api/orders/${orderId}/status`)
-        const data = await res.json()
-        if (data.status === 'ready') { clearInterval(poll); setActuallyReady(true); router.push(`/dashboard?order=${orderId}`) }
-        else if (data.status === 'failed') { clearInterval(poll); setFailed(true) }
-      } catch {}
-      if (attempts > 180) { clearInterval(poll); setFailed(true) } // 30 min polling
-    }, 10000)
-  }
-
   const stage = STAGES[stageIdx]
-  const timeLeft = Math.max(0, (STAGES.length - stageIdx - 1) * 8)
-  const minutesLeft = Math.floor(timeLeft / 60)
   const timerDone = stageIdx === STAGES.length - 1
   const isDone = actuallyReady
 
@@ -120,7 +134,6 @@ export function ProcessingPageClient() {
 
   return (
     <div className="min-h-screen bg-[#080808] flex flex-col px-6">
-      {/* Header */}
       <div className="flex items-center justify-between py-5 max-w-lg mx-auto w-full">
         <Link href="/" className="flex items-center">
           <span className="text-white font-bold text-lg">SwipePhotos</span>
@@ -129,10 +142,8 @@ export function ProcessingPageClient() {
         <span className="text-xs text-zinc-600 border border-white/8 rounded-full px-3 py-1">Order #{orderId?.slice(-6).toUpperCase()}</span>
       </div>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full pb-16">
 
-        {/* Animated orb */}
         <div className="relative mb-10">
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-600/20 to-blue-900/10 border border-blue-500/20 flex items-center justify-center">
             {isDone ? (
@@ -143,11 +154,9 @@ export function ProcessingPageClient() {
               <div className={`w-10 h-10 rounded-full border-2 border-t-blue-400 animate-spin ${timerDone ? 'border-blue-500/60' : 'border-blue-500/30'}`} />
             )}
           </div>
-          {/* Outer glow ring */}
           <div className="absolute inset-0 rounded-full border border-blue-500/10 scale-125 animate-pulse" />
         </div>
 
-        {/* Title */}
         <h1 className="text-3xl font-bold text-white mb-2 text-center tracking-tight">
           {isDone ? 'Photos are ready!' : 'Creating your photos'}
         </h1>
@@ -156,10 +165,9 @@ export function ProcessingPageClient() {
             ? 'Redirecting you to your dashboard...'
             : timerDone
             ? 'Almost there — finishing up your photos...'
-            : 'Your personal AI model is being trained'}
+            : 'AI is generating your dating photos'}
         </p>
 
-        {/* Progress bar */}
         <div className="w-full mb-3">
           <div className="flex justify-between text-xs text-zinc-600 mb-2">
             <span>{stage.icon} {stage.label}</span>
@@ -168,15 +176,11 @@ export function ProcessingPageClient() {
           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-none"
-              style={{
-                width: `${displayProgress}%`,
-                background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
-              }}
+              style={{ width: `${displayProgress}%`, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }}
             />
           </div>
         </div>
 
-        {/* Stage steps */}
         <div className="w-full mt-8 space-y-2">
           {STAGES.slice(0, -1).map((s, i) => {
             const done = i < stageIdx
@@ -197,25 +201,13 @@ export function ProcessingPageClient() {
                 <span className={`text-sm font-medium ${done ? 'text-zinc-400' : active ? 'text-white' : 'text-zinc-600'}`}>
                   {s.label}
                 </span>
-                {active && (
-                  <span className="ml-auto text-[10px] text-blue-400 font-medium animate-pulse">In progress</span>
-                )}
-                {done && (
-                  <span className="ml-auto text-[10px] text-zinc-600">Done</span>
-                )}
+                {active && <span className="ml-auto text-[10px] text-blue-400 font-medium animate-pulse">In progress</span>}
+                {done && <span className="ml-auto text-[10px] text-zinc-600">Done</span>}
               </div>
             )
           })}
         </div>
 
-        {/* ETA */}
-        {minutesLeft > 0 && (
-          <p className="text-zinc-600 text-xs mt-6">
-            Estimated time remaining: ~{minutesLeft} {minutesLeft === 1 ? 'minute' : 'minutes'}
-          </p>
-        )}
-
-        {/* Email notice */}
         <div className="mt-10 w-full bg-white/[0.03] border border-white/8 rounded-2xl px-5 py-4 flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
             <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

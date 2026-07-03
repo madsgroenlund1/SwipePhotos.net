@@ -19,6 +19,7 @@ interface Affiliate {
   clicks: number
   conversions: number
   earnings_cents: number
+  metadata?: { email?: string; name?: string; slug?: string }
   users?: { email: string }
 }
 
@@ -148,7 +149,7 @@ export function AdminClient({
               <tbody>
                 {affiliates.map((aff) => (
                   <tr key={aff.id} className="border-b border-white/5 hover:bg-white/2">
-                    <td className="px-5 py-4 text-sm text-zinc-300">{aff.users?.email || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-300">{aff.metadata?.email || aff.users?.email || '—'}</td>
                     <td className="px-5 py-4">
                       <span className={cn(
                         'text-xs px-2.5 py-1 rounded-full capitalize',
