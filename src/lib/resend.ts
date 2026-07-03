@@ -167,6 +167,40 @@ export async function sendReadyEmail(email: string, orderId: string) {
   })
 }
 
+export async function sendAffiliateApplicationEmail(email: string, name: string) {
+  const html = baseLayout(`
+    <!-- Icon -->
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding-bottom:24px;">
+      <div style="width:64px;height:64px;background:linear-gradient(135deg,#059669,#3B82F6);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:28px;">✅</div>
+    </td></tr></table>
+
+    <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#fff;text-align:center;letter-spacing:-0.5px;">Ansøgning modtaget!</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">Hej ${name} — tak for din interesse i at blive SwipePhotos affiliate.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;"><tr>
+      <td style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;">
+        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.7;">Vi gennemgår din ansøgning inden for <strong style="color:#fff;">1-2 hverdage</strong> og vender tilbage med svar.</p>
+        <p style="margin:0;color:#a1a1aa;font-size:14px;line-height:1.7;">Som godkendt affiliate tjener du <strong style="color:#f59e0b;">30% kommission</strong> på hvert salg — udbetalt månedligt.</p>
+      </td>
+    </tr></table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
+      <td style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;">
+        <div style="color:#a1a1aa;font-size:13px;line-height:1.7;">
+          💡 <strong style="color:#fff;">Hvad sker der nu?</strong> Vi vurderer din platform og målgruppe. Har du spørgsmål, er du velkommen til at svare på denne mail.
+        </div>
+      </td>
+    </tr></table>
+  `)
+
+  await getResend().emails.send({
+    from: `SwipePhotos.net <${FROM}>`,
+    to: email,
+    subject: '✅ Vi har modtaget din affiliate-ansøgning!',
+    html,
+  })
+}
+
 export async function sendAffiliateApprovedEmail(email: string, refCode: string) {
   const refLink = `${APP_URL}/?ref=${refCode}`
 

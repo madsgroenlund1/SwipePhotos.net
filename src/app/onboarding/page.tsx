@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 9
+const TOTAL_STEPS = 10
 
 const STYLE_OPTIONS = [
   { id: 'restaurant', label: 'Italian Restaurant', src: '/photos/presets/scene-restaurant.jpg', free: true },
@@ -1064,7 +1064,7 @@ export default function OnboardingPage() {
           {step === 10 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-5">
-                <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
                 <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
               </div>

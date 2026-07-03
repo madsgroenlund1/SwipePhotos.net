@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { sendAffiliateApplicationEmail } from '@/lib/resend'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,13 +12,13 @@ export async function POST(req: NextRequest) {
     }
 
     const slug = (handle || name).replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '')
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
 
     // Idempotent — if this email already applied, return success
     const { data: existing } = await supabase
       .from('affiliates')
       .select('id')
-      .filter('metadata->>email', 'eq', email)
+      .eq('metadata->>email', email)
       .maybeSingle()
 
     if (existing) {
@@ -36,6 +37,8 @@ export async function POST(req: NextRequest) {
       console.error('[affiliate/apply] DB error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    await sendAffiliateApplicationEmail(email, name).catch(console.error)
 
     return NextResponse.json({ ok: true })
   } catch (err) {
