@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { pollFaceSwaps } from '@/lib/faceswap'
 import { sendReadyEmail } from '@/lib/resend'
 
@@ -8,7 +8,7 @@ export const maxDuration = 30
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await params
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   const { data: order } = await supabase
     .from('orders')

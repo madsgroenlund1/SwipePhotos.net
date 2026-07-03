@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
 import { submitFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
 import { fal } from '@fal-ai/client'
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     if (!orderId) return NextResponse.json({ ok: true })
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
 
     // Idempotency
     const { data: existing } = await supabase.from('orders').select('status').eq('id', orderId).single()

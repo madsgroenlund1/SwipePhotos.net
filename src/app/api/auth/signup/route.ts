@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { generateReferralCode } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
 
     // Create or fetch user via magic link
     const { data: authData } = await supabase.auth.admin.createUser({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
 import { trainModel } from '@/lib/replicate'
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const { orderId } = await req.json()
   if (!orderId) return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
 
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single()
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })

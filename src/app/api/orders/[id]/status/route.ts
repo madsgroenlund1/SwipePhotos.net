@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   const { data: order } = await supabase
     .from('orders')

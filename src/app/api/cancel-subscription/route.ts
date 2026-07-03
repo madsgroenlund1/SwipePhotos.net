@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const admin = await createAdminClient()
+    const admin = createAdminClientDirect()
     const { data: userRow } = await admin.from('users').select('stripe_customer_id').eq('id', user.id).single()
 
     if (!userRow?.stripe_customer_id) {

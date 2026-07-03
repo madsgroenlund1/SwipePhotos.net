@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendAffiliateApprovedEmail } from '@/lib/resend'
 import { cookies } from 'next/headers'
 
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   const { data: aff } = await supabase
     .from('affiliates')

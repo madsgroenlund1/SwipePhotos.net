@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
 import { stripe } from '@/lib/stripe'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
 import { submitFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
 import { fal } from '@fal-ai/client'
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not paid yet' }, { status: 402 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
     const { data: order } = await supabase.from('orders').select('status, email').eq('id', orderId).single()
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 

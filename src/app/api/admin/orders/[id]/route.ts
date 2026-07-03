@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
   const { status } = await req.json()
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   await supabase.from('orders').update({ status }).eq('id', id)
   return NextResponse.json({ ok: true })

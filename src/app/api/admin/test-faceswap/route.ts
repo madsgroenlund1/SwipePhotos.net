@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 import { submitFaceSwaps, pollFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
 import { fal } from '@fal-ai/client'
 import { sendReadyEmail } from '@/lib/resend'
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createAdminClient()
+  const supabase = createAdminClientDirect()
 
   const { data: order } = await supabase
     .from('orders')

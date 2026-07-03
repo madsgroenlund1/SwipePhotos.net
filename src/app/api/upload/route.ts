@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 
 // Allow large photo uploads (iPhone photos can be 8MB+)
 export const maxDuration = 60
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing orderId or files' }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
     const uploadedUrls: string[] = []
 
     for (const file of files) {
