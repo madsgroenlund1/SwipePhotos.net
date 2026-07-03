@@ -55,12 +55,28 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const router = useRouter()
 
-  // Auto-refresh while order is in progress
+  // Auto-refresh + poll face-swap jobs while order is in progress
   useEffect(() => {
     const activeStatuses = ['pending', 'processing', 'training', 'generating']
-    const isActive = orders.some(o => activeStatuses.includes(o.status))
-    if (!isActive) return
-    const interval = setInterval(() => router.refresh(), 15000)
+    const activeOrder = orders.find(o => activeStatuses.includes(o.status))
+    if (!activeOrder) return
+
+    const tick = async () => {
+      // If generating, call poll endpoint to collect completed fal.ai jobs
+      if (activeOrder.status === 'generating') {
+        try {
+          const res = await fetch(`/api/orders/${activeOrder.id}/poll`)
+          const data = await res.json()
+          if (data.status === 'ready') {
+            router.refresh()
+            return
+          }
+        } catch { /* ignore, refresh will handle it */ }
+      }
+      router.refresh()
+    }
+
+    const interval = setInterval(tick, 10000)
     return () => clearInterval(interval)
   }, [orders, router])
 

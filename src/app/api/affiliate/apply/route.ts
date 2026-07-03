@@ -11,8 +11,18 @@ export async function POST(req: NextRequest) {
     }
 
     const slug = (handle || name).replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '')
-
     const supabase = await createAdminClient()
+
+    // Idempotent — if this email already applied, return success
+    const { data: existing } = await supabase
+      .from('affiliates')
+      .select('id')
+      .filter('metadata->>email', 'eq', email)
+      .maybeSingle()
+
+    if (existing) {
+      return NextResponse.json({ ok: true })
+    }
 
     const { error } = await supabase.from('affiliates').insert({
       status: 'pending',
