@@ -110,7 +110,7 @@ export async function generatePhotos(loraUrl: string): Promise<string[]> {
           input: {
             prompt,
             lora_weights: loraUrl,
-            num_outputs: 1,
+            num_outputs: 5,
             aspect_ratio: '3:4',
             output_format: 'webp',
             output_quality: 90,

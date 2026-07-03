@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
 
-const MODEL = 'fal-ai/instantid'
+const MODEL = 'fal-ai/pulid'
 
 export const maxDuration = 30
 
@@ -30,12 +30,13 @@ export async function GET(req: NextRequest) {
         if (s === 'COMPLETED') {
           completedCount++
           const result = await fal.queue.result(MODEL, { requestId }) as {
-            data?: { image?: { url: string }; images?: Array<{ url: string }> }
+            data?: { images?: Array<{ url: string }>; image?: { url: string } }
             images?: Array<{ url: string }>
             image?: { url: string }
           }
-          const d = result?.data ?? result as typeof result['data']
-          const url = d?.image?.url || d?.images?.[0]?.url
+          // PuLID returns { images: [{ url }] } — fall back to other shapes just in case
+          const d = result?.data ?? result
+          const url = d?.images?.[0]?.url || (d as { image?: { url: string } })?.image?.url
           if (url) photos[style] = url
         } else if (s === 'FAILED') {
           completedCount++ // count as done even if failed
