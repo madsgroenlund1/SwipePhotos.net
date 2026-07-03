@@ -174,20 +174,20 @@ export async function sendAffiliateApplicationEmail(email: string, name: string)
       <div style="width:64px;height:64px;background:linear-gradient(135deg,#059669,#3B82F6);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:28px;">✅</div>
     </td></tr></table>
 
-    <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#fff;text-align:center;letter-spacing:-0.5px;">Ansøgning modtaget!</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">Hej ${name} — tak for din interesse i at blive SwipePhotos affiliate.</p>
+    <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#fff;text-align:center;letter-spacing:-0.5px;">Application received!</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">Hi ${name} — thanks for your interest in becoming a SwipePhotos affiliate.</p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;"><tr>
       <td style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px 24px;">
-        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.7;">Vi gennemgår din ansøgning inden for <strong style="color:#fff;">1-2 hverdage</strong> og vender tilbage med svar.</p>
-        <p style="margin:0;color:#a1a1aa;font-size:14px;line-height:1.7;">Som godkendt affiliate tjener du <strong style="color:#f59e0b;">30% kommission</strong> på hvert salg — udbetalt månedligt.</p>
+        <p style="margin:0 0 12px;color:#a1a1aa;font-size:14px;line-height:1.7;">We'll review your application within <strong style="color:#fff;">1–2 business days</strong> and get back to you.</p>
+        <p style="margin:0;color:#a1a1aa;font-size:14px;line-height:1.7;">Once approved, you'll earn <strong style="color:#f59e0b;">30% commission</strong> on every sale — paid out monthly.</p>
       </td>
     </tr></table>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
       <td style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px 20px;">
         <div style="color:#a1a1aa;font-size:13px;line-height:1.7;">
-          💡 <strong style="color:#fff;">Hvad sker der nu?</strong> Vi vurderer din platform og målgruppe. Har du spørgsmål, er du velkommen til at svare på denne mail.
+          💡 <strong style="color:#fff;">What happens next?</strong> We'll review your platform and audience. If you have any questions, feel free to reply to this email.
         </div>
       </td>
     </tr></table>
@@ -196,7 +196,7 @@ export async function sendAffiliateApplicationEmail(email: string, name: string)
   await getResend().emails.send({
     from: `SwipePhotos.net <${FROM}>`,
     to: email,
-    subject: '✅ Vi har modtaget din affiliate-ansøgning!',
+    subject: '✅ We received your affiliate application!',
     html,
   })
 }
