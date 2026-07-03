@@ -6,6 +6,7 @@ import { trainModel } from '@/lib/replicate'
 import Stripe from 'stripe'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -28,9 +29,9 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Check if already handled (idempotency — verify endpoint may have run first)
+    // Check if already handled (idempotency — skip only if training has actually started)
     const { data: existing } = await supabase.from('orders').select('status').eq('id', orderId).single()
-    if (existing && existing.status !== 'pending') {
+    if (existing && !['pending', 'processing'].includes(existing.status)) {
       console.log('[stripe webhook] Order already handled, status:', existing.status)
       return NextResponse.json({ ok: true })
     }
