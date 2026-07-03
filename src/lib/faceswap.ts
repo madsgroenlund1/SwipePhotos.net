@@ -9,8 +9,14 @@ const REFERENCE_PHOTOS: Array<{ url: string; scene: string }> = [
   // Museum / formal event (grey suit)
   { scene: 'formal', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-suit-1.jpg' },
   { scene: 'formal', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-suit-2.jpg' },
-  // City / metro
-  { scene: 'city', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-metro.jpg' },
+  // Metro / city (green jacket, escalator)
+  { scene: 'city',   url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-metro.jpg' },
+  // Metro / city (green jacket, looking back in train)
+  { scene: 'city',   url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/670580191.jpg' },
+  // Additional model shots
+  { scene: 'casual', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/536607362.jpg' },
+  { scene: 'casual', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/536640715.jpg' },
+  { scene: 'casual', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/671193930.jpg' },
 ]
 
 type FaceSwapResult = {
