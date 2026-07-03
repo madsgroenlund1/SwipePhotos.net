@@ -147,13 +147,16 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
             </div>
           )}
 
-          {/* Photos grid */}
-          {latestOrder.status === 'ready' && latestOrder.generated_photos?.length > 0 && (
+          {/* Photos grid — show progressively as face-swaps complete */}
+          {['ready', 'generating'].includes(latestOrder.status) && latestOrder.generated_photos?.length > 0 && (
             <>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Your Photos</h2>
-                  <p className="text-zinc-500 text-sm mt-0.5">{latestOrder.generated_photos.length} photos generated</p>
+                  <p className="text-zinc-500 text-sm mt-0.5">
+                    {latestOrder.generated_photos.length} photos ready
+                    {latestOrder.status === 'generating' && ' — more coming…'}
+                  </p>
                 </div>
                 <button
                   onClick={() => downloadAll(latestOrder.generated_photos)}

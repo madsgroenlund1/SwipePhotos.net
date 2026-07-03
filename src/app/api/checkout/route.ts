@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, PACKAGES, PackageId } from '@/lib/stripe'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
     }
 
-    const supabase = await createAdminClient()
+    const supabase = createAdminClientDirect()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
     // Look up existing user (optional — new users won't have an account yet)
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    if (orderError) {
+    if (orderError || !order?.id) {
       console.error('[checkout] Order insert error:', orderError)
-      // Continue anyway — we'll match by session later
+      return NextResponse.json({ error: 'Could not create order. Please try again.' }, { status: 500 })
     }
 
     const session = await stripe.checkout.sessions.create({

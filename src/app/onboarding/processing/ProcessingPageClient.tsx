@@ -29,7 +29,7 @@ export function ProcessingPageClient() {
 
   // Start polling for order status immediately — face-swap is fast (~30-60 sec)
   useEffect(() => {
-    if (!orderId) return
+    if (!orderId || orderId === 'undefined') { setFailed(true); return }
 
     let stopped = false
     let attempts = 0
