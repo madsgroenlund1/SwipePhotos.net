@@ -51,10 +51,10 @@ export async function POST(req: NextRequest) {
 
     if (email) await sendWelcomeEmail(email, orderId).catch(console.error)
 
-    const { data: uploads } = await supabase
-      .from('uploads')
-      .select('file_url')
-      .eq('order_id', orderId)
+    const [{ data: uploads }, { data: orderRow }] = await Promise.all([
+      supabase.from('uploads').select('file_url').eq('order_id', orderId),
+      supabase.from('orders').select('selected_presets').eq('id', orderId).single(),
+    ])
 
     if (!uploads?.length) {
       console.error('[stripe webhook] No uploads for order', orderId)
@@ -64,14 +64,15 @@ export async function POST(req: NextRequest) {
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
     const faceUrl = pickBestFacePhoto(imageUrls)
+    const preferredScene = (orderRow?.selected_presets as string[] | null)?.[0]
 
     try {
       // Upload face to fal.ai storage once, reuse across all jobs
       const falFaceUrl = await fal.storage.upload(await fetch(faceUrl).then(r => r.blob())
         .then(b => new File([b], 'face.jpg', { type: 'image/jpeg' })))
 
-      // Submit all jobs to fal.ai queue — returns immediately, no timeout risk
-      const requestIds = await submitFaceSwaps(falFaceUrl)
+      // Submit jobs — preferred scene first so preview photos match customer's style
+      const requestIds = await submitFaceSwaps(falFaceUrl, preferredScene)
 
       if (!requestIds.length) throw new Error('No jobs submitted')
 

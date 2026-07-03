@@ -53,6 +53,7 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
   const [cancelling, setCancelling] = useState(false)
   const [cancelled, setCancelled] = useState(initialCancelled)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showAllPhotos, setShowAllPhotos] = useState(false)
   const router = useRouter()
 
   // Auto-refresh + poll face-swap jobs while order is in progress
@@ -147,49 +148,97 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
             </div>
           )}
 
-          {/* Photos grid — show progressively as face-swaps complete */}
-          {['ready', 'generating'].includes(latestOrder.status) && latestOrder.generated_photos?.length > 0 && (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Your Photos</h2>
-                  <p className="text-zinc-500 text-sm mt-0.5">
-                    {latestOrder.generated_photos.length} photos ready
-                    {latestOrder.status === 'generating' && ' — more coming…'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => downloadAll(latestOrder.generated_photos)}
-                  className="flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all"
-                >
-                  <Download className="w-4 h-4" />
-                  Download All
-                </button>
-              </div>
+          {/* Photos — first 5 as preview, expand to all */}
+          {['ready', 'generating'].includes(latestOrder.status) && latestOrder.generated_photos?.length > 0 && (() => {
+            const allPhotos = latestOrder.generated_photos
+            const PREVIEW_COUNT = 5
+            const visiblePhotos = showAllPhotos ? allPhotos : allPhotos.slice(0, PREVIEW_COUNT)
+            const hasMore = allPhotos.length > PREVIEW_COUNT && !showAllPhotos
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {latestOrder.generated_photos.map((photo, i) => (
-                  <div
-                    key={i}
-                    className="aspect-[3/4] rounded-2xl overflow-hidden relative group cursor-pointer bg-zinc-900"
-                    onClick={() => setLightbox(photo.file_url)}
-                  >
-                    <img src={photo.file_url} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-end justify-end p-3 opacity-0 group-hover:opacity-100">
-                      <a
-                        href={photo.file_url}
-                        download
-                        onClick={e => e.stopPropagation()}
-                        className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg"
-                      >
-                        <Download className="w-4 h-4 text-black" />
-                      </a>
+            return (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Your Photos</h2>
+                    <p className="text-zinc-500 text-sm mt-0.5">
+                      {showAllPhotos ? `${allPhotos.length} photos` : `${Math.min(PREVIEW_COUNT, allPhotos.length)} preview photos`}
+                      {latestOrder.status === 'generating' && ' — more generating…'}
+                    </p>
+                  </div>
+                  {showAllPhotos && (
+                    <button
+                      onClick={() => downloadAll(allPhotos)}
+                      className="flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download All
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {visiblePhotos.map((photo, i) => (
+                    <div
+                      key={i}
+                      className="aspect-[3/4] rounded-2xl overflow-hidden relative group cursor-pointer bg-zinc-900"
+                      onClick={() => setLightbox(photo.file_url)}
+                    >
+                      <img src={photo.file_url} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-end justify-end p-3 opacity-0 group-hover:opacity-100">
+                        <a
+                          href={photo.file_url}
+                          download
+                          onClick={e => e.stopPropagation()}
+                          className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg"
+                        >
+                          <Download className="w-4 h-4 text-black" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Unlock all photos CTA */}
+                {hasMore && (
+                  <div className="mt-6 text-center">
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/10 to-purple-600/5 border border-blue-500/20 p-6">
+                      <p className="text-white font-semibold mb-1">
+                        {allPhotos.length - PREVIEW_COUNT} more photos waiting for you
+                      </p>
+                      <p className="text-zinc-500 text-sm mb-4">These are your 5 preview photos. Unlock all {allPhotos.length} to download.</p>
+                      <div className="flex gap-3 justify-center flex-wrap">
+                        <button
+                          onClick={() => setShowAllPhotos(true)}
+                          className="bg-blue-600 hover:brightness-110 text-white font-semibold px-6 py-3 rounded-full transition-all"
+                        >
+                          See all {allPhotos.length} photos →
+                        </button>
+                        <button
+                          onClick={() => downloadAll(visiblePhotos)}
+                          className="flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium px-5 py-3 rounded-full transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download preview
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                )}
+
+                {showAllPhotos && (
+                  <div className="mt-4 flex gap-3 flex-wrap">
+                    <button
+                      onClick={() => downloadAll(allPhotos)}
+                      className="flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download All {allPhotos.length} Photos
+                    </button>
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 

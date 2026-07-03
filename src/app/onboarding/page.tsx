@@ -317,7 +317,7 @@ export default function OnboardingPage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle }),
       })
       const data = await res.json()
       console.log('[checkout response]', data)
@@ -1080,7 +1080,7 @@ export default function OnboardingPage() {
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '' }),
+                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle }),
                       })
                       const data = await res.json()
                       if (!res.ok || data.error) {

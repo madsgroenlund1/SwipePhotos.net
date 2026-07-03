@@ -40,10 +40,18 @@ type FaceSwapResult = {
 }
 
 // Submit all face-swap jobs to fal.ai queue and return request IDs immediately.
-// Does NOT wait for results — use pollFaceSwaps() to collect them.
-export async function submitFaceSwaps(customerPhotoUrl: string): Promise<string[]> {
+// preferredScene: put photos from this scene first so the dashboard preview
+// shows the customer's chosen style.
+export async function submitFaceSwaps(customerPhotoUrl: string, preferredScene?: string): Promise<string[]> {
+  const ordered = preferredScene
+    ? [
+        ...REFERENCE_PHOTOS.filter(r => r.scene === preferredScene),
+        ...REFERENCE_PHOTOS.filter(r => r.scene !== preferredScene),
+      ]
+    : REFERENCE_PHOTOS
+
   const jobs = await Promise.allSettled(
-    REFERENCE_PHOTOS.map((ref) =>
+    ordered.map((ref) =>
       fal.queue.submit('fal-ai/face-swap', {
         input: {
           base_image_url: ref.url,

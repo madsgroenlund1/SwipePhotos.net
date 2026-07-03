@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
 
     if (email) await sendWelcomeEmail(email, orderId).catch(console.error)
 
-    const { data: uploads } = await supabase.from('uploads').select('file_url').eq('order_id', orderId)
+    const [{ data: uploads }, { data: orderFull }] = await Promise.all([
+      supabase.from('uploads').select('file_url').eq('order_id', orderId),
+      supabase.from('orders').select('selected_presets').eq('id', orderId).single(),
+    ])
     if (!uploads?.length) {
       console.error('[verify] No uploads for order', orderId)
       await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
@@ -49,12 +52,13 @@ export async function POST(req: NextRequest) {
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
     const faceUrl = pickBestFacePhoto(imageUrls)
+    const preferredScene = (orderFull?.selected_presets as string[] | null)?.[0]
 
     try {
       const falFaceUrl = await fal.storage.upload(
         await fetch(faceUrl).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
       )
-      const requestIds = await submitFaceSwaps(falFaceUrl)
+      const requestIds = await submitFaceSwaps(falFaceUrl, preferredScene)
       if (!requestIds.length) throw new Error('No jobs submitted')
 
       await supabase.from('orders').update({
