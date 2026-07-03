@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase.from('affiliates').insert({
       status: 'pending',
-      referral_code: slug,
       metadata: { name, email, platform, handle, audienceSize, contentType, slug },
       clicks: 0,
       conversions: 0,
