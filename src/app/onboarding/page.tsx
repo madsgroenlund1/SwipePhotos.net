@@ -175,7 +175,8 @@ export default function OnboardingPage() {
         canvas.height = h
         canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
         canvas.toBlob(blob => {
-          resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file)
+          // Fall back to original if blob is null or empty (can happen on mobile Safari)
+          resolve((blob && blob.size > 0) ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file)
         }, 'image/jpeg', quality)
       }
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
