@@ -718,7 +718,7 @@ export default function OnboardingPage() {
                 {hasGenerated ? (
                   <button
                     onClick={() => {
-                      setPickedPreviewUrl(generatedArray[carouselIdx] ?? generatedArray[0])
+                      setPickedPreviewUrl(selectedAiPhoto)
                       next()
                     }}
                     className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base"

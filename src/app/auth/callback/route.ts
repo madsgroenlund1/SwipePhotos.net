@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
       { id: user.id, email: user.email },
       { onConflict: 'id', ignoreDuplicates: true }
     )
+    // Link any orders created by email (Google OAuth flow) to this user account
+    if (user.email) {
+      await admin.from('orders').update({ user_id: user.id }).eq('email', user.email).is('user_id', null)
+    }
     return NextResponse.redirect(`${origin}${next}`)
   }
 

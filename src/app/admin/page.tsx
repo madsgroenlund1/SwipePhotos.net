@@ -30,7 +30,7 @@ export default async function AdminPage() {
   ])
 
   const revenue = (revenueOrders || []).reduce((acc, o) => {
-    const prices: Record<string, number> = { starter: 19, popular: 39, elite: 79 }
+    const prices: Record<string, number> = { starter: 19, popular: 39, elite: 79, starter_yearly: 114, popular_yearly: 234, elite_yearly: 474 }
     return acc + (prices[o.package_type] || 0)
   }, 0)
 
