@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { DashboardClient } from './DashboardClient'
+import { stripe } from '@/lib/stripe'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -15,12 +16,30 @@ export default async function DashboardPage() {
       .select('*, generated_photos(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase.from('users').select('referral_code').eq('id', user.id).single(),
+    supabase.from('users').select('referral_code, stripe_customer_id').eq('id', user.id).single(),
   ])
 
   const refCode = userRow?.referral_code
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
   const refLink = refCode ? `${appUrl}/?ref=${refCode}` : null
+
+  // Check real subscription status from Stripe so cancel button shows correctly after refresh
+  let subscriptionCancelledAtPeriodEnd = false
+  let hasActiveSubscription = false
+  if (userRow?.stripe_customer_id) {
+    try {
+      const subs = await stripe.subscriptions.list({
+        customer: userRow.stripe_customer_id,
+        limit: 1,
+      })
+      if (subs.data.length > 0) {
+        hasActiveSubscription = true
+        subscriptionCancelledAtPeriodEnd = subs.data[0].cancel_at_period_end
+      }
+    } catch {
+      // Stripe error — fall back to showing cancel button
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -37,7 +56,12 @@ export default async function DashboardPage() {
         </div>
       </nav>
 
-      <DashboardClient orders={orders || []} refLink={refLink} />
+      <DashboardClient
+        orders={orders || []}
+        refLink={refLink}
+        initialCancelled={subscriptionCancelledAtPeriodEnd}
+        hasActiveSubscription={hasActiveSubscription}
+      />
     </div>
   )
 }

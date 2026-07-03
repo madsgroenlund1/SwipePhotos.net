@@ -41,11 +41,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   failed:     { label: 'Failed',     color: 'text-red-400   bg-red-400/10   border-red-400/20',   icon: <X    className="w-3.5 h-3.5" />, desc: 'Something went wrong' },
 }
 
-export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink: string | null }) {
+export function DashboardClient({ orders, refLink, initialCancelled = false, hasActiveSubscription = false }: {
+  orders: Order[]
+  refLink: string | null
+  initialCancelled?: boolean
+  hasActiveSubscription?: boolean
+}) {
   const [copied, setCopied] = useState(false)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
-  const [cancelled, setCancelled] = useState(false)
+  const [cancelled, setCancelled] = useState(initialCancelled)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   async function handleCancelSubscription() {
@@ -188,8 +193,8 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
         </section>
       )}
 
-      {/* Manage Subscription */}
-      <section className="border border-white/8 rounded-2xl p-6">
+      {/* Manage Subscription — only shown if they have an active or recently cancelled subscription */}
+      {hasActiveSubscription && <section className="border border-white/8 rounded-2xl p-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h3 className="text-white font-bold text-base mb-0.5">Subscription</h3>
@@ -229,7 +234,7 @@ export function DashboardClient({ orders, refLink }: { orders: Order[]; refLink:
             <span className="text-zinc-500 text-sm border border-white/8 px-3 py-1.5 rounded-xl">Cancelled</span>
           )}
         </div>
-      </section>
+      </section>}
 
       <div className="h-4" />
 

@@ -36,6 +36,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
+    // Save stripe_customer_id to users table (critical for cancel-subscription to work)
+    const stripeCustomerId = typeof session.customer === 'string' ? session.customer : null
+    if (stripeCustomerId && email) {
+      await supabase.from('users').update({ stripe_customer_id: stripeCustomerId }).eq('email', email)
+    }
+
     // Update order status + email
     await supabase
       .from('orders')
