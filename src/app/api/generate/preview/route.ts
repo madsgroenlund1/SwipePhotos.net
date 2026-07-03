@@ -7,13 +7,15 @@ const SUPABASE = 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/pub
 
 // One representative reference photo per style for preview
 const STYLE_REFERENCE: Record<string, string> = {
-  restaurant: `${SUPABASE}/ref-suit-1.jpg`,
   formal:     `${SUPABASE}/ref-suit-2.jpg`,
   rooftop:    `${SUPABASE}/ref-suit-1.jpg`,
-  beach:      `${SUPABASE}/536607362.jpg`,
-  casual:     `${SUPABASE}/536640715.jpg`,
   city:       `${SUPABASE}/ref-metro.jpg`,
   social:     `${SUPABASE}/670580191.jpg`,
+  casual:     `${SUPABASE}/tom-casual.webp`,
+  outdoor:    `${SUPABASE}/urban-wall-1.jpg`,
+  nature:     `${SUPABASE}/kyle-nature.webp`,
+  restaurant: `${SUPABASE}/radu-restaurant.webp`,
+  beach:      `${SUPABASE}/salvatore-nature.webp`,
 }
 
 const DEFAULT_REF = `${SUPABASE}/ref-suit-1.jpg`

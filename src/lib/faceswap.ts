@@ -5,13 +5,33 @@ fal.config({ credentials: process.env.FAL_KEY })
 const SUPABASE = 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references'
 
 export const REFERENCE_PHOTOS: Array<{ url: string; scene: string }> = [
-  { scene: 'formal', url: `${SUPABASE}/ref-suit-1.jpg` },
-  { scene: 'formal', url: `${SUPABASE}/ref-suit-2.jpg` },
-  { scene: 'city',   url: `${SUPABASE}/ref-metro.jpg` },
-  { scene: 'city',   url: `${SUPABASE}/670580191.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/536607362.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/536640715.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/671193930.jpg` },
+  // Formal / suit
+  { scene: 'formal',     url: `${SUPABASE}/ref-suit-1.jpg` },
+  { scene: 'formal',     url: `${SUPABASE}/ref-suit-2.jpg` },
+  // City / urban
+  { scene: 'city',       url: `${SUPABASE}/ref-metro.jpg` },
+  { scene: 'city',       url: `${SUPABASE}/670580191.jpg` },
+  { scene: 'city',       url: `${SUPABASE}/brick-city-1.jpg` },
+  { scene: 'city',       url: `${SUPABASE}/alan-city.webp` },
+  { scene: 'city',       url: `${SUPABASE}/vibhor-city.webp` },
+  // Casual / outdoor urban
+  { scene: 'casual',     url: `${SUPABASE}/536607362.jpg` },
+  { scene: 'casual',     url: `${SUPABASE}/536640715.jpg` },
+  { scene: 'casual',     url: `${SUPABASE}/671193930.jpg` },
+  { scene: 'casual',     url: `${SUPABASE}/brick-casual-1.jpg` },
+  { scene: 'casual',     url: `${SUPABASE}/tom-casual.webp` },
+  { scene: 'casual',     url: `${SUPABASE}/casual-city-1.webp` },
+  // Outdoor / urban street
+  { scene: 'outdoor',    url: `${SUPABASE}/urban-wall-1.jpg` },
+  { scene: 'outdoor',    url: `${SUPABASE}/urban-wall-2.jpg` },
+  { scene: 'outdoor',    url: `${SUPABASE}/rupert-outdoor.webp` },
+  // Nature / park / garden
+  { scene: 'nature',     url: `${SUPABASE}/kyle-nature.webp` },
+  { scene: 'nature',     url: `${SUPABASE}/salvatore-nature.webp` },
+  { scene: 'nature',     url: `${SUPABASE}/garden-casual-1.webp` },
+  // Restaurant / cafe
+  { scene: 'restaurant', url: `${SUPABASE}/radu-restaurant.webp` },
+  { scene: 'restaurant', url: `${SUPABASE}/headshot-restaurant.webp` },
 ]
 
 type FaceSwapResult = {
