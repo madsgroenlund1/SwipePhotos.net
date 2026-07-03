@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendWelcomeEmail } from '@/lib/resend'
-import { trainModel } from '@/lib/replicate'
+import { sendWelcomeEmail, sendReadyEmail } from '@/lib/resend'
+import { runFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
 import Stripe from 'stripe'
 
 export const runtime = 'nodejs'
@@ -29,26 +29,25 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Check if already handled (idempotency — skip only if training has actually started)
+    // Idempotency — skip if already past processing
     const { data: existing } = await supabase.from('orders').select('status').eq('id', orderId).single()
     if (existing && !['pending', 'processing'].includes(existing.status)) {
       console.log('[stripe webhook] Order already handled, status:', existing.status)
       return NextResponse.json({ ok: true })
     }
 
-    // Save stripe_customer_id to users table (critical for cancel-subscription to work)
+    // Save stripe_customer_id for cancel-subscription to work
     const stripeCustomerId = typeof session.customer === 'string' ? session.customer : null
     if (stripeCustomerId && email) {
       await supabase.from('users').update({ stripe_customer_id: stripeCustomerId }).eq('email', email)
     }
 
-    // Update order status + email
+    // Update order status
     await supabase
       .from('orders')
       .update({ status: 'processing', stripe_session_id: session.id, ...(email ? { email } : {}) })
       .eq('id', orderId)
 
-    // Send welcome email
     if (email) await sendWelcomeEmail(email, orderId).catch(console.error)
 
     // Fetch uploaded photos
@@ -59,20 +58,34 @@ export async function POST(req: NextRequest) {
 
     if (!uploads?.length) {
       console.error('[stripe webhook] No uploads for order', orderId)
+      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
       return NextResponse.json({ ok: true })
     }
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
-    const webhookUrl = `${appUrl}/api/webhooks/replicate?orderId=${orderId}&email=${encodeURIComponent(email || '')}`
+    const faceUrl = pickBestFacePhoto(imageUrls)
 
-    // Start training — Replicate calls our webhook when done (no polling needed)
+    // Run face-swaps against reference library (~20–40 sec in parallel)
+    await supabase.from('orders').update({ status: 'generating' }).eq('id', orderId)
+
     try {
-      await supabase.from('orders').update({ status: 'training' }).eq('id', orderId)
-      const training = await trainModel(imageUrls, orderId, webhookUrl)
-      await supabase.from('orders').update({ replicate_training_id: training.id }).eq('id', orderId)
+      const photoUrls = await runFaceSwaps(faceUrl)
+
+      if (!photoUrls.length) {
+        throw new Error('Face-swap returned no results')
+      }
+
+      for (const url of photoUrls) {
+        await supabase.from('generated_photos').insert({ order_id: orderId, file_url: url })
+      }
+
+      await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
+
+      if (email) await sendReadyEmail(email, orderId).catch(console.error)
+
+      console.log(`[stripe webhook] Done — ${photoUrls.length} photos for order ${orderId}`)
     } catch (err) {
-      console.error('[stripe webhook] Training start failed:', err)
+      console.error('[stripe webhook] Face-swap failed:', err)
       await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
     }
   }
