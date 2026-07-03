@@ -89,13 +89,17 @@ export default function AffiliatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${res.status}`)
+      }
       const newSlug = form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '')
-      localStorage.setItem('sw_affiliate_slug', newSlug)
+      try { localStorage.setItem('sw_affiliate_slug', newSlug) } catch { /* incognito/Safari */ }
       setSavedSlug(newSlug)
       setSubmitted(true)
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      console.error('[affiliate] submit error:', err)
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }
