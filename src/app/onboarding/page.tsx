@@ -117,7 +117,7 @@ export default function OnboardingPage() {
   const [photos, setPhotos] = useState<File[]>([])
   const [dragOver, setDragOver] = useState(false)
   const [hasTattoos, setHasTattoos] = useState<boolean | null>(null)
-  const [selectedStyle, setSelectedStyle] = useState<string>('outdoor')
+  const [selectedStyle, setSelectedStyle] = useState<string>('restaurant')
   const [progress, setProgress] = useState(0)
   const [didYouKnowIdx, setDidYouKnowIdx] = useState(0)
   const [carouselIdx, setCarouselIdx] = useState(0)
@@ -528,8 +528,8 @@ export default function OnboardingPage() {
                 <div className="mb-4">
                   <p className="text-white text-sm font-semibold mb-2">Visible tattoos in your photos?</p>
                   <div className="flex gap-2">
-                    <button onPointerDown={() => setHasTattoos(false)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors', hasTattoos === false ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>No</button>
-                    <button onPointerDown={() => setHasTattoos(true)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors', hasTattoos === true ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>Yes</button>
+                    <button onClick={() => setHasTattoos(false)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border', hasTattoos === false ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>No</button>
+                    <button onClick={() => setHasTattoos(true)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border', hasTattoos === true ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>Yes</button>
                   </div>
                 </div>
               </div>
@@ -682,7 +682,7 @@ export default function OnboardingPage() {
                   {/* Style label badge */}
                   <div className="absolute top-3 left-3 z-20">
                     <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-                      {STYLE_OPTIONS.find(s => s.id === (PREVIEW_INDICES[carouselIdx] ?? selectedStyle))?.label ?? STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
+                      {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
                     </span>
                   </div>
 

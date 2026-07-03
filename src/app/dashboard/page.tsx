@@ -10,7 +10,7 @@ export default async function DashboardPage() {
 
   if (!user) redirect('/auth/signin')
 
-  const [{ data: orders }, { data: userRow }] = await Promise.all([
+  const [{ data: ordersByUserId }, { data: userRow }] = await Promise.all([
     supabase
       .from('orders')
       .select('*, generated_photos(*)')
@@ -18,6 +18,26 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false }),
     supabase.from('users').select('referral_code, stripe_customer_id').eq('id', user.id).single(),
   ])
+
+  // Also fetch orders matched by email (for users who paid without being logged in)
+  let ordersByEmail: typeof ordersByUserId = []
+  if (user.email) {
+    const { data } = await supabase
+      .from('orders')
+      .select('*, generated_photos(*)')
+      .eq('email', user.email)
+      .is('user_id', null)
+      .order('created_at', { ascending: false })
+    ordersByEmail = data || []
+    // Link these orphaned orders to the user so future queries find them
+    if (ordersByEmail.length > 0) {
+      await supabase.from('orders').update({ user_id: user.id }).eq('email', user.email).is('user_id', null)
+    }
+  }
+
+  const allOrders = [...(ordersByUserId || []), ...ordersByEmail]
+  const seen = new Set<string>()
+  const orders = allOrders.filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
 
   const refCode = userRow?.referral_code
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'

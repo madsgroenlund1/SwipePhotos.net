@@ -110,7 +110,7 @@ export async function generatePhotos(loraUrl: string): Promise<string[]> {
           input: {
             prompt,
             lora_weights: loraUrl,
-            num_outputs: 5,
+            num_outputs: 4,
             aspect_ratio: '3:4',
             output_format: 'webp',
             output_quality: 90,
@@ -130,6 +130,8 @@ export async function generatePhotos(loraUrl: string): Promise<string[]> {
     }
     const output = r.value
     const urls = Array.isArray(output) ? output : [output]
-    return (urls as string[]).filter(Boolean)
+    return urls
+      .map(u => (typeof u === 'string' ? u : (u as { url?: () => string })?.url?.() ?? String(u)))
+      .filter(u => u && u.startsWith('http'))
   })
 }

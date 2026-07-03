@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Download, Copy, Check, X, Clock, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -52,6 +53,16 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
   const [cancelling, setCancelling] = useState(false)
   const [cancelled, setCancelled] = useState(initialCancelled)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const router = useRouter()
+
+  // Auto-refresh while order is in progress
+  useEffect(() => {
+    const activeStatuses = ['pending', 'processing', 'training', 'generating']
+    const isActive = orders.some(o => activeStatuses.includes(o.status))
+    if (!isActive) return
+    const interval = setInterval(() => router.refresh(), 15000)
+    return () => clearInterval(interval)
+  }, [orders, router])
 
   async function handleCancelSubscription() {
     setCancelling(true)
@@ -173,7 +184,7 @@ export function DashboardClient({ orders, refLink, initialCancelled = false, has
               return (
                 <div key={order.id} className="bg-[#111] border border-white/8 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-white text-sm font-medium capitalize">{order.package_type} Package</p>
+                    <p className="text-white text-sm font-medium">{order.package_type ? order.package_type.charAt(0).toUpperCase() + order.package_type.slice(1) : 'Standard'} Package</p>
                     <p className="text-zinc-600 text-xs mt-0.5">{new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   </div>
                   <div className="flex items-center gap-3">
