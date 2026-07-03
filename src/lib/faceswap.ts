@@ -3,33 +3,14 @@ import { fal } from '@fal-ai/client'
 fal.config({ credentials: process.env.FAL_KEY })
 
 // ─── Reference photo library ──────────────────────────────────────────────────
-// Professional male model photos in varied scenes.
-// base_image_url = the target scene/body (replace with your curated library)
-// Tip: upload your own photos to Supabase Storage for full control.
+// Curated male model photos stored in Supabase Storage.
+// Add more via Supabase dashboard → Storage → references bucket.
 const REFERENCE_PHOTOS: Array<{ url: string; scene: string }> = [
-  // Restaurant / dining
-  { scene: 'restaurant', url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=768&q=90' },
-  { scene: 'restaurant', url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=768&q=90' },
-  // Rooftop / city
-  { scene: 'rooftop',    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=768&q=90' },
-  { scene: 'rooftop',    url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=768&q=90' },
-  // Beach / outdoor
-  { scene: 'beach',      url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=768&q=90' },
-  { scene: 'beach',      url: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=768&q=90' },
-  // Formal / blazer
-  { scene: 'formal',     url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=768&q=90' },
-  { scene: 'formal',     url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=768&q=90' },
-  // City / street
-  { scene: 'city',       url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=768&q=90' },
-  { scene: 'city',       url: 'https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=768&q=90' },
-  // Casual / lifestyle
-  { scene: 'casual',     url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=768&q=90' },
-  { scene: 'casual',     url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=768&q=90' },
-  // Social / bar
-  { scene: 'social',     url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=768&q=90' },
-  { scene: 'social',     url: 'https://images.unsplash.com/photo-1542178243-bc20204b769f?w=768&q=90' },
-  // Nature / travel
-  { scene: 'nature',     url: 'https://images.unsplash.com/photo-1530268729831-4b0b9e170218?w=768&q=90' },
+  // Museum / formal event (grey suit)
+  { scene: 'formal', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-suit-1.jpg' },
+  { scene: 'formal', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-suit-2.jpg' },
+  // City / metro
+  { scene: 'city', url: 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references/ref-metro.jpg' },
 ]
 
 type FaceSwapResult = {
