@@ -132,18 +132,17 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
+  const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const targetProgressRef = useRef(0)
   const displayProgressRef = useRef(0)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
-  const PREVIEW_INDICES = ['restaurant', 'formal', 'rooftop', 'beach', 'v0', 'v1', 'v2', 'v3', 'v4']
   const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
-  const generatedArray = PREVIEW_INDICES.map(k => generatedPhotos[k]).filter(Boolean) as string[]
+  const generatedArray = Object.values(generatedPhotos).filter(Boolean) as string[]
   const hasGenerated = generatedArray.length > 0
-  const selectedAiPhoto = hasGenerated
-    ? (generatedArray[carouselIdx] ?? generatedArray[0])
-    : fallbackPhotos[carouselIdx % fallbackPhotos.length]
+  const selectedAiPhoto = pickedPreviewUrl
+    ?? (hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : fallbackPhotos[carouselIdx % fallbackPhotos.length])
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -191,6 +190,8 @@ export default function OnboardingPage() {
     setDidYouKnowIdx(0)
     setGeneratedPhotos({})
     setGenError(null)
+    setPickedPreviewUrl(null)
+    setCarouselIdx(0)
     targetProgressRef.current = 0
     displayProgressRef.current = 0
 
@@ -601,16 +602,16 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 5: Preview carousel ──────────────────────────── */}
+          {/* ── STEP 5: Pick your favourite preview ──────────────── */}
           {step === 5 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-3">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-0">
-                  {hasGenerated ? 'Your preview photos are ready!' : 'This is what you\'ll get'}
+                  {hasGenerated ? 'Pick your favourite!' : 'This is what you\'ll get'}
                 </h2>
                 {hasGenerated
-                  ? <p className="text-green-400 text-xs mt-1">✓ {generatedArray.length} photos generated from your selfie</p>
+                  ? <p className="text-zinc-400 text-sm mt-1">Swipe through your {generatedArray.length} previews and choose the one you like best.</p>
                   : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Undetectable AI photos in 40+ styles, delivered to your email.</p>
                 }
               </div>
@@ -629,20 +630,10 @@ export default function OnboardingPage() {
                     draggable={false}
                   />
 
-                  {/* Watermark overlay — diagonal repeating pattern */}
+                  {/* Watermark overlay */}
                   <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ zIndex: 15 }}>
                     {Array.from({ length: 12 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute whitespace-nowrap"
-                        style={{
-                          top: `${(i * 18) - 10}%`,
-                          left: '-20%',
-                          width: '140%',
-                          transform: 'rotate(-30deg)',
-                          transformOrigin: 'center',
-                        }}
-                      >
+                      <div key={i} className="absolute whitespace-nowrap" style={{ top: `${(i * 18) - 10}%`, left: '-20%', width: '140%', transform: 'rotate(-30deg)', transformOrigin: 'center' }}>
                         <span className="text-white/18 font-bold text-sm tracking-widest" style={{ letterSpacing: '0.15em' }}>
                           SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net
                         </span>
@@ -650,7 +641,7 @@ export default function OnboardingPage() {
                     ))}
                   </div>
 
-                  {/* Corner watermark — more visible */}
+                  {/* Corner watermark */}
                   <div className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-none select-none" style={{ zIndex: 16 }}>
                     <span className="text-white/30 font-bold text-xs tracking-widest px-3 py-1 rounded-full" style={{ backdropFilter: 'blur(2px)', background: 'rgba(0,0,0,0.15)' }}>
                       SwipePhotos.net
@@ -658,29 +649,17 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Left/Right tap zones */}
-                  <button
-                    onClick={() => setCarouselIdx(i => Math.max(0, i - 1))}
-                    className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
-                    aria-label="Previous"
-                  />
-                  <button
-                    onClick={() => setCarouselIdx(i => Math.min((hasGenerated ? generatedArray.length : fallbackPhotos.length) - 1, i + 1))}
-                    className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
-                    aria-label="Next"
-                  />
+                  <button onClick={() => setCarouselIdx(i => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label="Previous" />
+                  <button onClick={() => setCarouselIdx(i => Math.min((hasGenerated ? generatedArray.length : fallbackPhotos.length) - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label="Next" />
 
                   {/* Dot indicators */}
                   <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
                     {(hasGenerated ? generatedArray : fallbackPhotos).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCarouselIdx(i)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`}
-                      />
+                      <button key={i} onClick={() => setCarouselIdx(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`} />
                     ))}
                   </div>
 
-                  {/* Style label badge */}
+                  {/* Style label */}
                   <div className="absolute top-3 left-3 z-20">
                     <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
                       {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
@@ -696,7 +675,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Thumbnail strip */}
+              {/* Thumbnail strip — tap to select */}
               <div className="px-4 pb-3">
                 <div className="flex gap-2">
                   {(hasGenerated ? generatedArray : fallbackPhotos).map((src, i) => (
@@ -734,23 +713,23 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* What's included */}
+              {/* CTA */}
               <div className="px-4 pb-4">
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {[
-                    { value: '40+', label: 'AI Photos', sub: 'per order', icon: '🖼️', color: '#3b82f6', glow: 'rgba(59,130,246,0.15)' },
-                    { value: '~1hr', label: 'Delivery', sub: 'avg. time', icon: '⚡', color: '#a855f7', glow: 'rgba(168,85,247,0.15)' },
-                    { value: '100%', label: 'Undetectable', sub: 'guaranteed', icon: '🛡️', color: '#22c55e', glow: 'rgba(34,197,94,0.15)' },
-                  ].map(({ value, label, sub, icon, color, glow }) => (
-                    <div key={label} className="relative rounded-2xl overflow-hidden p-3.5 text-center flex flex-col items-center" style={{ background: `linear-gradient(145deg, ${glow} 0%, rgba(255,255,255,0.02) 100%)`, border: `1px solid ${color}30` }}>
-                      <div className="text-lg leading-none mb-1.5">{icon}</div>
-                      <div className="font-black tracking-tight leading-none text-xl" style={{ color }}>{value}</div>
-                      <div className="text-white text-[11px] font-semibold mt-1">{label}</div>
-                      <div className="text-zinc-600 text-[9px] mt-0.5">{sub}</div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+                {hasGenerated ? (
+                  <button
+                    onClick={() => {
+                      setPickedPreviewUrl(generatedArray[carouselIdx] ?? generatedArray[0])
+                      next()
+                    }}
+                    className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base"
+                  >
+                    Choose this photo →
+                  </button>
+                ) : (
+                  <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                    Continue →
+                  </button>
+                )}
               </div>
             </div>
           )}
