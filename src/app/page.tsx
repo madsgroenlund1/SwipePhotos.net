@@ -118,6 +118,81 @@ export default function HomePage() {
       {/* BEFORE/AFTER CAROUSEL */}
       <BeforeAfterCarousel />
 
+      {/* PHOTO GUIDE — Good vs Bad upload photos */}
+      <section className="py-24 px-6 max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Step 1 — Upload</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            What photos should you upload?
+          </h2>
+          <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+            The quality of your result depends on your input. Here&apos;s exactly what works — and what doesn&apos;t.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* GOOD */}
+          <div className="rounded-2xl border border-green-500/30 bg-green-950/10 overflow-hidden">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-green-500/20">
+              <span className="text-green-400 font-bold text-lg">✓</span>
+              <span className="text-green-400 font-bold text-lg">Good</span>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-3">
+              {[
+                { src: '/photos/guide/1.webp', label: 'Clear face, good light' },
+                { src: '/photos/guide/4.webp', label: 'Smiling, relaxed pose' },
+              ].map(({ src, label }) => (
+                <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
+                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="200px" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
+                    <span className="text-green-400 text-xs font-semibold">✓ {label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* BAD */}
+          <div className="rounded-2xl border border-red-500/30 bg-red-950/10 overflow-hidden">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-red-500/20">
+              <span className="text-red-400 font-bold text-lg">✗</span>
+              <span className="text-red-400 font-bold text-lg">Bad</span>
+            </div>
+            <div className="p-4 grid grid-cols-3 gap-2">
+              {[
+                { src: '/photos/guide/1-selfie.webp', label: 'Selfie' },
+                { src: '/photos/guide/1-mirror-selfie.webp', label: 'Mirror selfie' },
+                { src: '/photos/guide/2-group-photo.webp', label: 'Group photo' },
+                { src: '/photos/guide/2-jacket.webp', label: 'Covered up' },
+                { src: '/photos/guide/3-sunglasses.webp', label: 'Sunglasses' },
+                { src: '/photos/guide/3-dark.webp', label: 'Too dark' },
+              ].map(({ src, label }) => (
+                <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
+                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="130px" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
+                    <span className="text-red-400 text-[10px] font-semibold">✗ {label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { icon: '💡', text: 'Good natural lighting' },
+            { icon: '👤', text: 'Face clearly visible' },
+            { icon: '📏', text: 'Head-to-waist framing' },
+            { icon: '🚫', text: 'No hats or sunglasses' },
+          ].map(({ icon, text }) => (
+            <div key={text} className="flex items-center gap-2 bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3">
+              <span className="text-xl">{icon}</span>
+              <span className="text-zinc-300 text-sm">{text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* POINT 2: CONCRETE TESTIMONIALS WITH SPECIFIC NUMBERS */}
       <section className="py-24 px-6 max-w-5xl mx-auto">
         <div className="text-center mb-16">
