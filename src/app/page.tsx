@@ -29,18 +29,24 @@ export default function HomePage() {
           ))}
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-6">
-          Get 10x more matches with
+        {/* POINT 5: Specific promise with timeframe */}
+        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-4">
+          Get 5–10x More Matches
           <br />
-          <span className="text-blue-500">undetectable AI photos</span>
+          <span className="text-blue-500">in 7 Days</span>
         </h1>
 
-        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-          The best AI photo generator for men on dating apps. Upload a few photos of yourself.
-          Generate photos in 1-click that fully look like you. Proven to work. Undetectable.
+        {/* POINT 3: "Can't see it's AI" as hero subtitle — stolen from Connor */}
+        <p className="text-zinc-500 text-base md:text-lg mb-6 italic">
+          (Without a Photoshoot, Expensive Camera, or Leaving Your House)
         </p>
 
-        {/* Social proof row — no button here, button is sticky at bottom */}
+        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+          Upload a few selfies. We generate ultra-realistic photos that look exactly like you —
+          in locations you&apos;ve never been, outfits you don&apos;t own. <strong className="text-white">Women can&apos;t tell. Apps can&apos;t detect it.</strong>
+        </p>
+
+        {/* Social proof row */}
         <div className="flex items-center gap-3 justify-center">
           <div className="flex -space-x-2">
             {[
@@ -91,11 +97,181 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* POINT 4: EMOTIONAL REFRAME — "You're not ugly, you just need better photos" */}
+      <section className="py-20 px-6 max-w-3xl mx-auto text-center">
+        <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-6">The hard truth</p>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+          You&apos;re not getting fewer matches
+          <br />because you&apos;re <span className="text-zinc-500 line-through">ugly</span>.
+        </h2>
+        <p className="text-2xl md:text-3xl font-bold text-white mb-8">
+          You&apos;re getting fewer matches because<br />
+          <span className="text-blue-400">you&apos;re marketing yourself wrong.</span>
+        </p>
+        <p className="text-zinc-400 text-lg leading-relaxed max-w-2xl mx-auto">
+          Women decide in under 1 second whether they&apos;re interested. If your photos don&apos;t instantly grab
+          attention, build attraction, and create curiosity — you get ignored. Not because you&apos;re unattractive.
+          Because you don&apos;t know how to present yourself correctly. <strong className="text-white">SwipePhotos fixes that.</strong>
+        </p>
+      </section>
+
       {/* BEFORE/AFTER CAROUSEL */}
       <BeforeAfterCarousel />
 
+      {/* POINT 2: CONCRETE TESTIMONIALS WITH SPECIFIC NUMBERS */}
+      <section className="py-24 px-6 max-w-5xl mx-auto">
+        <div className="text-center mb-16">
+          <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Real results</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            I&apos;m not the only one who&apos;s seen results...
+          </h2>
+          <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+            These aren&apos;t percentage increases. These are real numbers from real profiles.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Testimonial 1 */}
+          <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+              <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Marcus, 28</div>
+              <div className="text-white font-bold text-xl">3 likes/month → <span className="text-green-400">142 likes in 3 days</span></div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Before</p>
+                <ul className="space-y-1.5 text-zinc-400 text-sm">
+                  <li>• Getting only a few likes a month</li>
+                  <li>• Had to always make the first move</li>
+                  <li>• Never had a rose sent to him</li>
+                  <li>• Thought the problem was his looks</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-2">After SwipePhotos</p>
+                <ul className="space-y-1.5 text-white text-sm">
+                  <li>• 142 likes in the first 3 days</li>
+                  <li>• Now averages 20+ likes a day</li>
+                  <li>• Women message him first</li>
+                  <li>• Gets roses sent to him daily</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Testimonial 2 */}
+          <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+              <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Andreas, 24</div>
+              <div className="text-white font-bold text-xl">5 likes/week → <span className="text-green-400">55 likes overnight</span></div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Before</p>
+                <ul className="space-y-1.5 text-zinc-400 text-sm">
+                  <li>• Friends said he was good-looking</li>
+                  <li>• Rarely opened the app anymore</li>
+                  <li>• Barely got matches back from likes</li>
+                  <li>• No idea what was wrong</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-2">After SwipePhotos</p>
+                <ul className="space-y-1.5 text-white text-sm">
+                  <li>• 55 likes in under 24 hours</li>
+                  <li>• More in 1 day than in 2 months before</li>
+                  <li>• Booked dates the first weekend</li>
+                  <li>• Likes from women he actually wants</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Testimonial 3 */}
+          <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+              <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Julius, 22</div>
+              <div className="text-white font-bold text-xl">Never used apps → <span className="text-green-400">20 likes/day</span></div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Before</p>
+                <ul className="space-y-1.5 text-zinc-400 text-sm">
+                  <li>• Had never used Hinge before</li>
+                  <li>• No idea what photos to use</li>
+                  <li>• Would have got zero results</li>
+                  <li>• Would have thought he was the problem</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-2">After SwipePhotos</p>
+                <ul className="space-y-1.5 text-white text-sm">
+                  <li>• 20 likes a day, consistently</li>
+                  <li>• 5 dates booked in under a week</li>
+                  <li>• Top 1% of profiles on Hinge</li>
+                  <li>• Women message him first</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* POINT 1: PERSONAL STORY — founder quote with specific numbers */}
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto bg-gradient-to-br from-blue-950/40 to-zinc-900/60 border border-blue-500/20 rounded-3xl p-8 md:p-12">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-14 h-14 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-2xl">
+              💬
+            </div>
+            <div>
+              <div className="text-white font-bold">Mads, Founder of SwipePhotos</div>
+              <div className="text-zinc-500 text-sm">Built this after seeing the problem firsthand</div>
+            </div>
+          </div>
+          <blockquote className="text-white text-xl md:text-2xl font-medium leading-relaxed mb-6">
+            &ldquo;I went from getting 5–7 matches a week to <span className="text-blue-400 font-bold">20–30 matches every single day</span>.
+            Same app. Same me. Just new photos.
+            <br /><br />
+            Girls started messaging me first. That had never happened before. I&apos;ve had over
+            <span className="text-blue-400 font-bold"> 700 likes in a month</span> — and not one person
+            has ever mentioned &apos;AI&apos;. This isn&apos;t AI slop. It looks completely real.&rdquo;
+          </blockquote>
+          <p className="text-zinc-400 text-base">
+            That&apos;s why I built SwipePhotos — so anyone can get the same results, in minutes, without a photographer.
+          </p>
+        </div>
+      </section>
+
       {/* UNDETECTABLE SECTION */}
       <AnimatedAIDetection />
+
+      {/* POINT 3: VERIFICATION CALLOUT — "You can still verify" */}
+      <section className="py-16 px-6 max-w-3xl mx-auto text-center">
+        <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">100% undetectable</p>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+          Women won&apos;t question it.
+          <br />
+          <span className="text-green-400">Apps can&apos;t detect it.</span>
+        </h2>
+        <p className="text-zinc-400 text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+          Our photos are so realistic you can still <strong className="text-white">verify your dating app account</strong> — the ultimate
+          proof they look completely human. Every photo passes reverse image search, AI detectors, and Tinder&apos;s own scan.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { icon: '🔍', label: 'Passes Tinder verification' },
+            { icon: '🛡️', label: 'Google reverse image safe' },
+            { icon: '🤖', label: 'No SynthID watermark' },
+            { icon: '👤', label: 'Looks exactly like you' },
+          ].map(({ icon, label }) => (
+            <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-4 flex flex-col items-center gap-2">
+              <span className="text-2xl">{icon}</span>
+              <span className="text-zinc-300 text-sm text-center">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* TESTIMONIALS */}
       <section className="py-24">
@@ -109,7 +285,6 @@ export default function HomePage() {
         </div>
 
         <TestimonialsScroll />
-
       </section>
 
       {/* STICKY CTA */}
