@@ -297,8 +297,8 @@ export default function HomePage() {
       <section className="py-16 px-6">
         <div className="max-w-3xl mx-auto bg-gradient-to-br from-blue-950/40 to-zinc-900/60 border border-blue-500/20 rounded-3xl p-8 md:p-12">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl flex-shrink-0">
-              M
+            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
+              <Image src="/logo.png" alt="SwipePhotos logo" width={56} height={56} className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="text-white font-bold">Mads, Founder of SwipePhotos</div>
