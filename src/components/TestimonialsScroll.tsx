@@ -27,6 +27,29 @@ function ScreenshotCard({ n }: { n: number }) {
   )
 }
 
+function ResultCard({ before, after, name, stat }: { before: string; after: string; name: string; stat: string }) {
+  return (
+    <div className="flex-shrink-0 w-[300px] bg-[#111] rounded-xl overflow-hidden border border-white/8">
+      <div className="flex h-[240px]">
+        <div className="relative flex-1 overflow-hidden">
+          <Image src={before} alt="Before" fill className="object-cover object-top" sizes="150px" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide">✗ Before</span>
+        </div>
+        <div className="relative flex-1 overflow-hidden">
+          <Image src={after} alt="After" fill className="object-cover object-top" sizes="150px" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide">✓ After</span>
+        </div>
+      </div>
+      <div className="px-4 py-3">
+        <p className="text-white text-sm font-semibold">{name}</p>
+        <p className="text-green-400 text-xs mt-0.5 font-medium">{stat}</p>
+      </div>
+    </div>
+  )
+}
+
 function VideoCard({ thumb }: { thumb: typeof VIDEO_THUMBNAILS[0] }) {
   return (
     <div className="flex-shrink-0 w-[300px] bg-[#1E1F22] rounded-xl overflow-hidden border border-white/5">
@@ -63,11 +86,22 @@ export function TestimonialsScroll() {
 
   return (
     <div className="w-full overflow-hidden space-y-4 py-4">
-      {/* Row 1 — scrolls left */}
+      {/* Row 1 — scrolls left, with result card interleaved */}
       <div className="flex gap-4 animate-marquee-left" style={{ width: 'max-content' }}>
-        {row1.map((n, i) => (
-          <ScreenshotCard key={`r1-${i}`} n={n} />
-        ))}
+        {row1.map((n, i) => {
+          if (i === 3) return (
+            <div key={`r1-rc-${i}`} className="flex gap-4">
+              <ResultCard
+                before="/photos/guide/1-selfie.webp"
+                after="/photos/guide/4.webp"
+                name="Marcus, 28"
+                stat="3 likes/month → 142 likes in 3 days"
+              />
+              <ScreenshotCard n={n} />
+            </div>
+          )
+          return <ScreenshotCard key={`r1-${i}`} n={n} />
+        })}
       </div>
 
       {/* Row 2 — scrolls right, video cards interleaved */}
@@ -91,11 +125,23 @@ export function TestimonialsScroll() {
 
       {/* Row 3 — scrolls left slow */}
       <div className="flex gap-4 animate-marquee-left-slow" style={{ width: 'max-content' }}>
-        {row3.map((n, i) => (
-          i === 3
-            ? <div key={`r3-v-${i}`} className="flex gap-4"><VideoCard thumb={VIDEO_THUMBNAILS[2]} /><ScreenshotCard n={n} /></div>
-            : <ScreenshotCard key={`r3-${i}`} n={n} />
-        ))}
+        {row3.map((n, i) => {
+          if (i === 1) return (
+            <div key={`r3-rc-${i}`} className="flex gap-4">
+              <ResultCard
+                before="/photos/guide/1-mirror-selfie.webp"
+                after="/photos/guide/1.webp"
+                name="Andreas, 24"
+                stat="5 likes/week → 55 likes overnight"
+              />
+              <ScreenshotCard n={n} />
+            </div>
+          )
+          if (i === 3) return (
+            <div key={`r3-v-${i}`} className="flex gap-4"><VideoCard thumb={VIDEO_THUMBNAILS[2]} /><ScreenshotCard n={n} /></div>
+          )
+          return <ScreenshotCard key={`r3-${i}`} n={n} />
+        })}
       </div>
     </div>
   )

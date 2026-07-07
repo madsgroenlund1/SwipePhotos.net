@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
@@ -180,13 +181,13 @@ export default function HomePage() {
 
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { icon: '💡', text: 'Good natural lighting' },
-            { icon: '👤', text: 'Face clearly visible' },
-            { icon: '📏', text: 'Head-to-waist framing' },
-            { icon: '🚫', text: 'No hats or sunglasses' },
-          ].map(({ icon, text }) => (
-            <div key={text} className="flex items-center gap-2 bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3">
-              <span className="text-xl">{icon}</span>
+            { dot: 'bg-yellow-400', text: 'Good natural lighting' },
+            { dot: 'bg-blue-400', text: 'Face clearly visible' },
+            { dot: 'bg-blue-400', text: 'Head-to-waist framing' },
+            { dot: 'bg-red-400', text: 'No hats or sunglasses' },
+          ].map(({ dot, text }) => (
+            <div key={text} className="flex items-center gap-3 bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
               <span className="text-zinc-300 text-sm">{text}</span>
             </div>
           ))}
@@ -296,8 +297,8 @@ export default function HomePage() {
       <section className="py-16 px-6">
         <div className="max-w-3xl mx-auto bg-gradient-to-br from-blue-950/40 to-zinc-900/60 border border-blue-500/20 rounded-3xl p-8 md:p-12">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-2xl">
-              💬
+            <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl flex-shrink-0">
+              M
             </div>
             <div>
               <div className="text-white font-bold">Mads, Founder of SwipePhotos</div>
@@ -334,15 +335,29 @@ export default function HomePage() {
           proof they look completely human. Every photo passes reverse image search, AI detectors, and Tinder&apos;s own scan.
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: '🔍', label: 'Passes Tinder verification' },
-            { icon: '🛡️', label: 'Google reverse image safe' },
-            { icon: '🤖', label: 'No SynthID watermark' },
-            { icon: '👤', label: 'Looks exactly like you' },
-          ].map(({ icon, label }) => (
-            <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-4 flex flex-col items-center gap-2">
-              <span className="text-2xl">{icon}</span>
-              <span className="text-zinc-300 text-sm text-center">{label}</span>
+          {([
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Passes Tinder verification',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Google reverse image safe',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'No SynthID watermark',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Looks exactly like you',
+            },
+          ] as Array<{ svg: React.ReactNode; label: string }>).map(({ svg, label }) => (
+            <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-4 flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-400/10 flex items-center justify-center">
+                {svg}
+              </div>
+              <span className="text-zinc-300 text-sm text-center font-medium">{label}</span>
             </div>
           ))}
         </div>
