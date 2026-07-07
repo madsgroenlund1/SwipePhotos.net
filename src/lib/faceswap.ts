@@ -5,33 +5,48 @@ fal.config({ credentials: process.env.FAL_KEY })
 const SUPABASE = 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references'
 
 export const REFERENCE_PHOTOS: Array<{ url: string; scene: string }> = [
-  // Formal / suit
-  { scene: 'formal',     url: `${SUPABASE}/ref-suit-1.jpg` },
-  { scene: 'formal',     url: `${SUPABASE}/ref-suit-2.jpg` },
-  // City / urban
-  { scene: 'city',       url: `${SUPABASE}/ref-metro.jpg` },
-  { scene: 'city',       url: `${SUPABASE}/670580191.jpg` },
-  { scene: 'city',       url: `${SUPABASE}/brick-city-1.jpg` },
-  { scene: 'city',       url: `${SUPABASE}/alan-city.webp` },
-  { scene: 'city',       url: `${SUPABASE}/vibhor-city.webp` },
-  // Casual / outdoor urban
-  { scene: 'casual',     url: `${SUPABASE}/536607362.jpg` },
-  { scene: 'casual',     url: `${SUPABASE}/536640715.jpg` },
-  { scene: 'casual',     url: `${SUPABASE}/671193930.jpg` },
-  { scene: 'casual',     url: `${SUPABASE}/brick-casual-1.jpg` },
-  { scene: 'casual',     url: `${SUPABASE}/tom-casual.webp` },
-  { scene: 'casual',     url: `${SUPABASE}/casual-city-1.webp` },
-  // Outdoor / urban street
-  { scene: 'outdoor',    url: `${SUPABASE}/urban-wall-1.jpg` },
-  { scene: 'outdoor',    url: `${SUPABASE}/urban-wall-2.jpg` },
-  { scene: 'outdoor',    url: `${SUPABASE}/rupert-outdoor.webp` },
-  // Nature / park / garden
-  { scene: 'nature',     url: `${SUPABASE}/kyle-nature.webp` },
-  { scene: 'nature',     url: `${SUPABASE}/salvatore-nature.webp` },
-  { scene: 'nature',     url: `${SUPABASE}/garden-casual-1.webp` },
+  // City / urban European streets
+  { scene: 'city', url: `${SUPABASE}/model-566594022.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-590915174.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-601551406.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-656384899.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-656788933.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-682657360.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-703861624.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-704784546.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-708089048.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-708793199.jpg` },
+  { scene: 'city', url: `${SUPABASE}/model-728893385.jpg` },
+  // Casual / relaxed street
+  { scene: 'casual', url: `${SUPABASE}/model-609644343.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-610581112.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-610613378.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-671808132.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-705365478.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-706035720.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-715412525.jpg` },
+  { scene: 'casual', url: `${SUPABASE}/model-731072445.jpg` },
+  // Outdoor / waterfront / harbour
+  { scene: 'outdoor', url: `${SUPABASE}/model-568282345.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-643582149.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-658442365.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-687476205.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-689274595.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-710537485.jpg` },
+  { scene: 'outdoor', url: `${SUPABASE}/model-731736194.jpg` },
+  // Formal / hotel / suit
+  { scene: 'formal', url: `${SUPABASE}/model-651983567.jpg` },
+  { scene: 'formal', url: `${SUPABASE}/model-653691675.jpg` },
+  { scene: 'formal', url: `${SUPABASE}/model-708999683.jpg` },
+  { scene: 'formal', url: `${SUPABASE}/model-710423421.jpg` },
   // Restaurant / cafe
-  { scene: 'restaurant', url: `${SUPABASE}/radu-restaurant.webp` },
-  { scene: 'restaurant', url: `${SUPABASE}/headshot-restaurant.webp` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-670874313.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-670986892.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-671108876.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-671250925.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-724685144.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-726838267.jpg` },
+  { scene: 'restaurant', url: `${SUPABASE}/model-727190138.jpg` },
 ]
 
 type FaceSwapResult = {
