@@ -217,7 +217,7 @@ export default function HomePage() {
                 <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/benni/after/1.jpg" alt="Marcus after" fill className="object-cover" style={{ objectPosition: 'center 5%' }} sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/benni/after/1.jpg" alt="Marcus after" fill className="object-cover" style={{ objectPosition: 'center 20%' }} sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
               </div>
