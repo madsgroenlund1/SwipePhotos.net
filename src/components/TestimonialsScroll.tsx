@@ -3,45 +3,29 @@
 import Image from 'next/image'
 import { useEffect, useRef } from 'react'
 
-// ── Row 1: Girls messaging first ──────────────────────────────────────────
-// Hinge match cards where girls sent first message / rose
-const GIRL_HINGE = [
-  { file: '19.png', label: 'break hearts / gorge' },
-  { file: '27.png', label: 'I love you' },
-  { file: '29.png', label: 'Can I have your insta' },
-  { file: '31.png', label: 'Sent you a rose' },
-]
-const COACH_SCREENSHOTS = [1, 2, 4, 6, 7, 9, 10, 11]
+// ── Data ──────────────────────────────────────────────────────────────────────
 
-// ── Row 2: Match explosion numbers ────────────────────────────────────────
-const MATCH_HINGE = [
-  { file: '25.png', label: '96 notifications' },
-  { file: '30.png', label: 'roses keep coming' },
-  { file: 'SaveClip.App_683606128_18057773888511924_2683062959033343579_n.jpg', label: '7 in gym' },
-  { file: 'SaveClip.App_707866872_18062536424511924_4639417724254262759_n.jpg', label: 'match flood' },
-  { file: 'SaveClip.App_710979003_18062536379511924_1255798379216902517_n.jpg', label: 'match flood 2' },
-  { file: 'SaveClip.App_712904452_18062831375511924_6285178280750042753_n.jpg', label: 'match flood 3' },
+// Row 1: Girls messaging first — DMs where girls reached out
+const GIRL_HINGE = ['19.png', '27.png', '29.png', '31.png']
+// Coach proof screenshots (same 4:3 format)
+const COACH_NUMS = [1, 2, 4, 6, 7, 9, 10, 11]
+
+// Row 2: Match explosion — mix of portrait phone pics + landscape screenshots
+const MATCH_LANDSCAPE = ['25.png', '30.png']
+const MATCH_PORTRAIT = [
+  'SaveClip.App_683606128_18057773888511924_2683062959033343579_n.jpg',
+  'SaveClip.App_707866872_18062536424511924_4639417724254262759_n.jpg',
+  'SaveClip.App_710979003_18062536379511924_1255798379216902517_n.jpg',
+  'SaveClip.App_712904452_18062831375511924_6285178280750042753_n.jpg',
 ]
 
-// ── Row 3: Reviews + videos ───────────────────────────────────────────────
-const REVIEW_HINGE = [
-  { file: '23.png', label: 'match profiles' },
-  { file: '21.png', label: 'more matches' },
-  { file: '28.png', label: 'roses sent' },
-  { file: '32.png', label: 'more proof' },
-  { file: '33.png', label: 'more proof 2' },
-  { file: 'SaveClip.App_713443460_18062698499511924_7652687373312959975_n.jpg', label: 'proof' },
-  { file: 'SaveClip.App_716010437_18062973332511924_6108834314921062937_n.jpg', label: 'proof 2' },
-  { file: 'SaveClip.App_717186277_18063541640511924_1689200368543379394_n.jpg', label: 'proof 3' },
+// Row 3: Social proof — landscape screenshots + portrait social media clips + videos
+const PROOF_LANDSCAPE = ['23.png', '21.png', '28.png', '32.png', '33.png']
+const PROOF_PORTRAIT = [
+  'SaveClip.App_713443460_18062698499511924_7652687373312959975_n.jpg',
+  'SaveClip.App_716010437_18062973332511924_6108834314921062937_n.jpg',
+  'SaveClip.App_717186277_18063541640511924_1689200368543379394_n.jpg',
 ]
-
-const YOUTUBE_VIDEOS = [
-  { file: 'He-Got-100-Matches-Using-AI-Photos.jpg', title: 'He Got 100 Matches Using AI Photos', views: '243K views' },
-  { file: 'How-To-Create-Epic-AI-Photos.jpg', title: 'How To Create Epic AI Photos', views: '118K views' },
-  { file: 'The-4-AI-photos-that-got-me-10x-more-Tinder-matches.jpg', title: 'The 4 AI Photos That Got Me 10x More Tinder Matches', views: '391K views' },
-]
-
-// Hinge-proof mp4 filenames
 const HINGE_VIDEOS = [
   'SaveClip.App_AQMfB9uhnW1Ia7pi714bJhkVT1hPnqBMmiy5cc-fRLv3wyVy5GscvJMW2bRGgQlynGUqajPqpopLICe4KDghN0Sj-f-5AR29ttZVTyo.mp4',
   'SaveClip.App_AQN67Gcd76phYs5oLRCqw7lr72HSEoPWOt4YatHq4p5jG-51Paw-XXj8X2D9btokSZRyF6JZ_pQKFeAxGRpasuBhIrwoFXHOprG7_GU.mp4',
@@ -50,102 +34,65 @@ const HINGE_VIDEOS = [
   'SaveClip.App_AQPnyIv4FTufTyd3-HbPvEJMygY15ec-UuFCk7YembUhys_lh0oZS2aqt3qWWQvhaZQ1zXq10FHnUxe1sdP_m9ovOcb9cPLar-KkZkk.mp4',
 ]
 
-// ── Card components ───────────────────────────────────────────────────────
+// ── Dimensions ────────────────────────────────────────────────────────────────
+//
+// All *.png screenshots are 1365×1024 (4:3 landscape, ratio 1.334).
+// All SaveClip *.jpg are 608×1080 (portrait, ratio 0.563).
+// Videos are 9:16 portrait (ratio 0.5625).
+//
+// Uniform row height: 300px.
+// Landscape card width:  300 × (1365/1024) ≈ 400px
+// Portrait card width:   300 × (608/1080)  ≈ 170px
+// Video card width:      300 × (9/16)      ≈ 169px  (use 170px)
+//
+const ROW_H = 300          // px — same for all three rows
+const LANDSCAPE_W = 400    // px — 4:3 landscape screenshots
+const PORTRAIT_W = 170     // px — 9:16 portrait photos & videos
 
-function HingeCard({ file, objectPosition = 'object-center' }: { file: string; objectPosition?: string }) {
-  return (
-    <div className="flex-shrink-0 w-[320px] h-[420px] rounded-xl overflow-hidden bg-[#111] relative border border-white/8">
-      <Image
-        src={`/hinge-proof/${file}`}
-        alt="Hinge proof"
-        fill
-        className="object-contain"
-        unoptimized
-      />
-    </div>
-  )
-}
+// ── Card components ───────────────────────────────────────────────────────────
 
-function CoachCard({ n }: { n: number }) {
-  // Card 2 has white borders around the subject — zoom in hard to fill the frame
-  const zoom = n === 2 ? { transform: 'scale(2.2)', transformOrigin: 'center 30%' } : undefined
+// 4:3 landscape screenshot (hinge-proof/*.png, testimonials-coach-coner/*.png)
+function LandscapeCard({ src, base }: { src: string; base: 'hinge-proof' | 'testimonials-coach-coner' }) {
   return (
-    <div className="flex-shrink-0 w-[280px] h-[280px] rounded-xl overflow-hidden bg-[#111] border border-white/8 relative">
-      <Image
-        src={`/testimonials-coach-coner/${n}.png`}
-        alt={`Coach result ${n}`}
-        fill
-        className="object-cover object-top"
-        style={zoom}
-        unoptimized
-      />
-    </div>
-  )
-}
-
-function DiscordCard({ n }: { n: number }) {
-  return (
-    <div className="flex-shrink-0 w-[300px] h-[280px] rounded-xl overflow-hidden bg-[#1E1F22] border border-white/6 relative">
-      <Image
-        src={`/testimonials-discord-screenshots/${n}.webp`}
-        alt={`Testimonial ${n}`}
-        fill
-        className="object-cover object-center"
-        unoptimized
-      />
-    </div>
-  )
-}
-
-function ResultCard({ before, after, name, stat }: { before: string; after: string; name: string; stat: string }) {
-  return (
-    <div className="flex-shrink-0 w-[280px] h-[280px] bg-[#111] rounded-xl overflow-hidden border border-white/8 flex flex-col">
-      <div className="flex flex-1 overflow-hidden">
-        <div className="relative flex-1 overflow-hidden">
-          <Image src={before} alt="Before" fill className="object-cover object-top" sizes="140px" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-          <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide">✗ Before</span>
-        </div>
-        <div className="relative flex-1 overflow-hidden">
-          <Image src={after} alt="After" fill className="object-cover object-top" sizes="140px" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-          <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide">✓ After</span>
-        </div>
-      </div>
-      <div className="px-3 py-2 shrink-0">
-        <p className="text-white text-sm font-semibold">{name}</p>
-        <p className="text-green-400 text-xs mt-0.5 font-medium">{stat}</p>
-      </div>
-    </div>
-  )
-}
-
-function YoutubeCard({ thumb }: { thumb: typeof YOUTUBE_VIDEOS[0] }) {
-  return (
-    <div className="flex-shrink-0 w-[280px] h-[280px] bg-[#1A1B1E] rounded-xl overflow-hidden border border-white/6 flex flex-col">
-      <div className="relative" style={{ height: '157px' }}>
+    <div
+      className="flex-shrink-0 rounded-xl overflow-hidden bg-[#111] border border-white/8 flex items-center justify-center p-2"
+      style={{ width: LANDSCAPE_W, height: ROW_H }}
+    >
+      <div className="relative w-full h-full">
         <Image
-          src={`/video-testimonial-thumbnails/${thumb.file}`}
-          alt={thumb.title}
+          src={`/${base}/${src}`}
+          alt="Proof"
           fill
-          className="object-cover"
+          className="object-contain"
           unoptimized
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <div className="w-11 h-11 rounded-full bg-white/10 border-2 border-white/40 flex items-center justify-center">
-            <div className="w-0 h-0 border-t-[7px] border-b-[7px] border-l-[12px] border-transparent border-l-white ml-1" />
-          </div>
-        </div>
-      </div>
-      <div className="p-3 flex flex-col justify-center flex-1">
-        <p className="text-white text-sm font-medium leading-tight">{thumb.title}</p>
-        <p className="text-zinc-500 text-xs mt-1.5">{thumb.views}</p>
       </div>
     </div>
   )
 }
 
-function AutoplayVideoCard({ src, cropBottom }: { src: string; cropBottom?: boolean }) {
+// 9:16 portrait photo (SaveClip *.jpg)
+function PortraitCard({ file }: { file: string }) {
+  return (
+    <div
+      className="flex-shrink-0 rounded-xl overflow-hidden bg-[#111] border border-white/8 flex items-center justify-center p-2"
+      style={{ width: PORTRAIT_W, height: ROW_H }}
+    >
+      <div className="relative w-full h-full">
+        <Image
+          src={`/hinge-proof/${file}`}
+          alt="Proof"
+          fill
+          className="object-contain"
+          unoptimized
+        />
+      </div>
+    </div>
+  )
+}
+
+// 9:16 portrait video
+function VideoCard({ src }: { src: string }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -153,11 +100,8 @@ function AutoplayVideoCard({ src, cropBottom }: { src: string; cropBottom?: bool
     if (!video) return
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          video.play().catch(() => {})
-        } else {
-          video.pause()
-        }
+        if (entry.isIntersecting) video.play().catch(() => {})
+        else video.pause()
       },
       { threshold: 0.3 }
     )
@@ -166,88 +110,122 @@ function AutoplayVideoCard({ src, cropBottom }: { src: string; cropBottom?: bool
   }, [])
 
   return (
-    <div className="flex-shrink-0 w-[200px] h-[280px] rounded-xl overflow-hidden bg-black border border-white/8 relative">
+    <div
+      className="flex-shrink-0 rounded-xl overflow-hidden bg-[#0a0a0a] border border-white/8 flex items-center justify-center p-1.5"
+      style={{ width: PORTRAIT_W, height: ROW_H }}
+    >
       <video
         ref={videoRef}
         src={`/hinge-proof/${src}`}
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ objectPosition: '60% center', ...(cropBottom ? { clipPath: 'inset(5% 0 18% 0)' } : {}) }}
+        className="w-full h-full object-contain rounded-lg"
       />
     </div>
   )
 }
 
-function RowLabel({ emoji, text }: { emoji: string; text: string }) {
+// Row heading
+function RowHeading({ emoji, title, subtitle }: { emoji: string; title: string; subtitle: string }) {
   return (
-    <div className="flex items-center gap-2 px-6 mb-3">
-      <span className="text-base">{emoji}</span>
-      <span className="text-zinc-400 text-xs font-semibold uppercase tracking-widest">{text}</span>
-      <div className="flex-1 h-px bg-white/5" />
+    <div className="px-6 mb-4">
+      <div className="flex items-center gap-2 mb-0.5">
+        <span className="text-lg leading-none">{emoji}</span>
+        <h3 className="text-white font-semibold text-base leading-none">{title}</h3>
+      </div>
+      <p className="text-zinc-500 text-xs pl-7">{subtitle}</p>
     </div>
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 
 export function TestimonialsScroll() {
-  // Row 1: Girl DMs + Coach notifications — doubled
+  // Row 1 items — girls messaging first + coach screenshots
   const row1Base = [
-    ...GIRL_HINGE.map(h => ({ type: 'hinge' as const, file: h.file })),
-    ...COACH_SCREENSHOTS.map(n => ({ type: 'coach' as const, n })),
+    ...GIRL_HINGE.map(f => ({ kind: 'landscape-hinge' as const, file: f })),
+    ...COACH_NUMS.map(n => ({ kind: 'landscape-coach' as const, file: `${n}.png` })),
   ]
   const row1 = [...row1Base, ...row1Base]
 
-  // Row 2: Match explosion numbers — doubled
+  // Row 2 items — landscape match screenshots + portrait match photos
   const row2Base = [
-    ...MATCH_HINGE.map(h => ({ type: 'hinge' as const, file: h.file })),
+    ...MATCH_LANDSCAPE.map(f => ({ kind: 'landscape-hinge' as const, file: f })),
+    ...MATCH_PORTRAIT.map(f => ({ kind: 'portrait' as const, file: f })),
   ]
   const row2 = [...row2Base, ...row2Base]
 
-  // Row 3: Reviews + videos — doubled
+  // Row 3 items — landscape proof screenshots + portrait social clips + videos
   const row3Base = [
-    ...REVIEW_HINGE.map(h => ({ type: 'hinge' as const, file: h.file })),
-    ...HINGE_VIDEOS.map(src => ({ type: 'video' as const, src })),
+    ...PROOF_LANDSCAPE.map(f => ({ kind: 'landscape-hinge' as const, file: f })),
+    ...PROOF_PORTRAIT.map(f => ({ kind: 'portrait' as const, file: f })),
+    ...HINGE_VIDEOS.map(s => ({ kind: 'video' as const, file: s })),
   ]
   const row3 = [...row3Base, ...row3Base]
 
   return (
-    <div className="w-full overflow-hidden space-y-4 py-2">
-      {/* Row 1 — Girls messaging first */}
-      <div>
-        <RowLabel emoji="💬" text="Girls messaging first" />
-        <div className="flex gap-3 animate-marquee-left" style={{ width: 'max-content' }}>
+    <div className="w-full overflow-hidden" style={{ gap: 0 }}>
+
+      {/* ── Row 1: Girls messaging first ── */}
+      <div className="mb-8">
+        <RowHeading
+          emoji="💬"
+          title="Girls Messaging First"
+          subtitle="Real DMs — they reached out before he did"
+        />
+        <div
+          className="flex gap-3 animate-marquee-left"
+          style={{ width: 'max-content', height: ROW_H }}
+        >
           {row1.map((item, i) =>
-            item.type === 'coach'
-              ? <CoachCard key={`r1-${i}`} n={item.n} />
-              : <HingeCard key={`r1-${i}`} file={item.file} />
+            item.kind === 'landscape-coach'
+              ? <LandscapeCard key={`r1-${i}`} src={item.file} base="testimonials-coach-coner" />
+              : <LandscapeCard key={`r1-${i}`} src={item.file} base="hinge-proof" />
           )}
         </div>
       </div>
 
-      {/* Row 2 — Match explosions */}
-      <div>
-        <RowLabel emoji="📈" text="More matches, instantly" />
-        <div className="flex gap-3 animate-marquee-right" style={{ width: 'max-content' }}>
-          {row2.map((item, i) => (
-            <HingeCard key={`r2-${i}`} file={item.file} />
-          ))}
+      {/* ── Row 2: More Matches, Instantly ── */}
+      <div className="mb-8">
+        <RowHeading
+          emoji="📈"
+          title="More Matches, Instantly"
+          subtitle="Match counts exploding within days of uploading AI photos"
+        />
+        <div
+          className="flex gap-3 animate-marquee-right"
+          style={{ width: 'max-content', height: ROW_H }}
+        >
+          {row2.map((item, i) =>
+            item.kind === 'portrait'
+              ? <PortraitCard key={`r2-${i}`} file={item.file} />
+              : <LandscapeCard key={`r2-${i}`} src={item.file} base="hinge-proof" />
+          )}
         </div>
       </div>
 
-      {/* Row 3 — What they're saying + video proof */}
+      {/* ── Row 3: Results Speak for Themselves ── */}
       <div>
-        <RowLabel emoji="🔥" text="Results speak for themselves" />
-        <div className="flex gap-3 animate-marquee-left-slow" style={{ width: 'max-content' }}>
-          {row3.map((item, i) => (
-            item.type === 'video'
-              ? <AutoplayVideoCard key={`r3-${i}`} src={item.src} cropBottom={item.src.includes('AQOUz5mY')} />
-              : <HingeCard key={`r3-${i}`} file={item.file} />
-          ))}
+        <RowHeading
+          emoji="🔥"
+          title="Results Speak for Themselves"
+          subtitle="Screenshots, clips and reactions from real users"
+        />
+        <div
+          className="flex gap-3 animate-marquee-left-slow"
+          style={{ width: 'max-content', height: ROW_H }}
+        >
+          {row3.map((item, i) =>
+            item.kind === 'video'
+              ? <VideoCard key={`r3-${i}`} src={item.file} />
+              : item.kind === 'portrait'
+              ? <PortraitCard key={`r3-${i}`} file={item.file} />
+              : <LandscapeCard key={`r3-${i}`} src={item.file} base="hinge-proof" />
+          )}
         </div>
       </div>
+
     </div>
   )
 }
