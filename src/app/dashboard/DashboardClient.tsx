@@ -1,39 +1,51 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { Download, Copy, Check, X, Clock, Zap, LogOut, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  Download, Copy, Check, X, Clock, Zap, LogOut,
+  ChevronDown, ChevronUp, ImageIcon, Users, TrendingUp,
+  DollarSign, Link2, BarChart3,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Photo = { file_url: string }
-type Order = {
+type Photo  = { file_url: string }
+type Order  = { id: string; package_type: string; status: string; created_at: string; generated_photos: Photo[] }
+type Payout = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
+
+type AffiliateData = {
   id: string
-  package_type: string
   status: string
-  created_at: string
-  generated_photos: Photo[]
-}
+  refCode: string | null
+  refLink: string | null
+  clicks: number
+  signups: number
+  conversions: number
+  pendingCents: number
+  approvedCents: number
+  paidCents: number
+  totalEarnedCents: number
+  payouts: Payout[]
+} | null
+
+type Tab = 'overview' | 'affiliate' | 'account'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; desc: string; detail: string }> = {
-  draft:      { label: 'Draft',      color: 'text-zinc-500  bg-zinc-500/10  border-zinc-500/20',  icon: <Clock className="w-3.5 h-3.5" />, desc: 'Waiting for payment…',          detail: 'Complete your purchase to start generating photos.' },
-  pending:    { label: 'Pending',    color: 'text-zinc-400  bg-zinc-400/10  border-zinc-400/20',  icon: <Clock className="w-3.5 h-3.5" />, desc: 'Confirming payment…',           detail: 'We are confirming your payment. This usually takes under a minute.' },
-  processing: { label: 'Processing', color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20', icon: <Clock className="w-3.5 h-3.5" />, desc: 'Starting generation…',         detail: 'Payment confirmed. We are preparing your photos now.' },
-  training:   { label: 'Training',   color: 'text-blue-400  bg-blue-400/10  border-blue-400/20',  icon: <Zap  className="w-3.5 h-3.5" />, desc: 'AI is learning your face…',     detail: 'This takes about 20 minutes. We will email you when ready.' },
-  generating: { label: 'Generating', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', icon: <Zap className="w-3.5 h-3.5" />, desc: 'Creating your photos…',       detail: 'Almost there — your photos are being generated right now.' },
-  ready:      { label: 'Ready',      color: 'text-green-400  bg-green-400/10  border-green-400/20',  icon: <Check className="w-3.5 h-3.5" />, desc: 'Your photos are ready!',    detail: 'Download them below and upload directly to Hinge, Tinder or Bumble.' },
-  failed:     { label: 'Failed',     color: 'text-red-400   bg-red-400/10   border-red-400/20',   icon: <X    className="w-3.5 h-3.5" />, desc: 'Something went wrong',         detail: 'Your payment and order are safe. Contact support and we will fix it or refund you.' },
+  draft:      { label: 'Draft',      color: 'text-zinc-500  bg-zinc-500/10  border-zinc-500/20',      icon: <Clock className="w-3.5 h-3.5" />, desc: 'Waiting for payment…',       detail: 'Complete your purchase to start generating photos.' },
+  pending:    { label: 'Pending',    color: 'text-zinc-400  bg-zinc-400/10  border-zinc-400/20',      icon: <Clock className="w-3.5 h-3.5" />, desc: 'Confirming payment…',        detail: 'We are confirming your payment. This usually takes under a minute.' },
+  processing: { label: 'Processing', color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20', icon: <Clock className="w-3.5 h-3.5" />, desc: 'Starting generation…',        detail: 'Payment confirmed. We are preparing your photos now.' },
+  training:   { label: 'Training',   color: 'text-blue-400  bg-blue-400/10  border-blue-400/20',      icon: <Zap  className="w-3.5 h-3.5" />, desc: 'AI is learning your face…',  detail: 'This takes about 20 minutes. We will email you when ready.' },
+  generating: { label: 'Generating', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', icon: <Zap  className="w-3.5 h-3.5" />, desc: 'Creating your photos…',       detail: 'Almost there — your photos are being generated right now.' },
+  ready:      { label: 'Ready',      color: 'text-green-400  bg-green-400/10  border-green-400/20',   icon: <Check className="w-3.5 h-3.5" />, desc: 'Your photos are ready!',   detail: 'Download them below and upload directly to Hinge, Tinder or Bumble.' },
+  failed:     { label: 'Failed',     color: 'text-red-400   bg-red-400/10   border-red-400/20',       icon: <X    className="w-3.5 h-3.5" />, desc: 'Something went wrong',       detail: 'Your payment and order are safe. Contact support and we will fix it or refund you.' },
 }
 
-const PACKAGE_LABELS: Record<string, string> = {
-  starter: 'Starter',
-  popular: 'Popular',
-  elite:   'Elite',
-}
+const PACKAGE_LABELS: Record<string, string> = { starter: 'Starter', popular: 'Popular', elite: 'Elite' }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,14 +66,16 @@ async function downloadAll(photos: Photo[]) {
   }
 }
 
+function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
+function fmtK(n: number)    { return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n) }
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border', cfg.color)}>
-      {cfg.icon}
-      {cfg.label}
+      {cfg.icon}{cfg.label}
     </span>
   )
 }
@@ -72,10 +86,9 @@ function Spinner() {
 
 function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
   const [lightbox, setLightbox] = useState<string | null>(null)
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll]   = useState(false)
   const PREVIEW = 6
   const visible = showAll ? photos : photos.slice(0, PREVIEW)
-  const hasMore = photos.length > PREVIEW && !showAll
 
   return (
     <>
@@ -87,19 +100,11 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
             onClick={() => setLightbox(p.file_url)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.file_url}
-              alt=""
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            <img src={p.file_url} alt="" loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-end justify-end p-2.5 opacity-0 group-hover:opacity-100">
-              <a
-                href={p.file_url}
-                download
-                onClick={e => e.stopPropagation()}
-                className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg flex-shrink-0"
-              >
+              <a href={p.file_url} download onClick={e => e.stopPropagation()}
+                className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
                 <Download className="w-3.5 h-3.5 text-black" />
               </a>
             </div>
@@ -107,50 +112,29 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
         ))}
       </div>
 
-      {hasMore && (
-        <button
-          onClick={() => setShowAll(true)}
-          className="mt-3 w-full flex items-center justify-center gap-2 text-zinc-400 hover:text-white text-sm py-2.5 border border-white/8 hover:border-white/20 rounded-xl transition-all"
-        >
+      {photos.length > PREVIEW && !showAll && (
+        <button onClick={() => setShowAll(true)}
+          className="mt-3 w-full flex items-center justify-center gap-2 text-zinc-400 hover:text-white text-sm py-2.5 border border-white/8 hover:border-white/20 rounded-xl transition-all">
           Show all {photos.length} photos <ChevronDown className="w-4 h-4" />
         </button>
       )}
-
       {showAll && photos.length > PREVIEW && (
-        <button
-          onClick={() => setShowAll(false)}
-          className="mt-3 w-full flex items-center justify-center gap-2 text-zinc-400 hover:text-white text-sm py-2.5 border border-white/8 hover:border-white/20 rounded-xl transition-all"
-        >
+        <button onClick={() => setShowAll(false)}
+          className="mt-3 w-full flex items-center justify-center gap-2 text-zinc-400 hover:text-white text-sm py-2.5 border border-white/8 hover:border-white/20 rounded-xl transition-all">
           Show less <ChevronUp className="w-4 h-4" />
         </button>
       )}
 
       {lightbox && (
-        <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-            onClick={() => setLightbox(null)}
-          >
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <button className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors" onClick={() => setLightbox(null)}>
             <X className="w-5 h-5 text-white" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox}
-            alt=""
-            className="max-h-[88vh] max-w-[88vw] rounded-2xl object-contain shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          />
-          <a
-            href={lightbox}
-            download
-            onClick={e => e.stopPropagation()}
-            className="absolute bottom-6 flex items-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-full shadow-xl hover:bg-zinc-100 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Download
+          <img src={lightbox} alt="" className="max-h-[88vh] max-w-[88vw] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+          <a href={lightbox} download onClick={e => e.stopPropagation()}
+            className="absolute bottom-6 flex items-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-full shadow-xl hover:bg-zinc-100 transition-all">
+            <Download className="w-4 h-4" /> Download
           </a>
         </div>
       )}
@@ -160,60 +144,44 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
 
 function OrderCard({ order, expanded = false }: { order: Order; expanded?: boolean }) {
   const [open, setOpen] = useState(expanded)
-  const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending
+  const cfg    = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending
   const photos = order.generated_photos ?? []
   const isActive = ['pending', 'processing', 'training', 'generating'].includes(order.status)
-  const dateStr = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const dateStr  = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
     <div className={cn('border rounded-2xl overflow-hidden transition-all', isActive ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/8 bg-[#111]')}>
-      {/* Header — always visible */}
-      <button
-        className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/[0.02] transition-colors"
-        onClick={() => setOpen(o => !o)}
-      >
+      <button className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/[0.02] transition-colors" onClick={() => setOpen(o => !o)}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-white font-semibold text-sm">
-              {PACKAGE_LABELS[order.package_type] ?? 'Standard'} Package
-            </span>
+            <span className="text-white font-semibold text-sm">{PACKAGE_LABELS[order.package_type] ?? 'Standard'} Package</span>
             <StatusBadge status={order.status} />
           </div>
           <p className="text-zinc-600 text-xs">{dateStr} · Order #{order.id.slice(-8).toUpperCase()}</p>
         </div>
         {photos.length > 0 && (
           <span className="text-zinc-500 text-xs flex items-center gap-1 flex-shrink-0">
-            <ImageIcon className="w-3.5 h-3.5" />
-            {photos.length}
+            <ImageIcon className="w-3.5 h-3.5" />{photos.length}
           </span>
         )}
         {open ? <ChevronUp className="w-4 h-4 text-zinc-600 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-600 flex-shrink-0" />}
       </button>
 
-      {/* Expanded body */}
       {open && (
         <div className="px-5 pb-5 border-t border-white/5">
-          {/* Status detail */}
-          <div className={cn('flex items-start gap-3 py-4', isActive && 'pb-4')}>
+          <div className="flex items-start gap-3 py-4">
             {isActive && <Spinner />}
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium">{cfg.desc}</p>
               <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">{cfg.detail}</p>
             </div>
           </div>
-
-          {/* Photos */}
           {photos.length > 0 && (
             <>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">
-                  {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
-                </p>
+                <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</p>
                 {photos.length > 1 && (
-                  <button
-                    onClick={() => downloadAll(photos)}
-                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
-                  >
+                  <button onClick={() => downloadAll(photos)} className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
                     <Download className="w-3.5 h-3.5" /> Download all
                   </button>
                 )}
@@ -221,12 +189,9 @@ function OrderCard({ order, expanded = false }: { order: Order; expanded?: boole
               <PhotoGrid photos={photos} orderId={order.id} />
             </>
           )}
-
           {order.status === 'failed' && (
-            <a
-              href="mailto:support@swipephotos.net"
-              className="mt-4 flex items-center justify-center gap-2 w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium py-3 rounded-xl transition-all"
-            >
+            <a href="mailto:support@swipephotos.net"
+              className="mt-4 flex items-center justify-center gap-2 w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium py-3 rounded-xl transition-all">
               Contact support →
             </a>
           )}
@@ -236,49 +201,307 @@ function OrderCard({ order, expanded = false }: { order: Order; expanded?: boole
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Affiliate Tab ─────────────────────────────────────────────────────────────
 
-type AffiliateStats = {
-  status: string
-  clicks: number
-  conversions: number
-  earnings_cents: number
-  pending_cents: number
-  approved_cents: number
+function AffiliateTab({ data, onJoined }: {
+  data: AffiliateData
+  onJoined: (updated: NonNullable<AffiliateData>) => void
+}) {
+  const [copied, setCopied]               = useState(false)
+  const [joining, setJoining]             = useState(false)
+  const [payoutLoading, setPayoutLoading] = useState(false)
+  const [payoutError, setPayoutError]     = useState('')
+  const [payoutSuccess, setPayoutSuccess] = useState(false)
+
+  async function handleJoin() {
+    setJoining(true)
+    try {
+      const res  = await fetch('/api/affiliate/join', { method: 'POST' })
+      const json = await res.json()
+      if (json.ok) {
+        onJoined({
+          id: '',
+          status: json.status,
+          refCode: json.refCode,
+          refLink: json.refLink,
+          clicks: 0, signups: 0, conversions: 0,
+          pendingCents: 0, approvedCents: 0, paidCents: 0,
+          totalEarnedCents: 0,
+          payouts: [],
+        })
+      }
+    } catch { /* ignore */ }
+    setJoining(false)
+  }
+
+  function copyLink() {
+    if (!data?.refLink) return
+    navigator.clipboard.writeText(data.refLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handlePayoutRequest() {
+    setPayoutLoading(true)
+    setPayoutError('')
+    setPayoutSuccess(false)
+    try {
+      const res  = await fetch('/api/affiliate/payout', { method: 'POST' })
+      const json = await res.json()
+      if (json.ok) setPayoutSuccess(true)
+      else         setPayoutError(json.error || 'Something went wrong')
+    } catch { setPayoutError('Network error — please try again') }
+    setPayoutLoading(false)
+  }
+
+  // ── State 1: Not yet an affiliate ─────────────────────────────────────────
+  if (!data) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-5">
+        <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/40 to-[#111] p-8 text-center">
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top, #3b82f6 0%, transparent 70%)' }} />
+          <div className="relative">
+            <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-blue-500/20">
+              <DollarSign className="w-7 h-7 text-blue-400" />
+            </div>
+            <h2 className="text-white font-bold text-2xl mb-2 tracking-tight">Earn 30% commission</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-8 max-w-sm mx-auto">
+              Share SwipePhotos with your audience and earn 30% on every qualifying purchase — paid monthly to your account.
+            </p>
+            <button
+              onClick={handleJoin}
+              disabled={joining}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3.5 rounded-full transition-all disabled:opacity-60"
+            >
+              {joining ? 'Setting up…' : 'Join affiliate program →'}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: <DollarSign  className="w-5 h-5 text-blue-400" />,   label: '30%',  sub: 'Commission per sale' },
+            { icon: <Users       className="w-5 h-5 text-purple-400" />, label: '$39',   sub: 'Average order value' },
+            { icon: <TrendingUp  className="w-5 h-5 text-green-400" />,  label: '$50',   sub: 'Minimum payout' },
+          ].map(({ icon, label, sub }) => (
+            <div key={label} className="bg-[#111] border border-white/8 rounded-2xl p-4 text-center">
+              <div className="flex items-center justify-center mb-2">{icon}</div>
+              <p className="text-white font-bold text-xl leading-none mb-1">{label}</p>
+              <p className="text-zinc-500 text-xs">{sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-[#111] border border-white/8 rounded-2xl p-5 space-y-4">
+          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">How it works</p>
+          {[
+            ['Join for free',            'Click the button above to get your unique referral link instantly.'],
+            ['Share with your audience', 'Post your link on TikTok, YouTube, Reddit, Twitter, or Discord.'],
+            ['Earn 30% on every sale',   'Any purchase made within 30 days of clicking your link counts.'],
+            ['Get paid monthly',         'Request payout at $50 minimum — processed within 7 days.'],
+          ].map(([title, body]) => (
+            <div key={title as string} className="flex gap-3 items-start">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+              <div>
+                <p className="text-white text-sm font-medium">{title}</p>
+                <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── State 2: Affiliate dashboard ──────────────────────────────────────────
+
+  const convRate       = data.clicks > 0 ? ((data.conversions / data.clicks) * 100).toFixed(1) : '0.0'
+  const availableCents = data.approvedCents
+  const hasPendingPayout = data.payouts.some(p => p.status === 'pending')
+  const canRequestPayout = availableCents >= 5000 && !hasPendingPayout
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-5">
+
+      {data.status !== 'approved' && (
+        <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-4 flex items-center gap-3">
+          <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <div>
+            <p className="text-yellow-300 text-sm font-semibold">Under review</p>
+            <p className="text-zinc-400 text-xs mt-0.5">Your affiliate account is being reviewed. You&apos;ll receive an email when approved.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Referral link */}
+      <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Link2 className="w-4 h-4 text-blue-400" />
+          <p className="text-white text-sm font-semibold">Your referral link</p>
+        </div>
+        <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-3">
+          <code className="flex-1 text-blue-300 text-xs truncate font-mono">{data.refLink ?? '—'}</code>
+          <button
+            onClick={copyLink}
+            className={cn('flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0',
+              copied ? 'bg-green-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white')}
+          >
+            {copied ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
+          </button>
+        </div>
+        {data.refCode && (
+          <p className="text-zinc-600 text-xs mt-2">Code: <span className="text-zinc-400 font-mono">{data.refCode}</span></p>
+        )}
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { icon: <BarChart3   className="w-4 h-4 text-blue-400" />,    label: 'Clicks',      value: fmtK(data.clicks) },
+          { icon: <Users       className="w-4 h-4 text-purple-400" />,  label: 'Signups',     value: fmtK(data.signups) },
+          { icon: <Check       className="w-4 h-4 text-green-400" />,   label: 'Paying',      value: fmtK(data.conversions) },
+          { icon: <TrendingUp  className="w-4 h-4 text-orange-400" />,  label: 'Conv. rate',  value: `${convRate}%` },
+        ].map(({ icon, label, value }) => (
+          <div key={label} className="bg-[#111] border border-white/8 rounded-2xl p-4">
+            <div className="flex items-center gap-1.5 mb-2">{icon}<span className="text-zinc-500 text-xs">{label}</span></div>
+            <p className="text-white font-bold text-xl leading-none">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Commission breakdown */}
+      <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+        <p className="text-white text-sm font-semibold mb-4">Commission</p>
+        <div className="space-y-1">
+          {[
+            { label: 'Pending',   value: data.pendingCents,   desc: 'Awaiting order clearance',  dot: 'bg-yellow-500' },
+            { label: 'Approved',  value: data.approvedCents,  desc: 'Ready to request payout',   dot: 'bg-green-500' },
+            { label: 'Paid out',  value: data.paidCents,      desc: 'Already paid',               dot: 'bg-zinc-600' },
+          ].map(({ label, value, desc, dot }) => (
+            <div key={label} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+              <div className="flex items-center gap-2.5">
+                <span className={cn('w-2 h-2 rounded-full flex-shrink-0', dot)} />
+                <div>
+                  <p className="text-white text-sm font-medium">{label}</p>
+                  <p className="text-zinc-600 text-xs">{desc}</p>
+                </div>
+              </div>
+              <p className="text-white font-semibold tabular-nums">{fmt(value)}</p>
+            </div>
+          ))}
+          <div className="flex items-center justify-between pt-3">
+            <p className="text-zinc-400 text-sm font-semibold">Total earned</p>
+            <p className="text-white font-bold text-lg tabular-nums">{fmt(data.totalEarnedCents)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Payout */}
+      <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <p className="text-white text-sm font-semibold mb-0.5">Payout</p>
+            <p className="text-zinc-500 text-xs">Minimum $50 · Processed within 7 days</p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-white font-bold text-xl tabular-nums">{fmt(availableCents)}</p>
+            <p className="text-zinc-600 text-xs">available</p>
+          </div>
+        </div>
+
+        {payoutSuccess ? (
+          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+            <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+            <p className="text-green-300 text-sm">Payout requested — we&apos;ll process it within 7 days.</p>
+          </div>
+        ) : (
+          <>
+            {payoutError && <p className="text-red-400 text-xs mb-3">{payoutError}</p>}
+            <button
+              onClick={handlePayoutRequest}
+              disabled={!canRequestPayout || payoutLoading}
+              className={cn('w-full py-3 rounded-xl font-semibold text-sm transition-all',
+                canRequestPayout
+                  ? 'bg-blue-600 hover:brightness-110 text-white'
+                  : 'bg-white/5 text-zinc-600 cursor-not-allowed border border-white/8'
+              )}
+            >
+              {payoutLoading
+                ? 'Requesting…'
+                : hasPendingPayout
+                ? 'Payout already pending'
+                : canRequestPayout
+                ? `Request payout (${fmt(availableCents)})`
+                : `${fmt(5000 - availableCents)} more to reach minimum`}
+            </button>
+          </>
+        )}
+
+        {data.payouts.length > 0 && (
+          <div className="mt-5">
+            <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-3">History</p>
+            {data.payouts.map(p => (
+              <div key={p.id} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+                <div>
+                  <p className="text-white text-sm font-medium">{fmt(p.amount_cents)}</p>
+                  <p className="text-zinc-600 text-xs">{new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                </div>
+                <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full border', {
+                  'bg-yellow-500/15 text-yellow-400 border-yellow-500/20': p.status === 'pending',
+                  'bg-blue-500/15 text-blue-400 border-blue-500/20':       p.status === 'approved',
+                  'bg-green-500/15 text-green-400 border-green-500/20':    p.status === 'paid',
+                  'bg-red-500/15 text-red-400 border-red-500/20':          p.status === 'rejected',
+                })}>
+                  {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="text-center text-zinc-600 text-xs">
+        Questions?{' '}
+        <a href="mailto:support@swipephotos.net" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-2">Email support</a>
+      </p>
+    </div>
+  )
 }
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export function DashboardClient({
   orders,
-  refLink,
   userEmail,
   initialCancelled = false,
   hasActiveSubscription = false,
-  affiliateStats = null,
+  affiliateData: initialAffiliateData = null,
 }: {
   orders: Order[]
-  refLink: string | null
   userEmail: string
   initialCancelled?: boolean
   hasActiveSubscription?: boolean
-  affiliateStats?: AffiliateStats | null
+  affiliateData?: AffiliateData
 }) {
-  const router = useRouter()
-  const [copied, setCopied] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [cancelled, setCancelled] = useState(initialCancelled)
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+
+  const [tab, setTab]                     = useState<Tab>((searchParams.get('tab') as Tab) || 'overview')
+  const [cancelling, setCancelling]       = useState(false)
+  const [cancelled, setCancelled]         = useState(initialCancelled)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [loggingOut, setLoggingOut] = useState(false)
+  const [loggingOut, setLoggingOut]       = useState(false)
+  const [affiliateData, setAffiliateData] = useState<AffiliateData>(initialAffiliateData)
 
-  const activeOrder = orders.find(o => ['pending', 'processing', 'training', 'generating'].includes(o.status))
+  const activeOrder     = orders.find(o => ['pending', 'processing', 'training', 'generating'].includes(o.status))
   const completedOrders = orders.filter(o => o.status === 'ready')
-  const hasPhotos = orders.some(o => (o.generated_photos ?? []).length > 0)
+  const hasPhotos       = orders.some(o => (o.generated_photos ?? []).length > 0)
 
-  // Poll when an order is in-progress
   const pollTick = useCallback(async () => {
     if (!activeOrder) return
     if (activeOrder.status === 'generating') {
       try {
-        const res = await fetch(`/api/orders/${activeOrder.id}/poll`)
+        const res  = await fetch(`/api/orders/${activeOrder.id}/poll`)
         const data = await res.json()
         if (data.status === 'ready') { router.refresh(); return }
       } catch { /* ignore */ }
@@ -302,7 +525,7 @@ export function DashboardClient({
   async function handleCancelSubscription() {
     setCancelling(true)
     try {
-      const res = await fetch('/api/cancel-subscription', { method: 'POST' })
+      const res  = await fetch('/api/cancel-subscription', { method: 'POST' })
       const data = await res.json()
       if (data.ok) { setCancelled(true); setShowCancelConfirm(false) }
       else alert(data.error || 'Could not cancel. Please contact support.')
@@ -310,237 +533,169 @@ export function DashboardClient({
     setCancelling(false)
   }
 
-  function copyRef() {
-    if (!refLink) return
-    navigator.clipboard.writeText(refLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  function switchTab(t: Tab) {
+    setTab(t)
+    const params = new URLSearchParams(searchParams.toString())
+    if (t === 'overview') params.delete('tab')
+    else params.set('tab', t)
+    router.replace(`/dashboard${params.size ? `?${params}` : ''}`, { scroll: false })
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────
-  if (!orders.length) {
-    return (
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
-        <div className="text-center py-20">
-          <div className="w-20 h-20 bg-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <ImageIcon className="w-9 h-9 text-blue-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Create your first photo set</h2>
-          <p className="text-zinc-500 text-sm max-w-xs mx-auto mb-8 leading-relaxed">
-            Choose a setting, upload your photos, and preview what SwipePhotos can create for you.
-          </p>
-          <a
-            href="/onboarding"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3.5 rounded-full transition-all"
-          >
-            Get started for free →
-          </a>
-        </div>
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'overview',  label: 'Overview' },
+    { id: 'affiliate', label: 'Affiliate' },
+    { id: 'account',   label: 'Account' },
+  ]
 
-        {/* Account */}
-        <div className="border border-white/8 rounded-2xl p-5 mt-4">
-          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-3">Account</p>
-          <div className="flex items-center justify-between">
-            <p className="text-zinc-300 text-sm truncate">{userEmail}</p>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="flex items-center gap-1.5 text-zinc-500 hover:text-red-400 text-sm transition-colors ml-4 flex-shrink-0"
-            >
+  return (
+    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 bg-white/[0.04] border border-white/8 rounded-2xl p-1">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => switchTab(t.id)}
+            className={cn(
+              'flex-1 text-sm font-semibold py-2.5 rounded-xl transition-all relative',
+              tab === t.id ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'
+            )}
+          >
+            {t.label}
+            {t.id === 'affiliate' && !affiliateData && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 bg-blue-600 rounded-full text-[9px] text-white font-bold align-middle">$</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Overview ──────────────────────────────────────────────────── */}
+      {tab === 'overview' && (
+        <div className="space-y-5">
+          {activeOrder && (
+            <div className="bg-blue-600/8 border border-blue-500/25 rounded-2xl p-5 flex items-center gap-4">
+              <Spinner />
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm">{STATUS_CONFIG[activeOrder.status]?.desc ?? 'Working on your order…'}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">{STATUS_CONFIG[activeOrder.status]?.detail}</p>
+              </div>
+              <StatusBadge status={activeOrder.status} />
+            </div>
+          )}
+
+          {!activeOrder && !hasPhotos && orders.length > 0 && (
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="text-white font-bold text-lg mb-1">Get more photos</h2>
+                <p className="text-zinc-500 text-sm">Try a different style or order a bigger set.</p>
+              </div>
+              <a href="/onboarding" className="bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all flex-shrink-0 text-sm">
+                New order →
+              </a>
+            </div>
+          )}
+
+          {orders.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide px-1">
+                {orders.length === 1 ? 'Your order' : `${orders.length} orders`}
+              </p>
+              {orders.map((order, i) => (
+                <OrderCard key={order.id} order={order} expanded={i === 0} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <ImageIcon className="w-9 h-9 text-blue-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Create your first photo set</h2>
+              <p className="text-zinc-500 text-sm max-w-xs mx-auto mb-8 leading-relaxed">
+                Choose a setting, upload your photos, and preview what SwipePhotos can create for you.
+              </p>
+              <a href="/onboarding"
+                className="inline-flex items-center gap-2 bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3.5 rounded-full transition-all">
+                Get started for free →
+              </a>
+            </div>
+          )}
+
+          {completedOrders.length > 1 && (
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-white font-semibold">All photos</p>
+                <button onClick={() => downloadAll(completedOrders.flatMap(o => o.generated_photos))}
+                  className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
+                  <Download className="w-3.5 h-3.5" /> Download all
+                </button>
+              </div>
+              <PhotoGrid photos={completedOrders.flatMap(o => o.generated_photos)} orderId="all" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Affiliate ─────────────────────────────────────────────────── */}
+      {tab === 'affiliate' && (
+        <AffiliateTab
+          data={affiliateData}
+          onJoined={updated => setAffiliateData(updated)}
+        />
+      )}
+
+      {/* ── Account ───────────────────────────────────────────────────── */}
+      {tab === 'account' && (
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+            <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-3">Account</p>
+            <p className="text-white text-sm">{userEmail}</p>
+          </div>
+
+          {hasActiveSubscription && (
+            <div className="border border-white/8 rounded-2xl p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-white font-semibold text-sm mb-0.5">Subscription</p>
+                  <p className="text-zinc-500 text-xs">
+                    {cancelled ? 'Cancelled — you keep access until the end of the billing period.' : 'Cancel anytime.'}
+                  </p>
+                </div>
+                {!cancelled && !showCancelConfirm && (
+                  <button onClick={() => setShowCancelConfirm(true)}
+                    className="text-zinc-500 hover:text-red-400 text-xs font-medium border border-white/8 hover:border-red-400/30 px-3 py-1.5 rounded-lg transition-all">
+                    Cancel
+                  </button>
+                )}
+                {showCancelConfirm && !cancelled && (
+                  <div className="flex items-center gap-2 w-full mt-1">
+                    <p className="text-zinc-400 text-xs flex-1">Are you sure?</p>
+                    <button onClick={() => setShowCancelConfirm(false)} className="text-zinc-400 text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all hover:text-white">Keep</button>
+                    <button onClick={handleCancelSubscription} disabled={cancelling}
+                      className="text-red-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-400/30 transition-all hover:bg-red-500 hover:text-white disabled:opacity-50">
+                      {cancelling ? 'Cancelling…' : 'Cancel plan'}
+                    </button>
+                  </div>
+                )}
+                {cancelled && <span className="text-zinc-600 text-xs">Cancelled</span>}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+            <button onClick={handleLogout} disabled={loggingOut}
+              className="flex items-center gap-2 text-zinc-400 hover:text-red-400 text-sm transition-colors">
               <LogOut className="w-4 h-4" />
               {loggingOut ? 'Signing out…' : 'Sign out'}
             </button>
           </div>
-        </div>
-      </main>
-    )
-  }
 
-  // ── Main dashboard ───────────────────────────────────────────────────────
-  return (
-    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-
-      {/* Active order banner */}
-      {activeOrder && (
-        <div className="bg-blue-600/8 border border-blue-500/25 rounded-2xl p-5 flex items-center gap-4">
-          <Spinner />
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm">{STATUS_CONFIG[activeOrder.status]?.desc ?? 'Working on your order…'}</p>
-            <p className="text-zinc-500 text-xs mt-0.5">{STATUS_CONFIG[activeOrder.status]?.detail}</p>
-          </div>
-          <StatusBadge status={activeOrder.status} />
-        </div>
-      )}
-
-      {/* Hero CTA */}
-      {!activeOrder && !hasPhotos && (
-        <div className="bg-[#111] border border-white/8 rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-white font-bold text-lg mb-1">Get more photos</h2>
-            <p className="text-zinc-500 text-sm">Try a different style or order a bigger set.</p>
-          </div>
-          <a href="/onboarding" className="bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all flex-shrink-0 text-sm">
-            New order →
-          </a>
-        </div>
-      )}
-
-      {/* Orders — latest first, latest expanded */}
-      <div className="space-y-3">
-        <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide px-1">
-          {orders.length === 1 ? 'Your order' : `${orders.length} orders`}
-        </p>
-        {orders.map((order, i) => (
-          <OrderCard key={order.id} order={order} expanded={i === 0} />
-        ))}
-      </div>
-
-      {/* All photos — quick grid of latest completed */}
-      {completedOrders.length > 1 && (
-        <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-white font-semibold">All your photos</p>
-            <button
-              onClick={() => downloadAll(completedOrders.flatMap(o => o.generated_photos))}
-              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" /> Download all
-            </button>
-          </div>
-          <PhotoGrid
-            photos={completedOrders.flatMap(o => o.generated_photos)}
-            orderId="all"
-          />
-        </div>
-      )}
-
-      {/* Subscription management */}
-      {hasActiveSubscription && (
-        <div className="border border-white/8 rounded-2xl p-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-white font-semibold text-sm mb-0.5">Subscription</p>
-              <p className="text-zinc-500 text-xs">
-                {cancelled
-                  ? 'Cancelled — you keep access until the end of the billing period.'
-                  : 'Cancel anytime. You keep access until the end of your billing period.'}
-              </p>
-            </div>
-            {!cancelled && !showCancelConfirm && (
-              <button
-                onClick={() => setShowCancelConfirm(true)}
-                className="text-zinc-500 hover:text-red-400 text-xs font-medium border border-white/8 hover:border-red-400/30 px-3 py-1.5 rounded-lg transition-all"
-              >
-                Cancel
-              </button>
-            )}
-            {showCancelConfirm && !cancelled && (
-              <div className="flex items-center gap-2 w-full mt-1">
-                <p className="text-zinc-400 text-xs flex-1">Are you sure?</p>
-                <button onClick={() => setShowCancelConfirm(false)} className="text-zinc-400 text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all hover:text-white">Keep</button>
-                <button onClick={handleCancelSubscription} disabled={cancelling} className="text-red-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-400/30 transition-all hover:bg-red-500 hover:text-white disabled:opacity-50">
-                  {cancelling ? 'Cancelling…' : 'Cancel plan'}
-                </button>
-              </div>
-            )}
-            {cancelled && <span className="text-zinc-600 text-xs">Cancelled</span>}
+          <div className="flex gap-4 px-1">
+            <a href="/privacy" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Privacy Policy</a>
+            <a href="/terms"   className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Terms of Service</a>
+            <a href="mailto:support@swipephotos.net" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Support</a>
           </div>
         </div>
       )}
-
-      {/* Refer & Earn */}
-      <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/5 border border-blue-500/20 rounded-2xl p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
-          <div>
-            <h3 className="text-white font-bold mb-0.5">Refer & Earn 30%</h3>
-            <p className="text-zinc-400 text-sm">Share your link. Earn 30% on every sale — paid monthly.</p>
-          </div>
-          {affiliateStats ? (
-            <span className={cn(
-              'text-xs font-semibold px-3 py-1 rounded-full border flex-shrink-0',
-              affiliateStats.status === 'approved'
-                ? 'bg-green-500/15 text-green-400 border-green-500/25'
-                : affiliateStats.status === 'rejected'
-                ? 'bg-red-500/15 text-red-400 border-red-500/25'
-                : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25'
-            )}>
-              {affiliateStats.status === 'approved' ? 'Active' : affiliateStats.status === 'rejected' ? 'Rejected' : 'Under review'}
-            </span>
-          ) : (
-            <span className="bg-blue-600/20 text-blue-400 text-xs font-semibold px-3 py-1 rounded-full border border-blue-500/20 flex-shrink-0">
-              Affiliate
-            </span>
-          )}
-        </div>
-
-        {/* Affiliate stats for approved affiliates */}
-        {affiliateStats?.status === 'approved' && (
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {[
-              { label: 'Clicks', value: affiliateStats.clicks.toLocaleString() },
-              { label: 'Sales', value: affiliateStats.conversions.toLocaleString() },
-              { label: 'Earned', value: `$${(affiliateStats.earnings_cents / 100).toFixed(0)}` },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-black/30 border border-white/8 rounded-xl p-3 text-center">
-                <p className="text-white font-bold text-lg leading-none mb-1">{value}</p>
-                <p className="text-zinc-500 text-xs">{label}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pending commission notice */}
-        {affiliateStats?.status === 'approved' && affiliateStats.pending_cents > 0 && (
-          <p className="text-zinc-500 text-xs mb-3">
-            ${(affiliateStats.pending_cents / 100).toFixed(2)} pending · ${(affiliateStats.approved_cents / 100).toFixed(2)} approved for payout
-          </p>
-        )}
-
-        {refLink ? (
-          <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl p-3">
-            <code className="flex-1 text-zinc-300 text-xs truncate">{refLink}</code>
-            <button
-              onClick={copyRef}
-              className={cn('flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all flex-shrink-0', copied ? 'bg-green-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white')}
-            >
-              {copied ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
-            </button>
-          </div>
-        ) : affiliateStats ? (
-          <p className="text-zinc-500 text-xs">
-            {affiliateStats.status === 'pending'
-              ? 'Your application is being reviewed. We\'ll email you within 24 hours.'
-              : affiliateStats.status === 'rejected'
-              ? 'Your application was not approved. Contact support for details.'
-              : ''}
-          </p>
-        ) : (
-          <a href="/affiliate" className="inline-flex items-center gap-1.5 bg-blue-600 hover:brightness-110 text-white text-sm font-medium px-4 py-2.5 rounded-full transition-all">
-            Apply for affiliate →
-          </a>
-        )}
-      </div>
-
-      {/* Account */}
-      <div className="border border-white/8 rounded-2xl p-5">
-        <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-3">Account</p>
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-zinc-300 text-sm truncate">{userEmail}</p>
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-red-400 text-sm transition-colors flex-shrink-0"
-          >
-            <LogOut className="w-4 h-4" />
-            {loggingOut ? 'Signing out…' : 'Sign out'}
-          </button>
-        </div>
-        <div className="border-t border-white/5 mt-4 pt-4 flex gap-4">
-          <a href="/privacy" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Privacy Policy</a>
-          <a href="/terms" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Terms of Service</a>
-          <a href="mailto:support@swipephotos.net" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Support</a>
-        </div>
-      </div>
 
     </main>
   )

@@ -38,6 +38,30 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Track signup attribution via sw_ref cookie (passed from client via header)
+    const swRef = req.cookies.get('sw_ref')?.value
+    if (swRef && userId) {
+      // Find the affiliate whose referral code matches — increment their signup counter
+      const { data: refUserRow } = await supabase
+        .from('users')
+        .select('id')
+        .eq('referral_code', swRef.toUpperCase())
+        .maybeSingle()
+
+      if (refUserRow?.id && refUserRow.id !== userId) {
+        const { data: affRow } = await supabase
+          .from('affiliates')
+          .select('id')
+          .eq('user_id', refUserRow.id)
+          .eq('status', 'approved')
+          .maybeSingle()
+
+        if (affRow?.id) {
+          void supabase.rpc('increment_affiliate_signups', { p_affiliate_id: affRow.id })
+        }
+      }
+    }
+
     // Create a pending order
     const { data: order } = await supabase
       .from('orders')

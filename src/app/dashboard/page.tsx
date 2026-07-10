@@ -29,7 +29,6 @@ export default async function DashboardPage() {
       .is('user_id', null)
       .order('created_at', { ascending: false })
     ordersByEmail = data || []
-    // Link these orphaned orders to the user so future queries find them
     if (ordersByEmail.length > 0) {
       await supabase.from('orders').update({ user_id: user.id }).eq('email', user.email).is('user_id', null)
     }
@@ -39,11 +38,9 @@ export default async function DashboardPage() {
   const seen = new Set<string>()
   const orders = allOrders.filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
 
-  const refCode = userRow?.referral_code
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
-  const refLink = refCode ? `${appUrl}/?ref=${refCode}` : null
 
-  // Check real subscription status from Stripe so cancel button shows correctly after refresh
+  // Subscription status from Stripe
   let subscriptionCancelledAtPeriodEnd = false
   let hasActiveSubscription = false
   if (userRow?.stripe_customer_id) {
@@ -57,50 +54,73 @@ export default async function DashboardPage() {
         hasActiveSubscription = true
         subscriptionCancelledAtPeriodEnd = subs.data[0].cancel_at_period_end
       }
-    } catch {
-      // Stripe error — fall back to showing cancel button
-    }
+    } catch { /* ignore */ }
   }
 
-  // Fetch affiliate stats if user is an affiliate
-  let affiliateStats: {
+  // Full affiliate data
+  type Payout = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
+  type AffiliateData = {
+    id: string
     status: string
+    refCode: string | null
+    refLink: string | null
     clicks: number
+    signups: number
     conversions: number
-    earnings_cents: number
-    pending_cents: number
-    approved_cents: number
-  } | null = null
+    pendingCents: number
+    approvedCents: number
+    paidCents: number
+    totalEarnedCents: number
+    payouts: Payout[]
+  } | null
+
+  let affiliateData: AffiliateData = null
 
   const { data: affRow } = await supabase
     .from('affiliates')
-    .select('id, status, clicks, conversions, earnings_cents')
+    .select('id, status, clicks, signups, conversions, earnings_cents')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (affRow) {
-    const { data: commRows } = await supabase
-      .from('commissions')
-      .select('status, commission_cents')
-      .eq('affiliate_id', affRow.id)
+    const [{ data: commRows }, { data: payoutRows }] = await Promise.all([
+      supabase
+        .from('commissions')
+        .select('status, commission_cents')
+        .eq('affiliate_id', affRow.id),
+      supabase
+        .from('payouts')
+        .select('id, amount_cents, status, created_at, paid_at')
+        .eq('affiliate_id', affRow.id)
+        .order('created_at', { ascending: false }),
+    ])
 
-    const pending = commRows?.filter(c => c.status === 'pending').reduce((s, c) => s + c.commission_cents, 0) ?? 0
-    const approved = commRows?.filter(c => c.status === 'approved').reduce((s, c) => s + c.commission_cents, 0) ?? 0
+    const pendingCents  = commRows?.filter(c => c.status === 'pending')  .reduce((s, c) => s + c.commission_cents, 0) ?? 0
+    const approvedCents = commRows?.filter(c => c.status === 'approved') .reduce((s, c) => s + c.commission_cents, 0) ?? 0
+    const paidCents     = commRows?.filter(c => c.status === 'paid')     .reduce((s, c) => s + c.commission_cents, 0) ?? 0
 
-    affiliateStats = {
+    const refCode = userRow?.referral_code ?? null
+
+    affiliateData = {
+      id: affRow.id,
       status: affRow.status,
-      clicks: affRow.clicks,
-      conversions: affRow.conversions,
-      earnings_cents: affRow.earnings_cents,
-      pending_cents: pending,
-      approved_cents: approved,
+      refCode,
+      refLink: refCode ? `${appUrl}/r/${refCode}` : null,
+      clicks: affRow.clicks ?? 0,
+      signups: affRow.signups ?? 0,
+      conversions: affRow.conversions ?? 0,
+      pendingCents,
+      approvedCents,
+      paidCents,
+      totalEarnedCents: affRow.earnings_cents ?? 0,
+      payouts: (payoutRows ?? []) as Payout[],
     }
   }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       <nav className="border-b border-white/5 px-6 h-16 flex items-center justify-between max-w-6xl mx-auto">
-        <Link href="/" className="flex items-center gap-0">
+        <Link href="/" className="flex items-center">
           <span className="text-white font-bold text-xl">SwipePhotos</span>
           <span className="text-blue-500 font-bold text-xl">.net</span>
         </Link>
@@ -114,11 +134,10 @@ export default async function DashboardPage() {
 
       <DashboardClient
         orders={orders || []}
-        refLink={refLink}
         userEmail={user.email ?? ''}
         initialCancelled={subscriptionCancelledAtPeriodEnd}
         hasActiveSubscription={hasActiveSubscription}
-        affiliateStats={affiliateStats}
+        affiliateData={affiliateData}
       />
     </div>
   )
