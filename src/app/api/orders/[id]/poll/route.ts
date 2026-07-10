@@ -56,7 +56,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // If no more pending jobs, mark order ready
   if (pending.length === 0 && totalSaved > 0) {
     await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
-    if (order.email) await sendReadyEmail(order.email, orderId).catch(console.error)
+    if (order.email) await sendReadyEmail(order.email, orderId, totalSaved).catch(console.error)
     return NextResponse.json({ status: 'ready', count: totalSaved })
   }
 

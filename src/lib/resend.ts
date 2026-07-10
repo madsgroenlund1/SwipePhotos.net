@@ -118,12 +118,12 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
   await getResend().emails.send({
     from: `SwipePhotos.net <${FROM}>`,
     to: email,
-    subject: '📸 Your AI is training — photos in ~30 min',
+    subject: '📸 Your AI photos are being generated — ready in ~1 min',
     html,
   })
 }
 
-export async function sendReadyEmail(email: string, orderId: string) {
+export async function sendReadyEmail(email: string, orderId: string, photoCount?: number) {
   const html = baseLayout(`
     <!-- Icon -->
     <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding-bottom:24px;">
@@ -137,7 +137,7 @@ export async function sendReadyEmail(email: string, orderId: string) {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;"><tr>
       <td style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(124,58,237,0.1));border:1px solid rgba(59,130,246,0.2);border-radius:16px;padding:28px;text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">📷 📷 📷 📷</div>
-        <div style="color:#93c5fd;font-size:15px;font-weight:600;">8 photos generated</div>
+        <div style="color:#93c5fd;font-size:15px;font-weight:600;">${photoCount ?? 37} photos generated</div>
         <div style="color:#52525b;font-size:13px;margin-top:4px;">Outdoor cafe · City street · Rooftop bar · Beach club · and more</div>
       </td>
     </tr></table>
