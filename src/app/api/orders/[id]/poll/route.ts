@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClientDirect } from '@/lib/supabase/server'
-import { pollFaceSwaps } from '@/lib/faceswap'
+import { pollFaceSwapJobs } from '@/lib/faceswap'
 import { sendReadyEmail } from '@/lib/resend'
 
 export const runtime = 'nodejs'
@@ -41,10 +41,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const alreadySaved = new Set((existingPhotos || []).map((p: { file_url: string }) => p.file_url))
 
-  const { urls: newUrls, pending } = await pollFaceSwaps(requestIds)
+  const { passedUrls, failedUrls, pending } = await pollFaceSwapJobs(requestIds)
+  if (failedUrls.length) console.warn(`[poll] ${failedUrls.length} rejected by quality gate for order ${orderId}`)
 
-  // Save newly completed photos
-  for (const url of newUrls) {
+  // Save newly completed photos that passed quality control
+  for (const url of passedUrls) {
     if (!alreadySaved.has(url)) {
       await supabase.from('generated_photos').insert({ order_id: orderId, file_url: url })
       alreadySaved.add(url)

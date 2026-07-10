@@ -4,7 +4,7 @@ export const maxDuration = 60
 import { stripe } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
-import { submitFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
+import { submitFaceSwapJobs } from '@/lib/faceswap'
 import { fal } from '@fal-ai/client'
 
 fal.config({ credentials: process.env.FAL_KEY })
@@ -55,14 +55,21 @@ export async function POST(req: NextRequest) {
     }
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-    const faceUrl = pickBestFacePhoto(imageUrls)
     const preferredScene = (orderFull?.selected_presets as string[] | null)?.[0]
 
     try {
-      const falFaceUrl = await fal.storage.upload(
-        await fetch(faceUrl).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
-      )
-      const requestIds = await submitFaceSwaps(falFaceUrl, preferredScene)
+      const falPhotoUrls: string[] = []
+      for (const url of imageUrls) {
+        try {
+          const falUrl = await fal.storage.upload(
+            await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
+          )
+          falPhotoUrls.push(falUrl)
+        } catch (e) { console.warn('[verify] Failed to upload photo to fal.ai:', e) }
+      }
+      if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
+
+      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
       if (!requestIds.length) throw new Error('No jobs submitted')
 
       await supabase.from('orders').update({

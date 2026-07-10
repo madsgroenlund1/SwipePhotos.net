@@ -445,10 +445,34 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload 3–5 photos of yourself</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload 6–10 photos of yourself</h2>
               </div>
 
               <div className="px-4 pb-2">
+                {/* Requirements */}
+                <div className="mb-4 bg-blue-500/8 border border-blue-500/20 rounded-2xl p-3.5">
+                  <p className="text-blue-400 text-xs font-semibold mb-2">What we need (more = better results)</p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                    {[
+                      '1 frontal photo (looking straight)',
+                      '1 slight left angle',
+                      '1 slight right angle',
+                      '1 with natural smile',
+                      '1 with neutral expression',
+                      'Good lighting — no heavy shadows',
+                      'No sunglasses or hats',
+                      'No heavy filters or beauty mode',
+                      'Face clearly visible, not cropped',
+                      'High resolution (not screenshots)',
+                    ].map(r => (
+                      <div key={r} className="flex items-start gap-1.5">
+                        <svg className="w-3 h-3 text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        <span className="text-zinc-400 text-[11px] leading-tight">{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Good */}
                 <div className="mb-4">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -514,7 +538,7 @@ export default function OnboardingPage() {
                     <input id="file-input-s3" type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileInput} />
                     <svg className="w-7 h-7 text-zinc-600 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                     <p className="text-zinc-400 text-sm font-medium">Add photos</p>
-                    <p className="text-zinc-600 text-xs mt-0.5">Drop files or click to browse</p>
+                    <p className="text-zinc-600 text-xs mt-0.5">6–10 photos recommended · Drop files or click to browse</p>
                   </div>
                   {photos.length > 0 && (
                     <div className="grid grid-cols-5 gap-1.5 mt-2">
@@ -539,16 +563,19 @@ export default function OnboardingPage() {
               </div>
 
               <div className="px-4 pb-4">
-                {photos.length > 0 && photos.length < 3 && (
-                  <p className="text-amber-400 text-xs text-center mb-2">{photos.length}/3 minimum — upload {3 - photos.length} more</p>
+                {photos.length > 0 && photos.length < 6 && (
+                  <p className="text-amber-400 text-xs text-center mb-2">{photos.length}/6 minimum — upload {6 - photos.length} more for best results</p>
                 )}
-                {photos.length >= 3 && (
-                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos ready</p>
+                {photos.length >= 6 && photos.length < 10 && (
+                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos · Add {10 - photos.length} more for even better results</p>
+                )}
+                {photos.length >= 10 && (
+                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos — perfect!</p>
                 )}
                 <button
                   onClick={next}
-                  disabled={photos.length < 3}
-                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 3 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
+                  disabled={photos.length < 6}
+                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 6 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
                 >
                   Continue →
                 </button>

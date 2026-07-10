@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
-import { pickPreviewPhotos } from '@/lib/faceswap'
+import { runPreviewFaceSwaps } from '@/lib/faceswap'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
-// Map onboarding style IDs → faceswap scene names
-const STYLE_TO_SCENE: Record<string, string> = {
+// Map onboarding style IDs → template category names
+const STYLE_TO_CATEGORY: Record<string, string> = {
   restaurant: 'restaurant',
   formal:     'formal',
-  rooftop:    'city',    // city-style urban references
-  beach:      'casual',  // casual outdoor references
+  rooftop:    'city',
+  beach:      'casual',
 }
 
 export const maxDuration = 60
-
-type FaceSwapResult = { image?: { url: string }; images?: Array<{ url: string }> }
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,49 +25,21 @@ export async function POST(req: NextRequest) {
     const style = (formData.get('style') as string) || 'restaurant'
     if (!file) return NextResponse.json({ error: 'No photo' }, { status: 400 })
 
-    const scene = STYLE_TO_SCENE[style] ?? 'restaurant'
-    // Pick 5 photos with expression variety: smile, serious, relaxed, confident, candid
-    const refs = pickPreviewPhotos(scene)
-    if (!refs.length) return NextResponse.json({ error: 'No references' }, { status: 400 })
+    const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
 
-    // Upload customer face once, reuse across all jobs
+    // Upload customer face to fal.ai storage once, reuse across all 5 jobs
     const faceUrl = await fal.storage.upload(file)
-    console.log('[preview] Uploaded face, scene:', scene, 'expressions:', refs.map(r => r.expression))
+    console.log('[preview] Uploaded face, preferred category:', category)
 
-    // Run all 5 face-swaps in parallel (~15s each → ~15-20s total)
-    // Each job gets a 50s individual timeout so slow ones don't block the rest
-    function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-      return Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms))])
+    const photos = await runPreviewFaceSwaps(faceUrl, category)
+
+    const count = Object.keys(photos).length
+    console.log('[preview] Done —', count, 'photos returned')
+
+    if (count === 0) {
+      return NextResponse.json({ error: 'Face swap failed — please try again' }, { status: 500 })
     }
 
-    const results = await Promise.allSettled(
-      refs.map(ref =>
-        withTimeout(
-          fal.subscribe('fal-ai/face-swap', {
-            input: {
-              base_image_url: ref.url,
-              swap_image_url: faceUrl,
-              face_restore_version: 'v1.4',
-              face_restore_weight: 0.75,
-            },
-            logs: false,
-          }) as Promise<FaceSwapResult>,
-          50_000
-        )
-      )
-    )
-
-    const photos: Record<string, string> = {}
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled') {
-        const url = r.value?.image?.url ?? r.value?.images?.[0]?.url
-        if (url) photos[String(i)] = url
-      } else {
-        console.error(`[preview] Job ${i} failed:`, r.reason)
-      }
-    })
-
-    console.log('[preview] Done, photos:', Object.keys(photos).length)
     return NextResponse.json({ photos, done: true })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

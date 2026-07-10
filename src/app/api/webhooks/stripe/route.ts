@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
-import { submitFaceSwaps, pickBestFacePhoto } from '@/lib/faceswap'
+import { submitFaceSwapJobs } from '@/lib/faceswap'
 import { fal } from '@fal-ai/client'
 import Stripe from 'stripe'
 
@@ -65,16 +65,25 @@ export async function POST(req: NextRequest) {
     }
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-    const faceUrl = pickBestFacePhoto(imageUrls)
     const preferredScene = (orderRow?.selected_presets as string[] | null)?.[0]
 
     try {
-      // Upload face to fal.ai storage once, reuse across all jobs
-      const falFaceUrl = await fal.storage.upload(await fetch(faceUrl).then(r => r.blob())
-        .then(b => new File([b], 'face.jpg', { type: 'image/jpeg' })))
+      // Upload all customer photos to fal.ai storage so we can rotate through them per template
+      const falPhotoUrls: string[] = []
+      for (const url of imageUrls) {
+        try {
+          const falUrl = await fal.storage.upload(
+            await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
+          )
+          falPhotoUrls.push(falUrl)
+        } catch (e) {
+          console.warn('[stripe webhook] Failed to upload photo to fal.ai:', url, e)
+        }
+      }
+      if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      // Submit jobs — preferred scene first so preview photos match customer's style
-      const requestIds = await submitFaceSwaps(falFaceUrl, preferredScene)
+      // Submit 20 jobs, rotating customer photos across templates for best variety + matching
+      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
 
       if (!requestIds.length) throw new Error('No jobs submitted')
 
