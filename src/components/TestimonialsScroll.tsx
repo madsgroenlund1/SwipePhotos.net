@@ -59,7 +59,8 @@ function HingeCard({ file, objectPosition = 'object-center' }: { file: string; o
         src={`/hinge-proof/${file}`}
         alt="Hinge proof"
         fill
-        className="object-cover object-top"
+        className="object-cover"
+        style={{ objectPosition: 'center 38%' }}
         unoptimized
       />
     </div>
