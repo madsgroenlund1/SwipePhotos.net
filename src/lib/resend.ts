@@ -6,7 +6,11 @@ function getResend() {
   return _resend
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+// Gmail addresses aren't valid Resend senders — fall back to the Resend sandbox address
+const _configuredFrom = process.env.RESEND_FROM_EMAIL || ''
+const FROM = _configuredFrom && !_configuredFrom.includes('@gmail.com')
+  ? _configuredFrom
+  : 'onboarding@resend.dev'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
 function baseLayout(content: string) {

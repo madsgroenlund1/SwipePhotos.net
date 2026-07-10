@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const file = formData.get('photo') as File | null
     const style = (formData.get('style') as string) || 'restaurant'
-    if (!file) return NextResponse.json({ error: 'No photo' }, { status: 400 })
+    if (!file || file.size === 0) return NextResponse.json({ error: 'No photo' }, { status: 400 })
 
     const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
 

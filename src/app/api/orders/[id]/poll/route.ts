@@ -54,11 +54,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const totalSaved = alreadySaved.size
 
-  // If no more pending jobs, mark order ready
-  if (pending.length === 0 && totalSaved > 0) {
-    await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
-    if (order.email) await sendReadyEmail(order.email, orderId, totalSaved).catch(console.error)
-    return NextResponse.json({ status: 'ready', count: totalSaved })
+  // If no more pending jobs — either mark ready or failed
+  if (pending.length === 0) {
+    if (totalSaved > 0) {
+      await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
+      if (order.email) await sendReadyEmail(order.email, orderId, totalSaved).catch(console.error)
+      return NextResponse.json({ status: 'ready', count: totalSaved })
+    } else {
+      // All jobs completed but none passed quality gate
+      console.error(`[poll] All jobs failed quality gate for order ${orderId}`)
+      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
+      return NextResponse.json({ status: 'failed' })
+    }
   }
 
   // Update pending IDs for next poll
