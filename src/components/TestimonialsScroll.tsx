@@ -67,6 +67,8 @@ function HingeCard({ file, objectPosition = 'object-center' }: { file: string; o
 }
 
 function CoachCard({ n }: { n: number }) {
+  // Card 2 has white borders around the subject — zoom in hard to fill the frame
+  const zoom = n === 2 ? { transform: 'scale(2.2)', transformOrigin: 'center 30%' } : undefined
   return (
     <div className="flex-shrink-0 w-[280px] h-[280px] rounded-xl overflow-hidden bg-[#111] border border-white/8 relative">
       <Image
@@ -74,6 +76,7 @@ function CoachCard({ n }: { n: number }) {
         alt={`Coach result ${n}`}
         fill
         className="object-cover object-top"
+        style={zoom}
         unoptimized
       />
     </div>
