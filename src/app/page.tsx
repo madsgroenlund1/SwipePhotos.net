@@ -16,8 +16,8 @@ export default function HomePage() {
         <div className="flex items-center justify-center gap-3 mb-10 flex-wrap">
           {[
             { logo: 'tinder', label: 'Tinder' },
-            { logo: 'bumble', label: 'Bumble' },
             { logo: 'hinge', label: 'Hinge' },
+            { logo: 'bumble', label: 'Bumble' },
             { logo: 'instagram', label: 'Instagram' },
           ].map(({ logo, label }) => (
             <div
@@ -144,7 +144,7 @@ export default function HomePage() {
                 { src: '/photos/guide/4.webp', label: 'Smiling, relaxed pose' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
-                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="200px" />
+                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
                     <span className="text-green-400 text-xs font-semibold">✓ {label}</span>
                   </div>
@@ -181,13 +181,13 @@ export default function HomePage() {
 
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { dot: 'bg-yellow-400', text: 'Good natural lighting' },
-            { dot: 'bg-blue-400', text: 'Face clearly visible' },
-            { dot: 'bg-blue-400', text: 'Head-to-waist framing' },
-            { dot: 'bg-red-400', text: 'No hats or sunglasses' },
-          ].map(({ dot, text }) => (
+            { icon: '☀️', text: 'Good natural lighting' },
+            { icon: '👤', text: 'Face clearly visible' },
+            { icon: '📐', text: 'Head-to-waist framing' },
+            { icon: '🚫', text: 'No hats or sunglasses' },
+          ].map(({ icon, text }) => (
             <div key={text} className="flex items-center gap-3 bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3">
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
+              <span className="text-base flex-shrink-0">{icon}</span>
               <span className="text-zinc-300 text-sm">{text}</span>
             </div>
           ))}
@@ -195,7 +195,7 @@ export default function HomePage() {
       </section>
 
       {/* POINT 2: CONCRETE TESTIMONIALS WITH SPECIFIC NUMBERS */}
-      <section className="py-24 px-6 max-w-5xl mx-auto">
+      <section className="pt-8 pb-16 px-6 max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Real results</p>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -207,9 +207,22 @@ export default function HomePage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Testimonial 1 */}
+          {/* Testimonial 1 — Marcus */}
           <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+            {/* Before/After photos */}
+            <div className="flex h-72 relative">
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/benni/before/1.jpg" alt="Marcus before" fill className="object-cover object-bottom" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
+              </div>
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/benni/after/1.jpg" alt="Marcus after" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
+              </div>
+            </div>
+            <div className="bg-blue-600/10 border-y border-blue-500/20 px-6 py-4">
               <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Marcus, 28</div>
               <div className="text-white font-bold text-xl">3 likes/month → <span className="text-green-400">142 likes in 3 days</span></div>
             </div>
@@ -235,9 +248,21 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Testimonial 2 */}
+          {/* Testimonial 2 — Andreas */}
           <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+            <div className="flex h-72 relative">
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/andreas/before/1.jpg" alt="Andreas before" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
+              </div>
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/andreas/after/1.jpg" alt="Andreas after" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
+              </div>
+            </div>
+            <div className="bg-blue-600/10 border-y border-blue-500/20 px-6 py-4">
               <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Andreas, 24</div>
               <div className="text-white font-bold text-xl">5 likes/week → <span className="text-green-400">55 likes overnight</span></div>
             </div>
@@ -263,9 +288,21 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Testimonial 3 */}
+          {/* Testimonial 3 — Julius */}
           <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="bg-blue-600/10 border-b border-blue-500/20 px-6 py-4">
+            <div className="flex h-72 relative">
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/julius/before/2.webp" alt="Julius before" fill className="object-cover object-center" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
+              </div>
+              <div className="relative flex-1 overflow-hidden">
+                <Image src="/photos/before-after/julius/after/1.jpg" alt="Julius after" fill className="object-cover object-bottom" sizes="(max-width: 768px) 50vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
+              </div>
+            </div>
+            <div className="bg-blue-600/10 border-y border-blue-500/20 px-6 py-4">
               <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Julius, 22</div>
               <div className="text-white font-bold text-xl">Never used apps → <span className="text-green-400">20 likes/day</span></div>
             </div>
@@ -294,7 +331,7 @@ export default function HomePage() {
       </section>
 
       {/* POINT 1: PERSONAL STORY — founder quote with specific numbers */}
-      <section className="py-16 px-6">
+      <section className="pt-4 pb-12 px-6">
         <div className="max-w-3xl mx-auto bg-gradient-to-br from-blue-950/40 to-zinc-900/60 border border-blue-500/20 rounded-3xl p-8 md:p-12">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
@@ -323,7 +360,7 @@ export default function HomePage() {
       <AnimatedAIDetection />
 
       {/* POINT 3: VERIFICATION CALLOUT — "You can still verify" */}
-      <section className="py-16 px-6 max-w-3xl mx-auto text-center">
+      <section className="pt-4 pb-8 px-6 max-w-3xl mx-auto text-center">
         <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">100% undetectable</p>
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
           Women won&apos;t question it.
@@ -364,8 +401,8 @@ export default function HomePage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-24">
-        <div className="text-center mb-12 px-6">
+      <section className="py-8 bg-[#0A0A0A]">
+        <div className="text-center mb-6 px-6">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             &ldquo;It&apos;s honestly been life-changing&rdquo;
           </h2>
@@ -398,9 +435,15 @@ export default function HomePage() {
         <p className="text-zinc-600 text-sm mb-1">© 2026 SwipePhotos.net</p>
         <p className="text-zinc-700 text-xs mb-3">Grønlund Investments EMV · CVR: DK42292028</p>
         <div className="flex items-center justify-center">
-          <Link href="/privacy" className="text-zinc-500 hover:text-zinc-400 text-sm transition-colors">
-            Privacy Policy &amp; Terms
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="text-zinc-500 hover:text-zinc-400 text-sm transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-zinc-700">·</span>
+            <Link href="/terms" className="text-zinc-500 hover:text-zinc-400 text-sm transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </footer>
     </main>

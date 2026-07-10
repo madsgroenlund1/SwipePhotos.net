@@ -3,15 +3,13 @@
 import Image from 'next/image'
 
 const CARDS = [
-  { id: 'alex', name: 'Alex', age: 27, beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '8x' },
-  { id: 'andreas', name: 'Andreas', age: 24, beforeCount: 1, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '12x' },
-  { id: 'benni', name: 'Benni', age: 29, beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '6x' },
-  { id: 'black', name: 'Marcus', age: 26, beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '15x' },
-  { id: 'jason', name: 'Jason', age: 31, beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '10x' },
-  { id: 'julius', name: 'Julius', age: 23, beforeCount: 3, beforeExt: 'jpeg', afterExt: 'jpg', multiplier: '20x' },
+  { id: 'benni', name: 'Benni', age: 29, city: 'Berlin', beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '6x' },
+  { id: 'black', name: 'Marcus', age: 26, city: 'Madrid', beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '15x' },
+  { id: 'jason', name: 'Jason', age: 31, city: 'Vienna', beforeCount: 3, beforeExt: 'jpg', afterExt: 'jpg', multiplier: '10x' },
+  { id: 'julius', name: 'Julius', age: 23, city: 'Copenhagen', beforeCount: 3, beforeExt: 'jpeg', afterExt: 'jpg', multiplier: '20x' },
 ]
 
-function BeforeAfterCard({ id, name, age, beforeCount, beforeExt, afterExt, multiplier }: typeof CARDS[0]) {
+function BeforeAfterCard({ id, name, age, city, beforeCount, beforeExt, afterExt, multiplier }: typeof CARDS[0]) {
   const beforeNums = Array.from({ length: Math.min(beforeCount, 3) }, (_, i) => i + 1)
 
   return (
@@ -49,7 +47,7 @@ function BeforeAfterCard({ id, name, age, beforeCount, beforeExt, afterExt, mult
             </div>
             <div>
               <div className="text-white font-semibold text-sm drop-shadow-lg">{name}, {age}</div>
-              <div className="text-blue-300 text-xs drop-shadow">📍 San Francisco</div>
+              <div className="text-blue-300 text-xs drop-shadow">📍 {city}</div>
             </div>
           </div>
         </div>
