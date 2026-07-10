@@ -176,14 +176,14 @@ export default function AffiliatePage() {
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Application received!</h2>
             <p className="text-zinc-400 text-sm mb-4">
-              Vi godkender inden for 24 timer. Dit affiliate-link:
+              We review applications within 24 hours. Your affiliate link:
             </p>
             <button
               onClick={() => { navigator.clipboard.writeText(refLink); }}
               className="w-full bg-[#0A0A0A] border border-blue-500/30 rounded-xl px-4 py-3 text-left group hover:border-blue-500/60 transition-colors"
             >
               <code className="text-blue-400 text-sm break-all">{refLink}</code>
-              <span className="text-zinc-600 text-xs block mt-1 group-hover:text-zinc-400 transition-colors">Klik for at kopiere</span>
+              <span className="text-zinc-600 text-xs block mt-1 group-hover:text-zinc-400 transition-colors">Click to copy</span>
             </button>
           </div>
         ) : (
@@ -219,9 +219,9 @@ export default function AffiliatePage() {
                 />
               </div>
               <div>
-                <label className="text-zinc-400 text-xs mb-1.5 block">Social media brugernavn *</label>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Social media handle *</label>
                 <input
-                  type="text" value={form.handle} onChange={set('handle')} placeholder="@ditbrugernavn"
+                  type="text" value={form.handle} onChange={set('handle')} placeholder="@yourhandle"
                   required
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 transition-colors"
                 />
@@ -273,7 +273,7 @@ export default function AffiliatePage() {
             <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;How I went from 2 matches a week to 20+ with one simple change&rdquo;</li>
             <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;The AI tool that passes every AI detector (I tested it myself)&rdquo;</li>
           </ul>
-          <p className="text-zinc-500 text-xs mb-1.5">Dit link (efter godkendelse):</p>
+          <p className="text-zinc-500 text-xs mb-1.5">Your link (after approval):</p>
           <code className="block bg-white/5 rounded-lg px-3 py-2 text-blue-400 text-xs">
             {refLink}
           </code>
