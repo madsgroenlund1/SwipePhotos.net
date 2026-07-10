@@ -145,7 +145,7 @@ function YoutubeCard({ thumb }: { thumb: typeof YOUTUBE_VIDEOS[0] }) {
   )
 }
 
-function AutoplayVideoCard({ src }: { src: string }) {
+function AutoplayVideoCard({ src, cropBottom }: { src: string; cropBottom?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -174,6 +174,7 @@ function AutoplayVideoCard({ src }: { src: string }) {
         loop
         playsInline
         className="absolute inset-0 w-full h-full object-cover object-center"
+        style={cropBottom ? { clipPath: 'inset(5% 0 18% 0)' } : undefined}
       />
     </div>
   )
@@ -242,7 +243,7 @@ export function TestimonialsScroll() {
         <div className="flex gap-3 animate-marquee-left-slow" style={{ width: 'max-content' }}>
           {row3.map((item, i) => (
             item.type === 'video'
-              ? <AutoplayVideoCard key={`r3-${i}`} src={item.src} />
+              ? <AutoplayVideoCard key={`r3-${i}`} src={item.src} cropBottom={item.src.includes('AQOUz5mY')} />
               : <HingeCard key={`r3-${i}`} file={item.file} />
           ))}
         </div>
