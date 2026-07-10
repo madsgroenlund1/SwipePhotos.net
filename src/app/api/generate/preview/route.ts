@@ -37,17 +37,25 @@ export async function POST(req: NextRequest) {
     console.log('[preview] Uploaded face, scene:', scene, 'expressions:', refs.map(r => r.expression))
 
     // Run all 5 face-swaps in parallel (~15s each → ~15-20s total)
+    // Each job gets a 50s individual timeout so slow ones don't block the rest
+    function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+      return Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms))])
+    }
+
     const results = await Promise.allSettled(
       refs.map(ref =>
-        fal.subscribe('fal-ai/face-swap', {
-          input: {
-            base_image_url: ref.url,
-            swap_image_url: faceUrl,
-            face_restore_version: 'v1.4',
-            face_restore_weight: 0.75,
-          },
-          logs: false,
-        }) as Promise<FaceSwapResult>
+        withTimeout(
+          fal.subscribe('fal-ai/face-swap', {
+            input: {
+              base_image_url: ref.url,
+              swap_image_url: faceUrl,
+              face_restore_version: 'v1.4',
+              face_restore_weight: 0.75,
+            },
+            logs: false,
+          }) as Promise<FaceSwapResult>,
+          50_000
+        )
       )
     )
 
