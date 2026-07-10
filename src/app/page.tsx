@@ -217,7 +217,7 @@ export default function HomePage() {
                 <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/benni/after/1.jpg" alt="Marcus after" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/benni/after/1.jpg" alt="Marcus after" fill className="object-cover" style={{ objectPosition: 'center 15%' }} sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
               </div>
@@ -257,7 +257,7 @@ export default function HomePage() {
                 <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/andreas/after/1.jpg" alt="Andreas after" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/andreas/after/1.jpg" alt="Andreas after" fill className="object-cover" style={{ objectPosition: 'center 15%' }} sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
               </div>
@@ -292,12 +292,12 @@ export default function HomePage() {
           <div className="bg-white/[0.03] border border-white/8 rounded-2xl overflow-hidden">
             <div className="flex h-72 relative">
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/julius/before/2.webp" alt="Julius before" fill className="object-cover object-center" sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/julius/before/2.webp" alt="Julius before" fill className="object-cover" style={{ objectPosition: 'center 10%' }} sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/julius/after/1.jpg" alt="Julius after" fill className="object-cover object-bottom" sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/julius/after/1.jpg" alt="Julius after" fill className="object-cover" style={{ objectPosition: 'center 10%' }} sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✓ After</span>
               </div>
