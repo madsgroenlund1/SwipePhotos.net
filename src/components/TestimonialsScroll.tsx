@@ -174,8 +174,8 @@ function AutoplayVideoCard({ src, cropBottom }: { src: string; cropBottom?: bool
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        style={cropBottom ? { clipPath: 'inset(5% 0 18% 0)' } : undefined}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ objectPosition: '60% center', ...(cropBottom ? { clipPath: 'inset(5% 0 18% 0)' } : {}) }}
       />
     </div>
   )
