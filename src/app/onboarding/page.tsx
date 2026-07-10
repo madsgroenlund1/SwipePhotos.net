@@ -130,6 +130,7 @@ export default function OnboardingPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
   const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null)
@@ -311,6 +312,7 @@ export default function OnboardingPage() {
   async function handleEmailSubmit() {
     if (!email.includes('@') || !agreedToTerms) return
     setLoading(true)
+    setCheckoutError(null)
     try {
       // 1. Create order + get Stripe URL
       const currentPkgs = PACKAGES[billing]
@@ -324,7 +326,7 @@ export default function OnboardingPage() {
       console.log('[checkout response]', data)
 
       if (!res.ok || data.error) {
-        alert(`Payment error: ${data.error || res.status}`)
+        setCheckoutError(data.error || `Something went wrong (${res.status}). Please try again.`)
         setLoading(false)
         return
       }
@@ -344,9 +346,9 @@ export default function OnboardingPage() {
         return
       }
 
-      alert('No payment URL received. Please try again.')
+      setCheckoutError('No payment URL received. Please try again.')
     } catch (err) {
-      alert(`Error: ${err}`)
+      setCheckoutError(`Something went wrong. Please try again. (${err})`)
     }
     setLoading(false)
   }
@@ -1053,6 +1055,7 @@ export default function OnboardingPage() {
                   disabled={loading}
                   onClick={async () => {
                     setLoading(true)
+                    setCheckoutError(null)
                     try {
                       const currentPkgsG = PACKAGES[billing]
                       const pkgG = currentPkgsG.find(p => p.id === selectedPackage) || currentPkgsG[0]
@@ -1063,7 +1066,7 @@ export default function OnboardingPage() {
                       })
                       const data = await res.json()
                       if (!res.ok || data.error) {
-                        alert(`Payment error: ${data.error || res.status}`)
+                        setCheckoutError(data.error || `Something went wrong (${res.status}). Please try again.`)
                         setLoading(false)
                         return
                       }
@@ -1097,12 +1100,12 @@ export default function OnboardingPage() {
                           })
                         }
                       } else {
-                        alert(`No payment URL received. Response: ${JSON.stringify(data)}`)
+                        setCheckoutError('No payment URL received. Please try again.')
                         setLoading(false)
                       }
                     } catch (err) {
                       console.error('[checkout/google]', err)
-                      alert('Could not connect to payment. Please use email instead.')
+                      setCheckoutError('Could not connect to payment. Please use the email option instead.')
                       setLoading(false)
                     }
                   }}
@@ -1154,6 +1157,13 @@ export default function OnboardingPage() {
                     <Link href="/privacy" className="text-zinc-300 underline underline-offset-2">Privacy Policy</Link>
                   </span>
                 </label>
+
+                {/* Error */}
+                {checkoutError && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
+                    {checkoutError}
+                  </div>
+                )}
 
                 {/* Continue */}
                 <button
