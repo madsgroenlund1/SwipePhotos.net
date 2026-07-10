@@ -40,13 +40,17 @@ export async function POST(req: NextRequest) {
 
     if (email) await sendWelcomeEmail(email, orderId).catch(console.error)
 
-    const [{ data: uploads }, { data: orderFull }] = await Promise.all([
-      supabase.from('uploads').select('file_url').eq('order_id', orderId),
-      supabase.from('orders').select('selected_presets').eq('id', orderId).single(),
-    ])
+    // Wait up to 15s for uploads to land (browser uploads happen just before Stripe redirect)
+    let uploads: Array<{ file_url: string }> | null = null
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { data } = await supabase.from('uploads').select('file_url').eq('order_id', orderId)
+      if (data?.length) { uploads = data; break }
+      if (attempt < 4) await new Promise(r => setTimeout(r, 3_000))
+    }
+    const { data: orderFull } = await supabase.from('orders').select('selected_presets').eq('id', orderId).single()
+
     if (!uploads?.length) {
-      console.error('[verify] No uploads for order', orderId)
-      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
+      console.warn('[verify] No uploads after retries for order', orderId, '— leaving as processing')
       return NextResponse.json({ ok: true, warning: 'no_uploads' })
     }
 
