@@ -8,36 +8,13 @@ import { createClient } from '@/lib/supabase/client'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 10
+const TOTAL_STEPS = 7
 
 const STYLE_OPTIONS = [
   { id: 'restaurant', label: 'Italian Restaurant', src: '/photos/presets/scene-restaurant.jpg', free: true },
   { id: 'formal', label: 'Smart Formal', src: '/photos/presets/scene-formal.jpg', free: true },
   { id: 'rooftop', label: 'Rooftop Pool', src: '/photos/presets/scene-rooftop.jpg', free: true },
   { id: 'beach', label: 'Beach Club', src: '/photos/presets/scene-beach.jpg', free: true },
-]
-
-const AI_TRACES_BAD = [
-  'SynthID watermark detected',
-  'AI generation metadata',
-  'Missing camera EXIF data',
-  'Incorrect file dimensions',
-  'AI noise pattern',
-  'Missing mobile compression',
-  'Perfect color uniformity',
-  'No lens distortion artifacts',
-  'Uniform sharpness profile',
-  'Missing GPS coordinates',
-  'Incorrect JPEG quantization',
-  'No chromatic aberration',
-  'Missing device fingerprint',
-  'Synthetic depth of field',
-]
-
-const DETECTION_TOOLS = [
-  { name: 'imgengine', before: '92% AI', after: '3%', logo: 'IE' },
-  { name: 'TruthScan', before: 'AI Detected', after: 'Likely Real', logo: 'TS' },
-  { name: 'bfac', before: 'AI-Generated', after: 'Human', logo: 'BF' },
 ]
 
 const CAROUSEL_PHOTOS: Record<string, string[]> = {
@@ -64,18 +41,17 @@ const CAROUSEL_PHOTOS: Record<string, string[]> = {
 }
 
 const DID_YOU_KNOW = [
-  'The templates are picked by famous dating coaches',
+  'The templates are picked by professional dating coaches',
   'The bottom 50% of profiles only get 4% of the likes!',
-  "We're the ONLY photo generator with anti-AI-detection",
   'Better photos = less texting needed',
-  'SwipePhotos users get 10x more matches on average',
+  'SwipePhotos users report more matches after upgrading their profile',
   'Top 10% of profiles get 58% of all likes on Hinge',
   'Your first photo determines 90% of your swipe rate',
-  'SwipePhotos photos pass every AI scanner',
-  'Professional-looking photos double your match rate',
+  'Professional-looking photos can double your match rate',
   'Most dating coaches recommend quality photos above all',
   'We preserve your real hair, skin tone, and features',
-  'The more photos you upload, the more accurate the result',
+  'Natural lighting is the most important factor in a good photo',
+  'Face-forward photos perform best on Hinge and Bumble',
 ]
 
 const PACKAGES = {
@@ -123,8 +99,6 @@ export default function OnboardingPage() {
   const [progress, setProgress] = useState(0)
   const [didYouKnowIdx, setDidYouKnowIdx] = useState(0)
   const [carouselIdx, setCarouselIdx] = useState(0)
-  const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
-  const [cleanedCount, setCleanedCount] = useState(0)
   const [selectedPackage, setSelectedPackage] = useState<string>('popular')
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
   const [email, setEmail] = useState('')
@@ -297,21 +271,6 @@ export default function OnboardingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // AI traces animation for step 7
-  const handleCleanTraces = () => {
-    setTracesState('cleaning')
-    setCleanedCount(0)
-    let i = 0
-    const iv = setInterval(() => {
-      i++
-      setCleanedCount(i)
-      if (i >= AI_TRACES_BAD.length) {
-        clearInterval(iv)
-        setTracesState('clean')
-      }
-    }, 120)
-  }
-
   async function handleEmailSubmit() {
     if (!email.includes('@') || !agreedToTerms) return
     setLoading(true)
@@ -448,25 +407,19 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload 6–10 photos of yourself</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload your best photos</h2>
               </div>
 
               <div className="px-4 pb-2">
                 {/* Requirements */}
                 <div className="mb-4 bg-blue-500/8 border border-blue-500/20 rounded-2xl p-3.5">
-                  <p className="text-blue-400 text-xs font-semibold mb-2">What we need (more = better results)</p>
+                  <p className="text-blue-400 text-xs font-semibold mb-2">Tips for the best results</p>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                     {[
-                      '1 frontal photo (looking straight)',
-                      '1 slight left angle',
-                      '1 slight right angle',
-                      '1 with natural smile',
-                      '1 with neutral expression',
-                      'Natural lighting — shows real skin tone',
+                      'Face clearly visible',
+                      'Natural lighting',
                       'No sunglasses or hats',
-                      'No heavy filters or beauty mode',
-                      'Face clearly visible, not cropped',
-                      'High resolution (not screenshots)',
+                      'Not a group photo',
                     ].map(r => (
                       <div key={r} className="flex items-start gap-1.5">
                         <svg className="w-3 h-3 text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -541,7 +494,7 @@ export default function OnboardingPage() {
                     <input id="file-input-s3" type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileInput} />
                     <svg className="w-7 h-7 text-zinc-600 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                     <p className="text-zinc-400 text-sm font-medium">Add photos</p>
-                    <p className="text-zinc-600 text-xs mt-0.5">6–10 photos recommended · Drop files or click to browse</p>
+                    <p className="text-zinc-600 text-xs mt-0.5">1 photo minimum · More photos = better results</p>
                   </div>
                   {photos.length > 0 && (
                     <div className="grid grid-cols-5 gap-1.5 mt-2">
@@ -575,19 +528,16 @@ export default function OnboardingPage() {
               </div>
 
               <div className="px-4 pb-4">
-                {photos.length > 0 && photos.length < 6 && (
-                  <p className="text-amber-400 text-xs text-center mb-2">{photos.length}/6 minimum — upload {6 - photos.length} more for best results</p>
+                {photos.length > 0 && photos.length < 3 && (
+                  <p className="text-blue-400 text-xs text-center mb-2">✓ {photos.length} photo — add a few more for the best result</p>
                 )}
-                {photos.length >= 6 && photos.length < 10 && (
-                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos · Add {10 - photos.length} more for even better results</p>
-                )}
-                {photos.length >= 10 && (
-                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos — perfect!</p>
+                {photos.length >= 3 && (
+                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos — great!</p>
                 )}
                 <button
                   onClick={next}
-                  disabled={photos.length < 6}
-                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 6 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
+                  disabled={photos.length < 1}
+                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 1 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
                 >
                   Continue →
                 </button>
@@ -775,231 +725,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 6: DON'T USE YET ───────────────────────────── */}
+          {/* ── STEP 6: Pricing ──────────────────────────────────── */}
           {step === 6 && (
-            <div className="bg-[#0d0d0d] rounded-3xl overflow-hidden">
-              <div className="p-5 pb-3">
-                <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-red-500 mb-1">DON&apos;T USE THIS PHOTO YET!</h2>
-                <p className="text-zinc-400 text-sm">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
-              </div>
-              <div className="px-3 pb-2">
-                <div className="grid grid-cols-3 gap-2">
-                  {/* TruthScan — AI detected */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-1">
-                      <span className="text-blue-600 text-[9px] font-bold">✦</span>
-                      <span className="text-[9px] font-bold text-gray-800">TruthScan</span>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
-                      <div className="px-1.5 pt-1.5 pb-1">
-                        <p className="text-[7px] font-semibold text-gray-800 leading-tight mb-1">Basic AI Image Analysis</p>
-                        <div className="h-1 bg-red-500 rounded-full mb-0.5" />
-                        <div className="flex justify-between mb-1">
-                          <span className="text-[6px] text-red-500 font-bold">Synthetic</span>
-                        </div>
-                        <div className="flex justify-between text-center mb-1">
-                          <div><p className="text-[7px] font-bold text-gray-900">99%</p><p className="text-[5px] text-gray-500">AI Prob.</p></div>
-                          <div><p className="text-[7px] font-bold text-gray-900">High</p><p className="text-[5px] text-gray-500">Confidence</p></div>
-                          <div><p className="text-[7px] font-bold text-gray-900">AI</p><p className="text-[5px] text-gray-500">Class.</p></div>
-                        </div>
-                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
-                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                        </div>
-                        <div className="bg-red-600 rounded text-center py-0.5 mb-0.5">
-                          <p className="text-[6px] text-white font-bold">AI Probability: 99% AI</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
-                  </div>
-                  {/* sightengine — AI detected */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
-                      <span className="text-gray-700 text-[9px] font-bold">sight</span><span className="text-green-600 text-[9px] font-bold">engine</span>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
-                      <div className="px-1.5 pt-1.5 pb-1">
-                        <p className="text-[7px] font-bold text-gray-900 leading-tight mb-1">Detect AI-generated images</p>
-                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
-                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                        </div>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-[6px] font-bold text-gray-900">Likely AI-generated</p>
-                          <div className="bg-red-600 rounded px-1 py-0.5"><span className="text-[7px] text-white font-bold">92%</span></div>
-                        </div>
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">GenAI</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-500 rounded-full" style={{width:'92%'}} /></div><span className="text-[5px] text-gray-600">92%</span></div>
-                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">Face</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-orange-400 rounded-full" style={{width:'10%'}} /></div><span className="text-[5px] text-gray-600">1%</span></div>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
-                  </div>
-                  {/* IsThisAI — AI detected */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
-                      <span className="text-gray-800 text-[9px] font-bold">IsThis</span><div className="w-3 h-3 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-white text-[5px] font-bold">AI</span></div>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-red-300">
-                      <div className="aspect-[3/4] overflow-hidden">
-                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                      </div>
-                      <div className="px-1.5 py-1">
-                        <p className="text-[5px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Analysis Result</p>
-                        <div className="flex items-center gap-0.5 mb-0.5">
-                          <span className="text-red-500 text-[7px]">⊘</span>
-                          <p className="text-[8px] font-bold text-red-500">AI-Generated</p>
-                        </div>
-                        <p className="text-[5px] text-gray-500 mb-0.5">99% Confidence</p>
-                        <div className="h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-500 rounded-full" style={{width:'99%'}} /></div>
-                      </div>
-                    </div>
-                    <p className="text-red-400 text-[9px] font-bold mt-1">✗ AI Detected</p>
-                  </div>
-                </div>
-              </div>
-              <div className="px-4 pb-4 pt-2">
-                <button onClick={next} className="w-full bg-red-500 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 7: AI Traces ────────────────────────────────── */}
-          {step === 7 && (
-            <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-4">
-                <ProgressBar step={7} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">AI traces found in your photo</h2>
-              </div>
-              <div className="px-4 pb-3">
-                {tracesState !== 'clean' && (
-                  <button
-                    onClick={handleCleanTraces}
-                    disabled={tracesState === 'cleaning'}
-                    className={cn('w-full py-3 rounded-2xl font-semibold text-base mb-4 transition-all', tracesState === 'bad' ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-blue-600/50 text-white/50 cursor-not-allowed')}
-                  >
-                    {tracesState === 'cleaning' ? 'Removing AI traces...' : 'Remove all AI traces'}
-                  </button>
-                )}
-                <div className="space-y-0 max-h-72 overflow-y-auto scrollbar-hide">
-                  {AI_TRACES_BAD.map((trace, i) => {
-                    const isCleaned = tracesState === 'clean' || (tracesState === 'cleaning' && i < cleanedCount)
-                    return (
-                      <div key={trace} className="flex items-center gap-3 py-2.5 border-b border-white/5">
-                        {isCleaned ? (
-                          <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        ) : (
-                          <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        )}
-                        <span className={cn('text-sm transition-colors', isCleaned ? 'text-green-400' : 'text-zinc-300')}>{trace}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button onClick={next} disabled={tracesState !== 'clean'} className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', tracesState === 'clean' ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>Continue →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 8: Undetectable ─────────────────────────────── */}
-          {step === 8 && (
-            <div className="bg-[#0d0d0d] rounded-3xl overflow-hidden">
-              <div className="p-5 pb-3">
-                <ProgressBar step={8} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-green-400 mb-1">Undetectable</h2>
-                <p className="text-zinc-400 text-sm">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
-              </div>
-              <div className="px-3 pb-2">
-                <div className="grid grid-cols-3 gap-2">
-                  {/* sightengine — Human */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
-                      <span className="text-gray-700 text-[9px] font-bold">sight</span><span className="text-green-600 text-[9px] font-bold">engine</span>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
-                      <div className="px-1.5 pt-1.5 pb-1">
-                        <p className="text-[7px] font-bold text-gray-900 leading-tight mb-1">Detect AI-generated images</p>
-                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
-                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                        </div>
-                        <p className="text-[5px] text-gray-500 text-center mb-0.5">Tap to try an image or video</p>
-                        <p className="text-[6px] font-bold text-green-700 leading-tight">Not likely to be AI-generated or Deepfake</p>
-                        <div className="flex items-center justify-between mt-0.5 mb-1">
-                          <div className="bg-green-700 rounded px-1 py-0.5"><span className="text-[7px] text-white font-bold">3%</span></div>
-                        </div>
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">GenAI</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-gray-300 rounded-full" style={{width:'1%'}} /></div><span className="text-[5px] text-gray-600">1%</span></div>
-                          <div className="flex items-center gap-1"><span className="text-[5px] text-gray-600 w-8">Face</span><div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-orange-300 rounded-full" style={{width:'3%'}} /></div><span className="text-[5px] text-gray-600">3%</span></div>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
-                  </div>
-                  {/* TruthScan — Human */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-1">
-                      <span className="text-blue-600 text-[9px] font-bold">✦</span>
-                      <span className="text-[9px] font-bold text-gray-800">TruthScan</span>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
-                      <div className="px-1.5 pt-1.5 pb-1">
-                        <p className="text-[7px] font-semibold text-gray-800 leading-tight mb-1">Basic AI Image Analysis</p>
-                        <div className="h-1 bg-green-500 rounded-full mb-0.5" />
-                        <div className="flex justify-between mb-0.5">
-                          <span className="text-[6px] text-green-600 font-bold">Real</span>
-                        </div>
-                        <div className="flex justify-between text-center mb-1">
-                          <div><p className="text-[7px] font-bold text-gray-900">10%</p><p className="text-[5px] text-gray-500">AI Prob.</p></div>
-                          <div><p className="text-[7px] font-bold text-gray-900">High</p><p className="text-[5px] text-gray-500">Confidence</p></div>
-                          <div><p className="text-[7px] font-bold text-gray-900">Real</p><p className="text-[5px] text-gray-500">Class.</p></div>
-                        </div>
-                        <div className="aspect-[3/4] rounded overflow-hidden mb-1">
-                          <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                        </div>
-                        <div className="bg-green-600 rounded text-center py-0.5">
-                          <p className="text-[6px] text-white font-bold">AI Probability: 10% AI</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
-                  </div>
-                  {/* IsThisAI — Human */}
-                  <div className="flex flex-col items-center">
-                    <div className="mb-1.5 bg-white rounded-lg px-2 py-0.5 flex items-center gap-0.5">
-                      <span className="text-gray-800 text-[9px] font-bold">IsThis</span><div className="w-3 h-3 rounded-full bg-blue-600 flex items-center justify-center"><span className="text-white text-[5px] font-bold">AI</span></div>
-                    </div>
-                    <div className="bg-white rounded-xl overflow-hidden w-full border border-green-300">
-                      <div className="aspect-[3/4] overflow-hidden">
-                        <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
-                      </div>
-                      <div className="px-1.5 py-1">
-                        <p className="text-[5px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Analysis Result</p>
-                        <div className="flex items-center gap-0.5 mb-0.5">
-                          <span className="text-green-500 text-[7px]">✓</span>
-                          <p className="text-[8px] font-bold text-green-600">Likely Real</p>
-                        </div>
-                        <p className="text-[5px] text-gray-500 mb-0.5">90% Confidence</p>
-                        <div className="h-1 bg-gray-100 rounded-full"><div className="h-full bg-green-500 rounded-full" style={{width:'90%'}} /></div>
-                      </div>
-                    </div>
-                    <p className="text-green-400 text-[9px] font-bold mt-1">✓ Human</p>
-                  </div>
-                </div>
-              </div>
-              <div className="px-4 pb-4 pt-2">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 9: Pricing ──────────────────────────────────── */}
-          {step === 9 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-4 pb-0">
-                <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
               </div>
               {/* Hero photo with app icons */}
               <div className="relative flex justify-center pt-2 pb-4">
@@ -1080,11 +810,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 10: Email / Account ─────────────────────────── */}
-          {step === 10 && (
+          {/* ── STEP 7: Email / Account ─────────────────────────── */}
+          {step === 7 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-5">
-                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={7} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
                 <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
               </div>

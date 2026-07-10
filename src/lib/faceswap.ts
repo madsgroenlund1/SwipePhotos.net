@@ -1,5 +1,5 @@
 import { fal } from '@fal-ai/client'
-import { pickPaidTemplates, getPreviewTemplates, pickCustomerPhotoForTemplate } from './templates'
+import { getActiveTemplates, pickCustomerPhotoForTemplate } from './templates'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -88,13 +88,11 @@ export async function runPreviewFaceSwaps(
   preferredCategory?: string,
   hasTattoos?: boolean
 ): Promise<Record<string, string>> {
-  const templates = getPreviewTemplates()
-  const ordered = preferredCategory
-    ? [
-        ...templates.filter(t => t.category === preferredCategory),
-        ...templates.filter(t => t.category !== preferredCategory),
-      ].slice(0, 5)
-    : templates
+  // Pick 5 templates by quality: preferred category first, then fill from others
+  const active = getActiveTemplates().sort((a, b) => b.quality - a.quality)
+  const preferred = preferredCategory ? active.filter(t => t.category === preferredCategory) : []
+  const rest = active.filter(t => t.category !== preferredCategory)
+  const ordered = [...preferred, ...rest].slice(0, 5)
 
   // Always use "user_hair" so the customer recognises their own hair in the output.
   // If the customer has tattoos, log it — face/neck tattoos transfer naturally through
@@ -157,7 +155,12 @@ export async function submitFaceSwapJobs(
 ): Promise<string[]> {
   if (!customerPhotoUrls.length) throw new Error('No customer photos provided')
 
-  const templates = pickPaidTemplates(preferredCategory, 20)
+  // Use 100% from chosen category first, fill remaining slots with highest-quality from others
+  const active = getActiveTemplates().sort((a, b) => b.quality - a.quality)
+  const preferred = preferredCategory ? active.filter(t => t.category === preferredCategory) : []
+  const rest = active.filter(t => t.category !== preferredCategory)
+  const templates = [...preferred, ...rest].slice(0, 20)
+
   const workflowType = DEFAULT_WORKFLOW
   console.log(`[faceswap] Submitting ${templates.length} jobs — workflow: ${workflowType}, tattoos: ${!!hasTattoos}, photos: ${customerPhotoUrls.length}`)
 

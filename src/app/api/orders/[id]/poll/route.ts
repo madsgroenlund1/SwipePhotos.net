@@ -4,7 +4,44 @@ import { pollFaceSwapJobs } from '@/lib/faceswap'
 import { sendReadyEmail } from '@/lib/resend'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
+
+const STORAGE_BUCKET = 'generated-photos'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+
+// Download from fal.ai and re-upload to Supabase Storage for a permanent URL.
+// Falls back to the original fal URL on any failure so generation is never lost.
+async function saveToStorage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  falUrl: string,
+  orderId: string,
+  idx: number
+): Promise<string> {
+  try {
+    const resp = await fetch(falUrl)
+    if (!resp.ok) return falUrl
+    const buf = await resp.arrayBuffer()
+    const path = `${orderId}/${idx}.jpg`
+
+    // Ensure the bucket exists (idempotent)
+    await supabase.storage.createBucket(STORAGE_BUCKET, { public: true }).catch(() => {})
+
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, buf, { contentType: 'image/jpeg', upsert: true })
+
+    if (error) {
+      console.warn('[poll] storage upload failed:', error.message)
+      return falUrl
+    }
+
+    return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`
+  } catch (e) {
+    console.warn('[poll] saveToStorage error:', e)
+    return falUrl
+  }
+}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await params
@@ -44,11 +81,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { passedUrls, failedUrls, pending } = await pollFaceSwapJobs(requestIds)
   if (failedUrls.length) console.warn(`[poll] ${failedUrls.length} rejected by quality gate for order ${orderId}`)
 
-  // Save newly completed photos that passed quality control
-  for (const url of passedUrls) {
-    if (!alreadySaved.has(url)) {
-      await supabase.from('generated_photos').insert({ order_id: orderId, file_url: url })
-      alreadySaved.add(url)
+  // Save newly completed photos: download from fal.ai → re-upload to Supabase Storage
+  for (const falUrl of passedUrls) {
+    if (!alreadySaved.has(falUrl)) {
+      const savedIdx = alreadySaved.size
+      const permanentUrl = await saveToStorage(supabase, falUrl, orderId, savedIdx)
+      await supabase.from('generated_photos').insert({ order_id: orderId, file_url: permanentUrl })
+      alreadySaved.add(falUrl) // dedup by original fal URL
     }
   }
 

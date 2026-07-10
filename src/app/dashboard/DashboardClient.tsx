@@ -20,6 +20,7 @@ type Order = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; desc: string; detail: string }> = {
+  draft:      { label: 'Draft',      color: 'text-zinc-500  bg-zinc-500/10  border-zinc-500/20',  icon: <Clock className="w-3.5 h-3.5" />, desc: 'Waiting for payment…',          detail: 'Complete your purchase to start generating photos.' },
   pending:    { label: 'Pending',    color: 'text-zinc-400  bg-zinc-400/10  border-zinc-400/20',  icon: <Clock className="w-3.5 h-3.5" />, desc: 'Confirming payment…',           detail: 'We are confirming your payment. This usually takes under a minute.' },
   processing: { label: 'Processing', color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20', icon: <Clock className="w-3.5 h-3.5" />, desc: 'Starting generation…',         detail: 'Payment confirmed. We are preparing your photos now.' },
   training:   { label: 'Training',   color: 'text-blue-400  bg-blue-400/10  border-blue-400/20',  icon: <Zap  className="w-3.5 h-3.5" />, desc: 'AI is learning your face…',     detail: 'This takes about 20 minutes. We will email you when ready.' },
@@ -237,18 +238,29 @@ function OrderCard({ order, expanded = false }: { order: Order; expanded?: boole
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+type AffiliateStats = {
+  status: string
+  clicks: number
+  conversions: number
+  earnings_cents: number
+  pending_cents: number
+  approved_cents: number
+}
+
 export function DashboardClient({
   orders,
   refLink,
   userEmail,
   initialCancelled = false,
   hasActiveSubscription = false,
+  affiliateStats = null,
 }: {
   orders: Order[]
   refLink: string | null
   userEmail: string
   initialCancelled?: boolean
   hasActiveSubscription?: boolean
+  affiliateStats?: AffiliateStats | null
 }) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
@@ -443,10 +455,47 @@ export function DashboardClient({
             <h3 className="text-white font-bold mb-0.5">Refer & Earn 30%</h3>
             <p className="text-zinc-400 text-sm">Share your link. Earn 30% on every sale — paid monthly.</p>
           </div>
-          <span className="bg-blue-600/20 text-blue-400 text-xs font-semibold px-3 py-1 rounded-full border border-blue-500/20 flex-shrink-0">
-            Affiliate
-          </span>
+          {affiliateStats ? (
+            <span className={cn(
+              'text-xs font-semibold px-3 py-1 rounded-full border flex-shrink-0',
+              affiliateStats.status === 'approved'
+                ? 'bg-green-500/15 text-green-400 border-green-500/25'
+                : affiliateStats.status === 'rejected'
+                ? 'bg-red-500/15 text-red-400 border-red-500/25'
+                : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25'
+            )}>
+              {affiliateStats.status === 'approved' ? 'Active' : affiliateStats.status === 'rejected' ? 'Rejected' : 'Under review'}
+            </span>
+          ) : (
+            <span className="bg-blue-600/20 text-blue-400 text-xs font-semibold px-3 py-1 rounded-full border border-blue-500/20 flex-shrink-0">
+              Affiliate
+            </span>
+          )}
         </div>
+
+        {/* Affiliate stats for approved affiliates */}
+        {affiliateStats?.status === 'approved' && (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[
+              { label: 'Clicks', value: affiliateStats.clicks.toLocaleString() },
+              { label: 'Sales', value: affiliateStats.conversions.toLocaleString() },
+              { label: 'Earned', value: `$${(affiliateStats.earnings_cents / 100).toFixed(0)}` },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-black/30 border border-white/8 rounded-xl p-3 text-center">
+                <p className="text-white font-bold text-lg leading-none mb-1">{value}</p>
+                <p className="text-zinc-500 text-xs">{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pending commission notice */}
+        {affiliateStats?.status === 'approved' && affiliateStats.pending_cents > 0 && (
+          <p className="text-zinc-500 text-xs mb-3">
+            ${(affiliateStats.pending_cents / 100).toFixed(2)} pending · ${(affiliateStats.approved_cents / 100).toFixed(2)} approved for payout
+          </p>
+        )}
+
         {refLink ? (
           <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl p-3">
             <code className="flex-1 text-zinc-300 text-xs truncate">{refLink}</code>
@@ -457,6 +506,14 @@ export function DashboardClient({
               {copied ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
             </button>
           </div>
+        ) : affiliateStats ? (
+          <p className="text-zinc-500 text-xs">
+            {affiliateStats.status === 'pending'
+              ? 'Your application is being reviewed. We\'ll email you within 24 hours.'
+              : affiliateStats.status === 'rejected'
+              ? 'Your application was not approved. Contact support for details.'
+              : ''}
+          </p>
         ) : (
           <a href="/affiliate" className="inline-flex items-center gap-1.5 bg-blue-600 hover:brightness-110 text-white text-sm font-medium px-4 py-2.5 rounded-full transition-all">
             Apply for affiliate →

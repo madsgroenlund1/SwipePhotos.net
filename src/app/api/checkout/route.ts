@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Read affiliate referral code from cookie (set by middleware on ?ref=CODE visits)
+    const referredByCode = req.cookies.get('sw_ref')?.value || null
+
     // Create a pending order (user_id may be null for new users)
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
           ...(hasTattoos ? ['has_tattoos'] : []),
         ],
         email: email || null,
+        referred_by_code: referredByCode,
       })
       .select()
       .single()

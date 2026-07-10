@@ -16,14 +16,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from('affiliates')
     .update({ status: 'approved' })
     .eq('id', id)
-    .select('metadata, referral_code')
+    .select('user_id, metadata')
     .single()
 
   const email = aff?.metadata?.email
-  const refCode = aff?.referral_code || aff?.metadata?.slug
+  const slug: string = aff?.metadata?.slug || ''
+
+  // If affiliate has a linked user account, ensure they have a referral code
+  let refCode = slug
+  if (aff?.user_id) {
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('referral_code')
+      .eq('id', aff.user_id)
+      .single()
+
+    if (userRow?.referral_code) {
+      refCode = userRow.referral_code
+    } else if (slug) {
+      await supabase.from('users').update({ referral_code: slug }).eq('id', aff.user_id)
+    }
+  }
 
   if (email && refCode) {
-    await sendAffiliateApprovedEmail(email, refCode).catch(console.error)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+    const link = `${appUrl}/?ref=${refCode}`
+    await sendAffiliateApprovedEmail(email, link).catch(console.error)
   }
 
   return NextResponse.json({ ok: true })

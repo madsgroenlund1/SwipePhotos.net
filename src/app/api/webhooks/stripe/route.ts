@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const [{ data: uploads }, { data: orderRow }] = await Promise.all([
       supabase.from('uploads').select('file_url').eq('order_id', orderId),
-      supabase.from('orders').select('selected_presets').eq('id', orderId).single(),
+      supabase.from('orders').select('selected_presets, referred_by_code, user_id').eq('id', orderId).single(),
     ])
 
     if (!uploads?.length) {
@@ -68,6 +68,14 @@ export async function POST(req: NextRequest) {
     const selectedPresets = (orderRow?.selected_presets as string[] | null) ?? []
     const preferredScene = selectedPresets.find(p => p !== 'has_tattoos')
     const hasTattoos = selectedPresets.includes('has_tattoos')
+
+    // Create affiliate commission if this order was referred
+    const refCode = orderRow?.referred_by_code
+    if (refCode) {
+      await createCommission(supabase, refCode, orderId, orderRow?.user_id, session).catch(e =>
+        console.error('[stripe webhook] Commission creation failed (non-fatal):', e)
+      )
+    }
 
     try {
       // Upload all customer photos to fal.ai storage so we can rotate through them per template
@@ -103,4 +111,82 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true })
+}
+
+// Look up the affiliate for a ref code and create a 30% commission
+async function createCommission(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  refCode: string,
+  orderId: string,
+  orderUserId: string | null,
+  session: Stripe.Checkout.Session
+) {
+  // Find affiliate by users.referral_code first (authenticated affiliates)
+  let affiliateId: string | null = null
+
+  const { data: userRef } = await supabase
+    .from('users')
+    .select('id')
+    .eq('referral_code', refCode)
+    .single()
+
+  if (userRef?.id) {
+    // Prevent self-referral
+    if (userRef.id === orderUserId) {
+      console.log('[commission] Self-referral detected, skipping')
+      return
+    }
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id, status')
+      .eq('user_id', userRef.id)
+      .single()
+    if (aff?.status === 'approved') affiliateId = aff.id
+  }
+
+  // Fall back to affiliates.metadata->>'slug' (external influencer affiliates)
+  if (!affiliateId) {
+    const { data: aff } = await supabase
+      .from('affiliates')
+      .select('id, status')
+      .eq('metadata->>slug', refCode)
+      .single()
+    if (aff?.status === 'approved') affiliateId = aff.id
+  }
+
+  if (!affiliateId) {
+    console.log('[commission] No approved affiliate found for ref code:', refCode)
+    return
+  }
+
+  const amountCents = session.amount_total ?? 0
+  const commissionCents = Math.floor(amountCents * 0.30)
+
+  // Upsert prevents duplicate commissions if webhook fires twice
+  const { error } = await supabase.from('commissions').upsert(
+    {
+      affiliate_id: affiliateId,
+      order_id: orderId,
+      amount_cents: amountCents,
+      commission_cents: commissionCents,
+      status: 'pending',
+      stripe_session_id: session.id,
+    },
+    { onConflict: 'order_id', ignoreDuplicates: true }
+  )
+
+  if (error) {
+    console.error('[commission] Insert error:', error)
+    return
+  }
+
+  // Atomically increment affiliate stats
+  await supabase.rpc('increment_affiliate_stats', {
+    p_affiliate_id: affiliateId,
+    p_conversions: 1,
+    p_earnings_cents: commissionCents,
+  })
+
+  console.log(`[commission] Created $${(commissionCents / 100).toFixed(2)} commission for affiliate ${affiliateId}`)
 }

@@ -77,7 +77,7 @@ export default function AffiliatePage() {
 
   // Use saved slug if available, otherwise derive from handle field
   const slug = savedSlug || form.handle.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '') || 'yourusername'
-  const refLink = `https://swipephotos.net/${slug}`
+  const refLink = `https://swipephotos.net/?ref=${slug}`
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

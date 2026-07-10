@@ -50,6 +50,7 @@ export default async function DashboardPage() {
     try {
       const subs = await stripe.subscriptions.list({
         customer: userRow.stripe_customer_id,
+        status: 'active',
         limit: 1,
       })
       if (subs.data.length > 0) {
@@ -58,6 +59,41 @@ export default async function DashboardPage() {
       }
     } catch {
       // Stripe error — fall back to showing cancel button
+    }
+  }
+
+  // Fetch affiliate stats if user is an affiliate
+  let affiliateStats: {
+    status: string
+    clicks: number
+    conversions: number
+    earnings_cents: number
+    pending_cents: number
+    approved_cents: number
+  } | null = null
+
+  const { data: affRow } = await supabase
+    .from('affiliates')
+    .select('id, status, clicks, conversions, earnings_cents')
+    .eq('user_id', user.id)
+    .single()
+
+  if (affRow) {
+    const { data: commRows } = await supabase
+      .from('commissions')
+      .select('status, commission_cents')
+      .eq('affiliate_id', affRow.id)
+
+    const pending = commRows?.filter(c => c.status === 'pending').reduce((s, c) => s + c.commission_cents, 0) ?? 0
+    const approved = commRows?.filter(c => c.status === 'approved').reduce((s, c) => s + c.commission_cents, 0) ?? 0
+
+    affiliateStats = {
+      status: affRow.status,
+      clicks: affRow.clicks,
+      conversions: affRow.conversions,
+      earnings_cents: affRow.earnings_cents,
+      pending_cents: pending,
+      approved_cents: approved,
     }
   }
 
@@ -82,6 +118,7 @@ export default async function DashboardPage() {
         userEmail={user.email ?? ''}
         initialCancelled={subscriptionCancelledAtPeriodEnd}
         hasActiveSubscription={hasActiveSubscription}
+        affiliateStats={affiliateStats}
       />
     </div>
   )

@@ -5,11 +5,12 @@ import { runPreviewFaceSwaps } from '@/lib/faceswap'
 fal.config({ credentials: process.env.FAL_KEY })
 
 // Map onboarding style IDs → template category names
+// 'casual' has 0 active templates — beach maps to outdoor (pool/waterfront scenes)
 const STYLE_TO_CATEGORY: Record<string, string> = {
   restaurant: 'restaurant',
   formal:     'formal',
   rooftop:    'city',
-  beach:      'casual',
+  beach:      'outdoor',
 }
 
 export const maxDuration = 60
