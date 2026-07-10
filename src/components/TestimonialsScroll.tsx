@@ -227,19 +227,9 @@ export function TestimonialsScroll() {
       <div>
         <RowLabel emoji="📈" text="More matches, instantly" />
         <div className="flex gap-3 animate-marquee-right" style={{ width: 'max-content' }}>
-          {row2.map((item, i) => {
-            if (item.type === 'result') return (
-              <ResultCard
-                key={`r2-${i}`}
-                before="/photos/guide/1-selfie.webp"
-                after="/photos/guide/4.webp"
-                name="Marcus, 28"
-                stat="3 likes/month → 142 likes in 3 days"
-              />
-            )
-            if (item.type === 'discord') return <DiscordCard key={`r2-${i}`} n={item.n} />
-            return <HingeCard key={`r2-${i}`} file={item.file} />
-          })}
+          {row2.map((item, i) => (
+            <HingeCard key={`r2-${i}`} file={item.file} />
+          ))}
         </div>
       </div>
 
@@ -247,12 +237,11 @@ export function TestimonialsScroll() {
       <div>
         <RowLabel emoji="🔥" text="Results speak for themselves" />
         <div className="flex gap-3 animate-marquee-left-slow" style={{ width: 'max-content' }}>
-          {row3.map((item, i) => {
-            if (item.type === 'youtube') return <YoutubeCard key={`r3-${i}`} thumb={YOUTUBE_VIDEOS[item.idx]} />
-            if (item.type === 'video') return <AutoplayVideoCard key={`r3-${i}`} src={item.src} />
-            if (item.type === 'discord') return <DiscordCard key={`r3-${i}`} n={item.n} />
-            return <HingeCard key={`r3-${i}`} file={item.file} />
-          })}
+          {row3.map((item, i) => (
+            item.type === 'video'
+              ? <AutoplayVideoCard key={`r3-${i}`} src={item.src} />
+              : <HingeCard key={`r3-${i}`} file={item.file} />
+          ))}
         </div>
       </div>
     </div>
