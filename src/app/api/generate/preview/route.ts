@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fal } from '@fal-ai/client'
-import { REFERENCE_PHOTOS } from '@/lib/faceswap'
+import { pickPreviewPhotos } from '@/lib/faceswap'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -28,19 +28,24 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: 'No photo' }, { status: 400 })
 
     const scene = STYLE_TO_SCENE[style] ?? 'restaurant'
-    // Get up to 5 reference photos for this scene
-    const refs = REFERENCE_PHOTOS.filter(r => r.scene === scene).slice(0, 5)
+    // Pick 5 photos with expression variety: smile, serious, relaxed, confident, candid
+    const refs = pickPreviewPhotos(scene)
     if (!refs.length) return NextResponse.json({ error: 'No references' }, { status: 400 })
 
     // Upload customer face once, reuse across all jobs
     const faceUrl = await fal.storage.upload(file)
-    console.log('[preview] Uploaded face, scene:', scene, 'refs:', refs.length)
+    console.log('[preview] Uploaded face, scene:', scene, 'expressions:', refs.map(r => r.expression))
 
-    // Run all face-swaps in parallel (each ~15s, so 5 concurrent ≈ 15-20s total)
+    // Run all 5 face-swaps in parallel (~15s each → ~15-20s total)
     const results = await Promise.allSettled(
       refs.map(ref =>
         fal.subscribe('fal-ai/face-swap', {
-          input: { base_image_url: ref.url, swap_image_url: faceUrl },
+          input: {
+            base_image_url: ref.url,
+            swap_image_url: faceUrl,
+            face_restore_version: 'v1.4',
+            face_restore_weight: 0.75,
+          },
           logs: false,
         }) as Promise<FaceSwapResult>
       )

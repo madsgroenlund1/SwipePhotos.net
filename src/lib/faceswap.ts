@@ -4,66 +4,98 @@ fal.config({ credentials: process.env.FAL_KEY })
 
 const SUPABASE = 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references'
 
-export const REFERENCE_PHOTOS: Array<{ url: string; scene: string }> = [
+// expression: the vibe of the reference photo — used to ensure preview shows variety
+// best: true = include in post-payment set (user curates this)
+export const REFERENCE_PHOTOS: Array<{ url: string; scene: string; expression: string; best?: boolean }> = [
   // City / urban European streets
-  { scene: 'city', url: `${SUPABASE}/model-566594022.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-590915174.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-601551406.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-656384899.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-656788933.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-682657360.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-703861624.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-704784546.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-708089048.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-708793199.jpg` },
-  { scene: 'city', url: `${SUPABASE}/model-728893385.jpg` },
+  { scene: 'city', expression: 'smile',      url: `${SUPABASE}/model-566594022.jpg` },
+  { scene: 'city', expression: 'serious',    url: `${SUPABASE}/model-590915174.jpg` },
+  { scene: 'city', expression: 'relaxed',    url: `${SUPABASE}/model-601551406.jpg` },
+  { scene: 'city', expression: 'confident',  url: `${SUPABASE}/model-656384899.jpg` },
+  { scene: 'city', expression: 'candid',     url: `${SUPABASE}/model-656788933.jpg` },
+  { scene: 'city', expression: 'smile',      url: `${SUPABASE}/model-682657360.jpg` },
+  { scene: 'city', expression: 'serious',    url: `${SUPABASE}/model-703861624.jpg` },
+  { scene: 'city', expression: 'relaxed',    url: `${SUPABASE}/model-704784546.jpg` },
+  { scene: 'city', expression: 'confident',  url: `${SUPABASE}/model-708089048.jpg` },
+  { scene: 'city', expression: 'candid',     url: `${SUPABASE}/model-708793199.jpg` },
+  { scene: 'city', expression: 'smile',      url: `${SUPABASE}/model-728893385.jpg` },
   // Casual / relaxed street
-  { scene: 'casual', url: `${SUPABASE}/model-609644343.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-610581112.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-610613378.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-671808132.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-705365478.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-706035720.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-715412525.jpg` },
-  { scene: 'casual', url: `${SUPABASE}/model-731072445.jpg` },
+  { scene: 'casual', expression: 'smile',     url: `${SUPABASE}/model-609644343.jpg` },
+  { scene: 'casual', expression: 'serious',   url: `${SUPABASE}/model-610581112.jpg` },
+  { scene: 'casual', expression: 'relaxed',   url: `${SUPABASE}/model-610613378.jpg` },
+  { scene: 'casual', expression: 'confident', url: `${SUPABASE}/model-671808132.jpg` },
+  { scene: 'casual', expression: 'candid',    url: `${SUPABASE}/model-705365478.jpg` },
+  { scene: 'casual', expression: 'smile',     url: `${SUPABASE}/model-706035720.jpg` },
+  { scene: 'casual', expression: 'serious',   url: `${SUPABASE}/model-715412525.jpg` },
+  { scene: 'casual', expression: 'relaxed',   url: `${SUPABASE}/model-731072445.jpg` },
   // Outdoor / waterfront / harbour
-  { scene: 'outdoor', url: `${SUPABASE}/model-568282345.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-643582149.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-658442365.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-687476205.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-689274595.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-710537485.jpg` },
-  { scene: 'outdoor', url: `${SUPABASE}/model-731736194.jpg` },
+  { scene: 'outdoor', expression: 'smile',     url: `${SUPABASE}/model-568282345.jpg` },
+  { scene: 'outdoor', expression: 'serious',   url: `${SUPABASE}/model-643582149.jpg` },
+  { scene: 'outdoor', expression: 'relaxed',   url: `${SUPABASE}/model-658442365.jpg` },
+  { scene: 'outdoor', expression: 'confident', url: `${SUPABASE}/model-687476205.jpg` },
+  { scene: 'outdoor', expression: 'candid',    url: `${SUPABASE}/model-689274595.jpg` },
+  { scene: 'outdoor', expression: 'smile',     url: `${SUPABASE}/model-710537485.jpg` },
+  { scene: 'outdoor', expression: 'serious',   url: `${SUPABASE}/model-731736194.jpg` },
   // Formal / hotel / suit
-  { scene: 'formal', url: `${SUPABASE}/model-651983567.jpg` },
-  { scene: 'formal', url: `${SUPABASE}/model-653691675.jpg` },
-  { scene: 'formal', url: `${SUPABASE}/model-708999683.jpg` },
-  { scene: 'formal', url: `${SUPABASE}/model-710423421.jpg` },
+  { scene: 'formal', expression: 'confident', url: `${SUPABASE}/model-651983567.jpg` },
+  { scene: 'formal', expression: 'serious',   url: `${SUPABASE}/model-653691675.jpg` },
+  { scene: 'formal', expression: 'smile',     url: `${SUPABASE}/model-708999683.jpg` },
+  { scene: 'formal', expression: 'relaxed',   url: `${SUPABASE}/model-710423421.jpg` },
   // Restaurant / cafe
-  { scene: 'restaurant', url: `${SUPABASE}/model-670874313.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-670986892.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-671108876.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-671250925.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-724685144.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-726838267.jpg` },
-  { scene: 'restaurant', url: `${SUPABASE}/model-727190138.jpg` },
+  { scene: 'restaurant', expression: 'smile',     url: `${SUPABASE}/model-670874313.jpg` },
+  { scene: 'restaurant', expression: 'candid',    url: `${SUPABASE}/model-670986892.jpg` },
+  { scene: 'restaurant', expression: 'relaxed',   url: `${SUPABASE}/model-671108876.jpg` },
+  { scene: 'restaurant', expression: 'serious',   url: `${SUPABASE}/model-671250925.jpg` },
+  { scene: 'restaurant', expression: 'confident', url: `${SUPABASE}/model-724685144.jpg` },
+  { scene: 'restaurant', expression: 'smile',     url: `${SUPABASE}/model-726838267.jpg` },
+  { scene: 'restaurant', expression: 'candid',    url: `${SUPABASE}/model-727190138.jpg` },
 ]
+
+// The 5 expression types we always want in a preview set (variety = more attractive)
+const PREVIEW_EXPRESSIONS = ['smile', 'serious', 'relaxed', 'confident', 'candid'] as const
+
+// Pick exactly 5 photos for preview: one per expression type from the chosen scene.
+// Falls back to any scene photo if a scene doesn't cover all 5 expressions.
+export function pickPreviewPhotos(scene: string): typeof REFERENCE_PHOTOS {
+  const scenePhotos = REFERENCE_PHOTOS.filter(r => r.scene === scene)
+  const picked: typeof REFERENCE_PHOTOS = []
+  for (const expr of PREVIEW_EXPRESSIONS) {
+    const match = scenePhotos.find(r => r.expression === expr && !picked.includes(r))
+    if (match) picked.push(match)
+  }
+  // Fill up to 5 if scene doesn't have all expressions
+  if (picked.length < 5) {
+    for (const p of scenePhotos) {
+      if (!picked.includes(p)) picked.push(p)
+      if (picked.length === 5) break
+    }
+  }
+  return picked.slice(0, 5)
+}
+
+// Post-payment: only photos marked best:true — user curates this list
+// TODO: set best:true on your top 10-20 photos after reviewing them
+export function pickBestPhotos(): typeof REFERENCE_PHOTOS {
+  const best = REFERENCE_PHOTOS.filter(r => r.best)
+  return best.length >= 10 ? best : REFERENCE_PHOTOS // fallback until curated
+}
 
 type FaceSwapResult = {
   image?: { url?: string }
   images?: Array<{ url?: string }>
 }
 
-// Submit all face-swap jobs to fal.ai queue and return request IDs immediately.
-// preferredScene: put photos from this scene first so the dashboard preview
-// shows the customer's chosen style.
+// Submit face-swap jobs to fal.ai queue after payment.
+// Uses only the curated best photos (set best:true above) — quality over quantity.
+// preferredScene photos are submitted first so the dashboard preview loads the right style.
 export async function submitFaceSwaps(customerPhotoUrl: string, preferredScene?: string): Promise<string[]> {
+  const pool = pickBestPhotos()
   const ordered = preferredScene
     ? [
-        ...REFERENCE_PHOTOS.filter(r => r.scene === preferredScene),
-        ...REFERENCE_PHOTOS.filter(r => r.scene !== preferredScene),
+        ...pool.filter(r => r.scene === preferredScene),
+        ...pool.filter(r => r.scene !== preferredScene),
       ]
-    : REFERENCE_PHOTOS
+    : pool
 
   const jobs = await Promise.allSettled(
     ordered.map((ref) =>
@@ -71,6 +103,8 @@ export async function submitFaceSwaps(customerPhotoUrl: string, preferredScene?:
         input: {
           base_image_url: ref.url,
           swap_image_url: customerPhotoUrl,
+          face_restore_version: 'v1.4',
+          face_restore_weight: 0.75,
         },
       })
     )
@@ -85,7 +119,7 @@ export async function submitFaceSwaps(customerPhotoUrl: string, preferredScene?:
     }
   }
 
-  console.log(`[faceswap] Submitted ${requestIds.length}/${REFERENCE_PHOTOS.length} jobs`)
+  console.log(`[faceswap] Submitted ${requestIds.length}/${ordered.length} jobs`)
   return requestIds
 }
 
