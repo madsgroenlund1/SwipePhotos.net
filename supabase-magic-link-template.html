@@ -1,59 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sign in to SwipePhotos</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<meta name="supported-color-schemes" content="dark" />
+<title>Sign in to SwipePhotos.net</title>
 </head>
-<body style="margin:0;padding:0;background:#0A0A0A;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0A0A0A;padding:40px 16px;">
+<body style="margin:0;padding:0;background:#080808;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+
+<!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+  style="background:#080808;min-width:100%;">
   <tr>
-    <td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+    <td align="center" style="padding:44px 16px 48px;">
+
+      <table width="560" cellpadding="0" cellspacing="0" border="0" role="presentation"
+        style="max-width:560px;width:100%;">
 
         <!-- Logo -->
         <tr>
-          <td style="padding-bottom:32px;" align="center">
-            <span style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.5px;">Swipe<span style="color:#3B82F6;">Photos</span>.net</span>
+          <td align="center" style="padding-bottom:36px;">
+            <a href="https://swipephotos.net" style="text-decoration:none;">
+              <span style="
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                font-size:21px;
+                font-weight:700;
+                color:#ffffff;
+                letter-spacing:-0.5px;
+              ">SwipePhotos<span style="color:#3b82f6;">.net</span></span>
+            </a>
           </td>
         </tr>
 
         <!-- Card -->
         <tr>
-          <td style="background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:44px 44px 40px;">
+          <td style="
+            background:#111111;
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:24px;
+            padding:44px 40px 40px;
+          ">
 
-            <!-- Icon -->
-            <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding-bottom:28px;">
-              <table cellpadding="0" cellspacing="0"><tr><td style="width:72px;height:72px;background:linear-gradient(135deg,rgba(37,99,235,0.25),rgba(37,99,235,0.1));border:1px solid rgba(59,130,246,0.25);border-radius:18px;text-align:center;vertical-align:middle;">
-                <span style="font-size:32px;line-height:72px;">📸</span>
-              </td></tr></table>
-            </td></tr></table>
+            <!-- Brand icon: S lettermark in blue gradient square -->
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 32px;border-collapse:collapse;">
+              <tr>
+                <td width="72" height="72" style="
+                  background:linear-gradient(145deg,#1e40af 0%,#2563eb 50%,#3b82f6 100%);
+                  border-radius:20px;
+                  text-align:center;
+                  vertical-align:middle;
+                  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                  font-size:30px;
+                  font-weight:800;
+                  color:#ffffff;
+                  letter-spacing:-1px;
+                ">S</td>
+              </tr>
+            </table>
 
-            <h1 style="margin:0 0 10px;font-size:26px;font-weight:700;color:#fff;text-align:center;letter-spacing:-0.5px;">Sign in to SwipePhotos</h1>
-            <p style="margin:0 0 32px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">Click the button below to securely sign in.<br />This link expires in 1 hour.</p>
+            <h1 style="
+              margin:0 0 10px;
+              font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+              font-size:26px;
+              font-weight:700;
+              color:#ffffff;
+              text-align:center;
+              letter-spacing:-0.5px;
+              line-height:1.2;
+            ">Sign in to SwipePhotos</h1>
 
-            <!-- CTA Button -->
-            <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding-bottom:32px;">
-              <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3B82F6;color:#fff;font-size:16px;font-weight:700;padding:16px 40px;border-radius:9999px;text-decoration:none;letter-spacing:-0.3px;">
-                Sign in →
-              </a>
-            </td></tr></table>
+            <p style="
+              margin:0 0 36px;
+              font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+              font-size:15px;
+              color:#a1a1aa;
+              text-align:center;
+              line-height:1.65;
+            ">
+              Click the button below to sign in.<br />This link expires in 1 hour and can only be used once.
+            </p>
+
+            <!-- CTA button — table-based for maximum email-client compatibility -->
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 36px;border-collapse:collapse;">
+              <tr>
+                <td style="background:#2563eb;border-radius:100px;">
+                  <a href="{{ .ConfirmationURL }}" style="
+                    display:block;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                    font-size:15px;
+                    font-weight:700;
+                    color:#ffffff;
+                    text-decoration:none;
+                    padding:15px 40px;
+                    white-space:nowrap;
+                    letter-spacing:-0.2px;
+                  ">Sign In →</a>
+                </td>
+              </tr>
+            </table>
 
             <!-- Divider -->
-            <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;">
-              <p style="margin:0 0 8px;font-size:12px;color:#3f3f46;text-align:center;">Or paste this link into your browser:</p>
-              <p style="margin:0;font-size:11px;color:#52525b;text-align:center;word-break:break-all;">{{ .ConfirmationURL }}</p>
-            </td></tr></table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;border-collapse:collapse;">
+              <tr><td style="border-top:1px solid rgba(255,255,255,0.06);font-size:0;line-height:0;">&nbsp;</td></tr>
+            </table>
+
+            <!-- Fallback URL -->
+            <p style="
+              margin:0 0 8px;
+              font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+              font-size:12px;
+              color:#52525b;
+              text-align:center;
+              line-height:1.6;
+            ">If the button doesn't work, copy and paste this link:</p>
+
+            <p style="
+              margin:0;
+              font-family:Menlo,Monaco,Consolas,'Courier New',monospace;
+              font-size:11px;
+              color:#3b82f6;
+              text-align:center;
+              word-break:break-all;
+              line-height:1.6;
+            ">{{ .ConfirmationURL }}</p>
 
           </td>
         </tr>
 
         <!-- Footer -->
         <tr>
-          <td style="padding-top:28px;text-align:center;color:#3f3f46;font-size:12px;line-height:1.8;">
-            SwipePhotos.net — AI Dating Photos for Men<br />
-            Questions? <a href="mailto:support@swipephotos.net" style="color:#52525b;text-decoration:none;">support@swipephotos.net</a><br />
-            <span style="font-size:11px;color:#27272a;">If you didn't request this email, you can safely ignore it. This link can only be used once.</span>
+          <td align="center" style="padding-top:32px;">
+            <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:#3f3f46;line-height:1.7;">
+              <a href="https://swipephotos.net" style="color:#52525b;text-decoration:none;font-weight:600;">SwipePhotos.net</a>
+              &nbsp;&middot;&nbsp;
+              <a href="mailto:support@swipephotos.net" style="color:#52525b;text-decoration:none;">support@swipephotos.net</a>
+            </p>
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;color:#27272a;line-height:1.6;">
+              You're receiving this because you requested a sign-in link. If you didn't, ignore this email.
+            </p>
           </td>
         </tr>
 
@@ -61,5 +146,7 @@
     </td>
   </tr>
 </table>
+<!--[if mso]></td></tr></table><![endif]-->
+
 </body>
 </html>
