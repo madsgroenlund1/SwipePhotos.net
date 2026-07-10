@@ -212,7 +212,7 @@ export default function HomePage() {
             {/* Before/After photos */}
             <div className="flex h-72 relative">
               <div className="relative flex-1 overflow-hidden">
-                <Image src="/photos/before-after/benni/before/1.jpg" alt="Marcus before" fill className="object-cover object-bottom" sizes="(max-width: 768px) 50vw, 33vw" />
+                <Image src="/photos/before-after/benni/before/1.jpg" alt="Marcus before" fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/40 px-1.5 py-0.5 rounded">✗ Before</span>
               </div>
