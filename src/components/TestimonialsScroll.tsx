@@ -54,12 +54,12 @@ const HINGE_VIDEOS = [
 
 function HingeCard({ file, objectPosition = 'object-center' }: { file: string; objectPosition?: string }) {
   return (
-    <div className="flex-shrink-0 w-[360px] h-[280px] rounded-xl overflow-hidden bg-[#0A0A0A] relative border border-white/8">
+    <div className="flex-shrink-0 w-[360px] h-[280px] rounded-xl overflow-hidden bg-[#111] relative border border-white/8">
       <Image
         src={`/hinge-proof/${file}`}
         alt="Hinge proof"
         fill
-        className={`object-cover ${objectPosition}`}
+        className="object-contain object-center"
         unoptimized
       />
     </div>
