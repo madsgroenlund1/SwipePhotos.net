@@ -74,6 +74,8 @@ const DID_YOU_KNOW = [
   'SwipePhotos photos pass every AI scanner',
   'Professional-looking photos double your match rate',
   'Most dating coaches recommend quality photos above all',
+  'We preserve your real hair, skin tone, and features',
+  'The more photos you upload, the more accurate the result',
 ]
 
 const PACKAGES = {
@@ -231,6 +233,7 @@ export default function OnboardingPage() {
         const fd = new FormData()
         fd.append('photo', photos[0])
         fd.append('style', selectedStyle)
+        fd.append('hasTattoos', String(hasTattoos === true))
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
         const data = await res.json() as {
           photos?: Record<string, string>
@@ -320,7 +323,7 @@ export default function OnboardingPage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos === true }),
       })
       const data = await res.json()
       console.log('[checkout response]', data)
@@ -459,7 +462,7 @@ export default function OnboardingPage() {
                       '1 slight right angle',
                       '1 with natural smile',
                       '1 with neutral expression',
-                      'Good lighting — no heavy shadows',
+                      'Natural lighting — shows real skin tone',
                       'No sunglasses or hats',
                       'No heavy filters or beauty mode',
                       'Face clearly visible, not cropped',
@@ -552,12 +555,21 @@ export default function OnboardingPage() {
                   )}
                 </div>
 
+                {/* Identity note */}
+                <div className="mb-4 bg-zinc-900/60 border border-white/8 rounded-2xl px-3.5 py-3">
+                  <p className="text-zinc-400 text-xs leading-relaxed">
+                    <span className="text-white font-semibold">We preserve your real identity.</span>{' '}
+                    Your hair, skin tone, and facial features are kept as close to your actual appearance as possible — the more photos you upload, the better the result.
+                  </p>
+                </div>
+
                 {/* Tattoos */}
                 <div className="mb-4">
-                  <p className="text-white text-sm font-semibold mb-2">Visible tattoos in your photos?</p>
+                  <p className="text-white text-sm font-semibold mb-1">Do you have visible tattoos?</p>
+                  <p className="text-zinc-500 text-xs mb-2">Face and neck tattoos will be preserved. Body tattoos may not appear on template clothing.</p>
                   <div className="flex gap-2">
-                    <button onClick={() => setHasTattoos(false)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border', hasTattoos === false ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>No</button>
-                    <button onClick={() => setHasTattoos(true)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border', hasTattoos === true ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>Yes</button>
+                    <button onClick={() => setHasTattoos(false)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all', hasTattoos === false ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>No</button>
+                    <button onClick={() => setHasTattoos(true)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all', hasTattoos === true ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>Yes — I have tattoos</button>
                   </div>
                 </div>
               </div>
@@ -1089,7 +1101,7 @@ export default function OnboardingPage() {
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle }),
+                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos === true }),
                       })
                       const data = await res.json()
                       if (!res.ok || data.error) {

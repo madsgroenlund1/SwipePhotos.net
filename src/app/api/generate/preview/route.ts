@@ -23,15 +23,16 @@ export async function POST(req: NextRequest) {
 
     const file = formData.get('photo') as File | null
     const style = (formData.get('style') as string) || 'restaurant'
+    const hasTattoos = formData.get('hasTattoos') === 'true'
     if (!file || file.size === 0) return NextResponse.json({ error: 'No photo' }, { status: 400 })
 
     const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
 
     // Upload customer face to fal.ai storage once, reuse across all 5 jobs
     const faceUrl = await fal.storage.upload(file)
-    console.log('[preview] Uploaded face, preferred category:', category)
+    console.log('[preview] Uploaded face, category:', category, 'hasTattoos:', hasTattoos)
 
-    const photos = await runPreviewFaceSwaps(faceUrl, category)
+    const photos = await runPreviewFaceSwaps(faceUrl, category, hasTattoos)
 
     const count = Object.keys(photos).length
     console.log('[preview] Done —', count, 'photos returned')

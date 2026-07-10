@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
     }
 
     const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-    const preferredScene = (orderRow?.selected_presets as string[] | null)?.[0]
+    const selectedPresets = (orderRow?.selected_presets as string[] | null) ?? []
+    const preferredScene = selectedPresets.find(p => p !== 'has_tattoos')
+    const hasTattoos = selectedPresets.includes('has_tattoos')
 
     try {
       // Upload all customer photos to fal.ai storage so we can rotate through them per template
@@ -82,8 +84,8 @@ export async function POST(req: NextRequest) {
       }
       if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      // Submit 20 jobs, rotating customer photos across templates for best variety + matching
-      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
+      // Submit 20 jobs — hasTattoos logged for reference (face/neck tattoos transfer naturally)
+      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene, hasTattoos)
 
       if (!requestIds.length) throw new Error('No jobs submitted')
 

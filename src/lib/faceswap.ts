@@ -6,14 +6,21 @@ fal.config({ credentials: process.env.FAL_KEY })
 // ─── Model ────────────────────────────────────────────────────────────────────
 //
 // easel-ai/advanced-face-swap: swaps ONLY the face into the target image.
-// Preserves background, lighting, pose, clothing, and hair from the template.
-// Much more photorealistic than generative models (no "AI glow").
+// Preserves the template's background, lighting, pose, and clothing.
 //
-// workflow_type: "target_hair" keeps the model photo's hairstyle/scene intact.
+// workflow_type:
+//   "user_hair"   → keeps the CUSTOMER's own hair. Better identity recognition —
+//                   the customer sees their own hairstyle. ← USED BY DEFAULT
+//   "target_hair" → keeps the TEMPLATE model's hair. More polished studio look
+//                   but customer may not recognise themselves as easily.
+//
 // upscale: true adds 2× resolution boost for sharper output.
 //
 const MODEL = 'easel-ai/advanced-face-swap'
-const WORKFLOW_TYPE = 'target_hair'
+
+// "user_hair" is the default — customers recognise themselves much better
+// when their own hairstyle is preserved rather than the template model's.
+const DEFAULT_WORKFLOW = 'user_hair'
 
 // With upscale:true, output images are typically 400–1200 KB.
 // Raise threshold from 80 KB to 150 KB to filter no-op / failed swaps.
@@ -78,7 +85,8 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
 
 export async function runPreviewFaceSwaps(
   customerFaceUrl: string,
-  preferredCategory?: string
+  preferredCategory?: string,
+  hasTattoos?: boolean
 ): Promise<Record<string, string>> {
   const templates = getPreviewTemplates()
   const ordered = preferredCategory
@@ -87,6 +95,12 @@ export async function runPreviewFaceSwaps(
         ...templates.filter(t => t.category !== preferredCategory),
       ].slice(0, 5)
     : templates
+
+  // Always use "user_hair" so the customer recognises their own hair in the output.
+  // If the customer has tattoos, log it — face/neck tattoos transfer naturally through
+  // the face swap; body tattoos stay with the template model's skin (model limitation).
+  const workflowType = DEFAULT_WORKFLOW
+  if (hasTattoos) console.log('[preview] Customer has tattoos — face/neck tattoos will transfer; body tattoos follow template skin')
 
   function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     return Promise.race([
@@ -105,7 +119,7 @@ export async function runPreviewFaceSwaps(
           input: {
             face_image_0: customerUrl,
             target_image: template.url,
-            workflow_type: WORKFLOW_TYPE,
+            workflow_type: workflowType,
             upscale: true,
           } as FaceSwapInput,
           logs: false,
@@ -138,12 +152,14 @@ export async function runPreviewFaceSwaps(
 
 export async function submitFaceSwapJobs(
   customerPhotoUrls: string[],
-  preferredCategory?: string
+  preferredCategory?: string,
+  hasTattoos?: boolean
 ): Promise<string[]> {
   if (!customerPhotoUrls.length) throw new Error('No customer photos provided')
 
   const templates = pickPaidTemplates(preferredCategory, 20)
-  console.log(`[faceswap] Submitting ${templates.length} jobs (customer has ${customerPhotoUrls.length} photos)`)
+  const workflowType = DEFAULT_WORKFLOW
+  console.log(`[faceswap] Submitting ${templates.length} jobs — workflow: ${workflowType}, tattoos: ${!!hasTattoos}, photos: ${customerPhotoUrls.length}`)
 
   const jobs = await Promise.allSettled(
     templates.map((template, idx) => {
@@ -152,7 +168,7 @@ export async function submitFaceSwapJobs(
         input: {
           face_image_0: customerUrl,
           target_image: template.url,
-          workflow_type: WORKFLOW_TYPE,
+          workflow_type: workflowType,
           upscale: true,
         } as FaceSwapInput,
       })
