@@ -57,8 +57,10 @@ export async function POST(req: NextRequest) {
     ])
 
     if (!uploads?.length) {
-      console.error('[stripe webhook] No uploads for order', orderId)
-      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
+      // Uploads may still be in-flight from the browser (race condition).
+      // Leave status as 'processing' — the /api/checkout/verify fallback
+      // called from the processing page will retry once uploads land.
+      console.warn('[stripe webhook] No uploads yet for order', orderId, '— leaving as processing for verify fallback')
       return NextResponse.json({ ok: true })
     }
 
