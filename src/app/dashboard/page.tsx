@@ -68,8 +68,8 @@ export default async function DashboardPage() {
           <span className="text-white font-bold text-xl">SwipePhotos</span>
           <span className="text-blue-500 font-bold text-xl">.net</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <span className="text-zinc-500 text-sm hidden sm:block">{user.email}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-zinc-500 text-sm hidden sm:block truncate max-w-[200px]">{user.email}</span>
           <Link href="/onboarding" className="bg-blue-600 hover:brightness-110 text-white text-sm font-medium px-4 py-2 rounded-full transition-all">
             New Order →
           </Link>
@@ -79,6 +79,7 @@ export default async function DashboardPage() {
       <DashboardClient
         orders={orders || []}
         refLink={refLink}
+        userEmail={user.email ?? ''}
         initialCancelled={subscriptionCancelledAtPeriodEnd}
         hasActiveSubscription={hasActiveSubscription}
       />
