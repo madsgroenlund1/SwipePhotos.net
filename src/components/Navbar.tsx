@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
     function onScroll() {
@@ -12,6 +14,17 @@ export function Navbar() {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedIn(!!data.session)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session)
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   return (
@@ -27,10 +40,10 @@ export function Navbar() {
         </Link>
 
         <Link
-          href="/auth/signin"
+          href={loggedIn ? '/dashboard' : '/auth/signin'}
           className="text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all"
         >
-          Sign in
+          {loggedIn ? 'Dashboard' : 'Sign in'}
         </Link>
       </div>
     </nav>
