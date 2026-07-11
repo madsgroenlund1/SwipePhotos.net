@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [loggedIn, setLoggedIn] = useState(false)
+  // null = auth check not yet complete (hide button to prevent flash)
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
 
   useEffect(() => {
     function onScroll() {
@@ -18,9 +19,13 @@ export function Navbar() {
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Read session from local storage/cookie synchronously on mount
     supabase.auth.getSession().then(({ data }) => {
       setLoggedIn(!!data.session)
     })
+
+    // Keep in sync with sign-in / sign-out across tabs and route changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setLoggedIn(!!session)
     })
@@ -39,9 +44,14 @@ export function Navbar() {
           <span className="text-blue-500 font-bold text-xl">.net</span>
         </Link>
 
+        {/* Hidden until auth check resolves — prevents "Sign in" flash for logged-in users */}
         <Link
           href={loggedIn ? '/dashboard' : '/auth/signin'}
-          className="text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all"
+          className={`text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all duration-150 ${
+            loggedIn === null ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+          tabIndex={loggedIn === null ? -1 : undefined}
+          aria-hidden={loggedIn === null}
         >
           {loggedIn ? 'Dashboard' : 'Sign in'}
         </Link>
