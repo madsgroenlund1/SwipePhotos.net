@@ -758,7 +758,7 @@ export default function OnboardingPage() {
               <div className="px-4 pb-2">
                 <h2 className="text-xl font-bold text-white text-center mb-1">Your matches are waiting</h2>
                 <div className="flex flex-col items-center gap-1 mb-4">
-                  {['100+ proven templates', 'Custom photos', "Don't get banned"].map(f => (
+                  {['100+ proven templates', 'Photos that look like you', 'No photographer needed'].map(f => (
                     <div key={f} className="flex items-center gap-2">
                       <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       <span className="text-zinc-300 text-sm">{f}</span>

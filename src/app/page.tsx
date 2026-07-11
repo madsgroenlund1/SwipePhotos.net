@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { BeforeAfterCarousel } from '@/components/BeforeAfterCarousel'
-import { AnimatedAIDetection } from '@/components/AnimatedAIDetection'
+
 import { TestimonialsScroll } from '@/components/TestimonialsScroll'
 
 export default function HomePage() {
@@ -44,7 +44,7 @@ export default function HomePage() {
 
         <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
           Upload a few selfies. We generate ultra-realistic photos that look exactly like you —
-          in locations you&apos;ve never been, outfits you don&apos;t own. <strong className="text-white">Women can&apos;t tell. Apps can&apos;t detect it.</strong>
+          in professional settings you&apos;ve never been to, with the lighting and composition of a real photographer.
         </p>
 
         {/* Social proof row */}
@@ -74,18 +74,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* AI DETECTION TICKER */}
+      {/* QUALITY TICKER */}
       <div className="w-full overflow-hidden border-y border-white/5 bg-white/[0.02] py-3 my-8">
         <div className="flex gap-0 animate-ticker" style={{ width: 'max-content' }}>
           {[...Array(4)].map((_, rep) => (
             <div key={rep} className="flex items-center gap-0 flex-shrink-0">
               {[
-                { icon: '✓', text: 'PASSES AI DETECTION', color: 'text-green-400' },
-                { icon: '✓', text: 'UNDETECTABLE ON GOOGLE', color: 'text-green-400' },
-                { icon: '✓', text: 'NO SYNTHID WATERMARK', color: 'text-green-400' },
-                { icon: '✓', text: 'PASSES TINDER SCAN', color: 'text-green-400' },
-                { icon: '✓', text: 'LOOKS 100% REAL', color: 'text-green-400' },
-                { icon: '✓', text: 'REVERSE IMAGE SAFE', color: 'text-green-400' },
+                { icon: '✓', text: 'PROFESSIONAL SETTINGS', color: 'text-blue-400' },
+                { icon: '✓', text: 'YOUR REAL FEATURES', color: 'text-blue-400' },
+                { icon: '✓', text: 'COACH-APPROVED TEMPLATES', color: 'text-blue-400' },
+                { icon: '✓', text: 'NATURAL LIGHTING', color: 'text-blue-400' },
+                { icon: '✓', text: '20+ PHOTOS DELIVERED', color: 'text-blue-400' },
+                { icon: '✓', text: 'NO PHOTOGRAPHER NEEDED', color: 'text-blue-400' },
               ].map(({ icon, text, color }, i) => (
                 <div key={i} className="flex items-center gap-6 px-8">
                   <span className={`font-bold text-sm ${color}`}>{icon}</span>
@@ -356,42 +356,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* UNDETECTABLE SECTION */}
-      <AnimatedAIDetection />
-
-      {/* POINT 3: VERIFICATION CALLOUT — "You can still verify" */}
-      <section className="pt-4 pb-8 px-6 max-w-3xl mx-auto text-center">
-        <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">100% undetectable</p>
+      {/* QUALITY SECTION */}
+      <section className="py-16 px-6 max-w-3xl mx-auto text-center">
+        <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Quality results</p>
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-          Women won&apos;t question it.
+          Photos that look like
           <br />
-          <span className="text-green-400">Apps can&apos;t detect it.</span>
+          <span className="text-blue-400">they were taken by a pro.</span>
         </h2>
         <p className="text-zinc-400 text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
-          Our photos are so realistic you can still <strong className="text-white">verify your dating app account</strong> — the ultimate
-          proof they look completely human. Every photo passes reverse image search, AI detectors, and Tinder&apos;s own scan.
+          Our AI preserves your real face, skin tone, and features — placing you in professional
+          settings with natural lighting and composition. The result looks like you hired a photographer.
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {([
             {
-              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-              label: 'Passes Tinder verification',
-            },
-            {
-              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-              label: 'Google reverse image safe',
-            },
-            {
-              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-              label: 'No SynthID watermark',
-            },
-            {
-              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-green-400"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-blue-400"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
               label: 'Looks exactly like you',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-blue-400"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" strokeLinecap="round" strokeLinejoin="round"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Professional settings',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-blue-400"><path d="M12 3v1m0 16v1m8.66-9H21m-18 0H1.34M17.66 5.34l-.7.7M7.04 17.66l-.7.7M17.66 18.66l-.7-.7M7.04 6.34l-.7-.7" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Natural lighting',
+            },
+            {
+              svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-blue-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+              label: 'Coach-approved templates',
             },
           ] as Array<{ svg: React.ReactNode; label: string }>).map(({ svg, label }) => (
             <div key={label} className="bg-white/[0.03] border border-white/8 rounded-xl p-4 flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-400/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-400/10 flex items-center justify-center">
                 {svg}
               </div>
               <span className="text-zinc-300 text-sm text-center font-medium">{label}</span>

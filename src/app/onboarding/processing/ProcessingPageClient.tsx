@@ -5,11 +5,11 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const STAGES = [
-  { label: 'Uploading your photos securely', icon: '☁️', pct: 15 },
-  { label: 'Analyzing your features', icon: '🔍', pct: 35 },
-  { label: 'Swapping face into model photos', icon: '🧠', pct: 60 },
-  { label: 'Applying finishing touches', icon: '✨', pct: 85 },
-  { label: 'Your photos are ready!', icon: '🎉', pct: 100 },
+  { label: 'Uploading your photos', pct: 15 },
+  { label: 'Analyzing your features', pct: 35 },
+  { label: 'Generating your photos', pct: 60 },
+  { label: 'Quality check', pct: 85 },
+  { label: 'Saving your photos', pct: 100 },
 ]
 
 // Face-swap takes ~30-60 sec per job. Advance stages every 12 sec so animation
@@ -170,7 +170,7 @@ export function ProcessingPageClient() {
 
         <div className="w-full mb-3">
           <div className="flex justify-between text-xs text-zinc-600 mb-2">
-            <span>{stage.icon} {stage.label}</span>
+            <span>{stage.label}</span>
             <span>{Math.round(displayProgress)}%</span>
           </div>
           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
