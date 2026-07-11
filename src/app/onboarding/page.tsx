@@ -190,8 +190,9 @@ export default function OnboardingPage() {
       }
 
       try {
+        const compressed = await compressImage(photos[0])
         const fd = new FormData()
-        fd.append('photo', photos[0])
+        fd.append('photo', compressed)
         fd.append('style', selectedStyle)
         fd.append('hasTattoos', String(hasTattoos === true))
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
@@ -203,49 +204,56 @@ export default function OnboardingPage() {
           error?: string
         }
 
-        // New face-swap path: results come back directly
+        // Success: real photos returned
         if (data.photos && Object.keys(data.photos).length > 0) {
           setGeneratedPhotos(data.photos)
           targetProgressRef.current = 100
           return
         }
 
-        // Legacy InstantID polling path (fallback)
-        if (!data.requestIds?.length) {
-          console.warn('[preview] No results, falling back to examples')
-          targetProgressRef.current = 100
+        // API returned an error
+        if (!res.ok || data.error) {
+          setGenError(data.error || 'Generation failed — please try a different photo')
           return
         }
 
-        const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
-
-        pollingRef.current = setInterval(async () => {
-          try {
-            const pollRes = await fetch(
-              `/api/generate/preview/poll?ids=${requestIds.join(',')}&styles=${styles.join(',')}`
-            )
-            const poll = await pollRes.json() as {
-              photos: Record<string, string>
-              done: boolean
-              completedCount: number
-              total: number
+        // Legacy polling path (requestIds present)
+        if (data.requestIds?.length) {
+          const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
+          pollingRef.current = setInterval(async () => {
+            try {
+              const pollRes = await fetch(
+                `/api/generate/preview/poll?ids=${requestIds.join(',')}&styles=${styles.join(',')}`
+              )
+              const poll = await pollRes.json() as {
+                photos: Record<string, string>
+                done: boolean
+                completedCount: number
+                total: number
+              }
+              if (Object.keys(poll.photos).length > 0) {
+                setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
+              }
+              if (poll.done) {
+                if (Object.keys(poll.photos).length === 0) {
+                  setGenError('Generation failed — please try a different photo')
+                } else {
+                  targetProgressRef.current = 100
+                }
+                clearInterval(pollingRef.current!)
+              }
+            } catch (err) {
+              console.error('[preview] Poll error:', err)
             }
+          }, 3000)
+          return
+        }
 
-            if (Object.keys(poll.photos).length > 0) {
-              setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
-            }
-
-            if (poll.done) {
-              targetProgressRef.current = 100
-              clearInterval(pollingRef.current!)
-            }
-          } catch (err) {
-            console.error('[preview] Poll error:', err)
-          }
-        }, 3000)
+        // No photos and no requestIds — unexpected empty success
+        setGenError('No photos were generated — please try again')
       } catch (err) {
         console.error('[preview] Submit error:', err)
-        targetProgressRef.current = 100
+        setGenError('Something went wrong — please try again')
       }
     }
 
@@ -566,9 +574,16 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="px-4 pb-4">
-                {progress >= 100 ? (
+                {genError ? (
+                  <div className="space-y-2">
+                    <p className="text-red-400 text-sm text-center px-2">{genError}</p>
+                    <button onClick={() => setStep(3)} className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-800 hover:bg-zinc-700 text-white transition-all">
+                      ← Try a different photo
+                    </button>
+                  </div>
+                ) : progress >= 100 && hasGenerated ? (
                   <button onClick={next} className="w-full py-4 rounded-2xl font-semibold text-base transition-all bg-blue-600 hover:brightness-110 text-white">
-                    {Object.keys(generatedPhotos).length > 0 ? 'See your AI photos →' : 'Continue →'}
+                    See your AI photos →
                   </button>
                 ) : (
                   <button disabled className="w-full py-4 rounded-2xl font-semibold text-base bg-white/5 text-zinc-600 cursor-not-allowed">
@@ -710,8 +725,8 @@ export default function OnboardingPage() {
                     Choose this photo →
                   </button>
                 ) : (
-                  <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
-                    Continue →
+                  <button onClick={() => setStep(4)} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                    ← Back to generating
                   </button>
                 )}
               </div>
