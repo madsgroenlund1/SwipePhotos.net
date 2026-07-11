@@ -499,26 +499,226 @@ function AffiliateTab({ data, onJoined }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+// ── Cancellation Modal ────────────────────────────────────────────────────────
+
+type CancelStep = 'reason' | 'offer' | 'confirm'
+
+const CANCEL_REASONS = [
+  { id: 'too_expensive',    label: 'Too expensive' },
+  { id: 'not_using',        label: 'Not using it enough' },
+  { id: 'missing_features', label: 'Missing features I need' },
+  { id: 'photos_quality',   label: 'Not happy with photo quality' },
+  { id: 'other',            label: 'Other' },
+]
+
+function CancelModal({
+  step,
+  interval,
+  periodEnd,
+  offerUsed,
+  onClose,
+  onCancelled,
+  onOfferAccepted,
+}: {
+  step: CancelStep
+  interval: 'month' | 'year'
+  periodEnd: number | null
+  offerUsed: boolean
+  onClose: () => void
+  onCancelled: (periodEnd: number) => void
+  onOfferAccepted: () => void
+}) {
+  const [currentStep, setCurrentStep] = useState<CancelStep>(step)
+  const [reason, setReason]           = useState('')
+  const [loading, setLoading]         = useState(false)
+
+  const endDate = periodEnd ? new Date(periodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''
+
+  const offerText = interval === 'month' ? 'Stay free for 1 month' : '50% off your next renewal'
+  const offerDesc = interval === 'month'
+    ? 'Your next billing cycle is on us — no charge. You keep all your photos and can cancel after.'
+    : 'Get 50% off your next yearly renewal. Your subscription continues as normal after that.'
+
+  async function handleContinueFromReason() {
+    if (!reason) return
+    if (!offerUsed) {
+      setCurrentStep('offer')
+    } else {
+      setCurrentStep('confirm')
+    }
+  }
+
+  async function handleAcceptOffer() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/subscription/apply-offer', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        onClose()
+        onOfferAccepted()
+      } else {
+        alert(data.error || 'Could not apply offer. Please contact support.')
+      }
+    } catch {
+      alert('Something went wrong. Please try again.')
+    }
+    setLoading(false)
+  }
+
+  async function handleConfirmCancel() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        onCancelled(data.periodEnd)
+        onClose()
+      } else {
+        alert(data.error || 'Could not cancel. Please contact support.')
+      }
+    } catch {
+      alert('Something went wrong. Please try again.')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Step 1 — Reason */}
+        {currentStep === 'reason' && (
+          <>
+            <h3 className="text-white font-bold text-lg mb-1">Why are you cancelling?</h3>
+            <p className="text-zinc-500 text-sm mb-5">Your feedback helps us improve.</p>
+            <div className="space-y-2 mb-5">
+              {CANCEL_REASONS.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setReason(r.id)}
+                  className={cn(
+                    'w-full text-left px-4 py-3 rounded-xl border text-sm transition-all',
+                    reason === r.id
+                      ? 'border-blue-500/50 bg-blue-500/10 text-white'
+                      : 'border-white/8 text-zinc-400 hover:border-white/20 hover:text-white'
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-zinc-400 text-sm hover:text-white transition-all"
+              >
+                Keep plan
+              </button>
+              <button
+                onClick={handleContinueFromReason}
+                disabled={!reason}
+                className="flex-1 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white text-sm font-medium transition-all"
+              >
+                Continue
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Step 2 — Retention offer */}
+        {currentStep === 'offer' && (
+          <>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                <span className="text-2xl">🎁</span>
+              </div>
+              <h3 className="text-white font-bold text-xl mb-2">{offerText}</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">{offerDesc}</p>
+            </div>
+            <button
+              onClick={handleAcceptOffer}
+              disabled={loading}
+              className="w-full py-3 rounded-xl bg-blue-600 hover:brightness-110 disabled:opacity-50 text-white text-sm font-semibold transition-all mb-3"
+            >
+              {loading ? 'Applying…' : 'Accept offer'}
+            </button>
+            <button
+              onClick={() => setCurrentStep('confirm')}
+              disabled={loading}
+              className="w-full py-2.5 text-zinc-500 hover:text-zinc-300 text-sm transition-all"
+            >
+              No thanks, cancel anyway
+            </button>
+          </>
+        )}
+
+        {/* Step 3 — Final confirm */}
+        {currentStep === 'confirm' && (
+          <>
+            <h3 className="text-white font-bold text-lg mb-2">Cancel your subscription?</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+              {endDate
+                ? `You'll keep access to all your photos until ${endDate}. After that, no more AI photos will be generated.`
+                : "You'll keep access until the end of the current billing period."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-zinc-400 text-sm hover:text-white transition-all"
+              >
+                Keep plan
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white disabled:opacity-50 text-sm font-medium transition-all"
+              >
+                {loading ? 'Cancelling…' : 'Yes, cancel'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function DashboardClient({
   orders,
   userEmail,
   initialCancelled = false,
   hasActiveSubscription = false,
+  subscriptionPeriodEnd = null,
+  subscriptionInterval = 'month',
+  retentionOfferUsed = false,
   affiliateData: initialAffiliateData = null,
 }: {
   orders: Order[]
   userEmail: string
   initialCancelled?: boolean
   hasActiveSubscription?: boolean
+  subscriptionPeriodEnd?: number | null
+  subscriptionInterval?: 'month' | 'year'
+  retentionOfferUsed?: boolean
   affiliateData?: AffiliateData
 }) {
   const router       = useRouter()
   const searchParams = useSearchParams()
 
   const [tab, setTab]                     = useState<Tab>((searchParams.get('tab') as Tab) || 'overview')
-  const [cancelling, setCancelling]       = useState(false)
   const [cancelled, setCancelled]         = useState(initialCancelled)
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [periodEnd, setPeriodEnd]         = useState<number | null>(subscriptionPeriodEnd)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [offerApplied, setOfferApplied]   = useState(false)
   const [loggingOut, setLoggingOut]       = useState(false)
   const [affiliateData, setAffiliateData] = useState<AffiliateData>(initialAffiliateData)
 
@@ -551,15 +751,18 @@ export function DashboardClient({
     router.push('/')
   }
 
-  async function handleCancelSubscription() {
-    setCancelling(true)
+  async function handleReactivate() {
     try {
-      const res  = await fetch('/api/cancel-subscription', { method: 'POST' })
+      const res = await fetch('/api/subscription/reactivate', { method: 'POST' })
       const data = await res.json()
-      if (data.ok) { setCancelled(true); setShowCancelConfirm(false) }
-      else alert(data.error || 'Could not cancel. Please contact support.')
-    } catch { alert('Something went wrong. Please try again.') }
-    setCancelling(false)
+      if (data.ok) {
+        setCancelled(false)
+      } else {
+        alert(data.error || 'Could not reactivate. Please contact support.')
+      }
+    } catch {
+      alert('Something went wrong. Please try again.')
+    }
   }
 
   function switchTab(t: Tab) {
@@ -686,28 +889,45 @@ export function DashboardClient({
                 <div>
                   <p className="text-white font-semibold text-sm mb-0.5">Subscription</p>
                   <p className="text-zinc-500 text-xs">
-                    {cancelled ? 'Cancelled — you keep access until the end of the billing period.' : 'Cancel anytime.'}
+                    {offerApplied
+                      ? 'Offer applied — enjoy your discount!'
+                      : cancelled && periodEnd
+                        ? `Cancelled — access until ${new Date(periodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                        : cancelled
+                          ? 'Cancelled — you keep access until the end of the billing period.'
+                          : 'Cancel anytime.'}
                   </p>
                 </div>
-                {!cancelled && !showCancelConfirm && (
-                  <button onClick={() => setShowCancelConfirm(true)}
-                    className="text-zinc-500 hover:text-red-400 text-xs font-medium border border-white/8 hover:border-red-400/30 px-3 py-1.5 rounded-lg transition-all">
+                {!cancelled && !offerApplied && (
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    className="text-zinc-500 hover:text-red-400 text-xs font-medium border border-white/8 hover:border-red-400/30 px-3 py-1.5 rounded-lg transition-all"
+                  >
                     Cancel
                   </button>
                 )}
-                {showCancelConfirm && !cancelled && (
-                  <div className="flex items-center gap-2 w-full mt-1">
-                    <p className="text-zinc-400 text-xs flex-1">Are you sure?</p>
-                    <button onClick={() => setShowCancelConfirm(false)} className="text-zinc-400 text-xs px-3 py-1.5 rounded-lg border border-white/10 transition-all hover:text-white">Keep</button>
-                    <button onClick={handleCancelSubscription} disabled={cancelling}
-                      className="text-red-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-400/30 transition-all hover:bg-red-500 hover:text-white disabled:opacity-50">
-                      {cancelling ? 'Cancelling…' : 'Cancel plan'}
-                    </button>
-                  </div>
+                {cancelled && (
+                  <button
+                    onClick={handleReactivate}
+                    className="text-blue-400 hover:text-blue-300 text-xs font-medium border border-blue-500/20 hover:border-blue-400/40 px-3 py-1.5 rounded-lg transition-all"
+                  >
+                    Reactivate
+                  </button>
                 )}
-                {cancelled && <span className="text-zinc-600 text-xs">Cancelled</span>}
               </div>
             </div>
+          )}
+
+          {showCancelModal && (
+            <CancelModal
+              step="reason"
+              interval={subscriptionInterval}
+              periodEnd={periodEnd}
+              offerUsed={retentionOfferUsed}
+              onClose={() => setShowCancelModal(false)}
+              onCancelled={(end) => { setCancelled(true); setPeriodEnd(end) }}
+              onOfferAccepted={() => setOfferApplied(true)}
+            />
           )}
 
           <div className="bg-[#111] border border-white/8 rounded-2xl p-5">

@@ -430,7 +430,104 @@ export async function sendFailedEmail(email: string, orderId: string) {
   })
 }
 
-// ─── 4. Affiliate application received ───────────────────────────────────────
+// ─── 4. Subscription cancelled ───────────────────────────────────────────────
+
+export async function sendCancellationEmail(
+  email: string,
+  { periodEnd, reason }: { periodEnd: Date; reason: string | null }
+) {
+  const endStr = periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+  const html = baseLayout(`
+
+    ${brandIcon(68, 18)}
+
+    <h1 style="margin:0 0 10px;font-family:${FONT};font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.5px;line-height:1.2;">
+      Subscription cancelled
+    </h1>
+    <p style="margin:0 0 36px;font-family:${FONT};font-size:15px;color:#a1a1aa;text-align:center;line-height:1.65;">
+      You&rsquo;ll keep full access to all your photos until <strong style="color:#ffffff;">${endStr}</strong>.<br />No more charges after that date.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;border-collapse:collapse;">
+      <tr>
+        <td style="background:#0d0d0d;border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;">
+          <div style="font-family:${FONT};font-size:13px;color:#a1a1aa;line-height:1.8;text-align:center;">
+            Your photos and dashboard remain accessible.<br />
+            You can reactivate your plan anytime from the dashboard.
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+      <tr><td align="center">${ctaButton(`${APP_URL}/dashboard?tab=account`, 'Reactivate plan →', 'secondary')}</td></tr>
+    </table>
+
+    ${divider}
+
+    ${reason ? `<p style="margin:0;font-family:${FONT};font-size:11px;color:#3f3f46;text-align:center;">Cancellation reason: ${reason}</p>` : ''}
+
+  `, "You're receiving this because you cancelled your SwipePhotos subscription.")
+
+  await getResend().emails.send({
+    from: `SwipePhotos.net <${FROM}>`,
+    to: email,
+    subject: `Your subscription has been cancelled — access until ${endStr}`,
+    html,
+  })
+}
+
+// ─── 5. Retention offer accepted ─────────────────────────────────────────────
+
+export async function sendOfferAcceptedEmail(
+  email: string,
+  { offerType, interval }: { offerType: string; interval: 'month' | 'year' }
+) {
+  const offerLabel = offerType === 'free_month'
+    ? 'Your next month is on us'
+    : '50% off your next renewal'
+  const offerDesc = offerType === 'free_month'
+    ? 'We&rsquo;ve applied a 100% discount to your next billing cycle. You won&rsquo;t be charged anything next month.'
+    : 'We&rsquo;ve applied 50% off your next renewal. The discount will be applied automatically.'
+
+  const html = baseLayout(`
+
+    ${brandIcon(68, 18)}
+
+    <h1 style="margin:0 0 10px;font-family:${FONT};font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.5px;line-height:1.2;">
+      ${offerLabel}!
+    </h1>
+    <p style="margin:0 0 36px;font-family:${FONT};font-size:15px;color:#a1a1aa;text-align:center;line-height:1.65;">
+      ${offerDesc}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;border-collapse:collapse;">
+      <tr>
+        <td style="background:#0d0d0d;border:1px solid rgba(37,99,235,0.2);border-radius:16px;padding:24px;text-align:center;">
+          <div style="font-family:${FONT};font-size:13px;color:#a1a1aa;line-height:1.8;">
+            Your subscription continues without interruption.<br />
+            Keep getting fresh AI photos every ${interval === 'month' ? 'month' : 'year'}.
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+      <tr><td align="center">${ctaButton(`${APP_URL}/dashboard`, 'Go to Dashboard →')}</td></tr>
+    </table>
+
+  `, "You're receiving this because you accepted a SwipePhotos retention offer.")
+
+  await getResend().emails.send({
+    from: `SwipePhotos.net <${FROM}>`,
+    to: email,
+    subject: offerType === 'free_month' ? 'Your next month is free' : '50% off your next renewal — confirmed',
+    html,
+  })
+}
+
+// ─── 6. Affiliate application received ───────────────────────────────────────
 
 export async function sendAffiliateApplicationEmail(email: string, name: string) {
   const html = baseLayout(`

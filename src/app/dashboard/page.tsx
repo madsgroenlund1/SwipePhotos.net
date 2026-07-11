@@ -16,7 +16,7 @@ export default async function DashboardPage() {
       .select('*, generated_photos(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase.from('users').select('referral_code, stripe_customer_id').eq('id', user.id).single(),
+    supabase.from('users').select('referral_code, stripe_customer_id, retention_offer_accepted_at').eq('id', user.id).single(),
   ])
 
   // Also fetch orders matched by email (for users who paid without being logged in)
@@ -43,6 +43,8 @@ export default async function DashboardPage() {
   // Subscription status from Stripe
   let subscriptionCancelledAtPeriodEnd = false
   let hasActiveSubscription = false
+  let subscriptionPeriodEnd: number | null = null
+  let subscriptionInterval: 'month' | 'year' = 'month'
   if (userRow?.stripe_customer_id) {
     try {
       const subs = await stripe.subscriptions.list({
@@ -51,11 +53,17 @@ export default async function DashboardPage() {
         limit: 1,
       })
       if (subs.data.length > 0) {
+        const sub = subs.data[0]
         hasActiveSubscription = true
-        subscriptionCancelledAtPeriodEnd = subs.data[0].cancel_at_period_end
+        subscriptionCancelledAtPeriodEnd = sub.cancel_at_period_end
+        subscriptionPeriodEnd = sub.items.data[0]?.current_period_end ?? null
+        subscriptionInterval = (sub.items.data[0]?.plan?.interval ?? 'month') as 'month' | 'year'
       }
     } catch { /* ignore */ }
   }
+
+  // Retention offer status (field already loaded via userRow above)
+  const retentionOfferUsed = !!userRow?.retention_offer_accepted_at
 
   // Full affiliate data
   type Payout = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
@@ -137,6 +145,9 @@ export default async function DashboardPage() {
         userEmail={user.email ?? ''}
         initialCancelled={subscriptionCancelledAtPeriodEnd}
         hasActiveSubscription={hasActiveSubscription}
+        subscriptionPeriodEnd={subscriptionPeriodEnd}
+        subscriptionInterval={subscriptionInterval}
+        retentionOfferUsed={retentionOfferUsed}
         affiliateData={affiliateData}
       />
     </div>

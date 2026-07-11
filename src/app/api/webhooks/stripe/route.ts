@@ -110,6 +110,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Sync subscription state changes (cancellations, reactivations)
+  if (event.type === 'customer.subscription.updated') {
+    const sub = event.data.object as Stripe.Subscription
+    const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+    const supabase = createAdminClientDirect()
+    await supabase
+      .from('users')
+      .update({ stripe_subscription_id: sub.id })
+      .eq('stripe_customer_id', customerId)
+    console.log(`[stripe webhook] subscription.updated ${sub.id} cancel_at_period_end=${sub.cancel_at_period_end}`)
+  }
+
+  // Mark subscription as ended when fully deleted
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object as Stripe.Subscription
+    const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+    const supabase = createAdminClientDirect()
+    await supabase
+      .from('users')
+      .update({ stripe_subscription_id: null })
+      .eq('stripe_customer_id', customerId)
+    console.log(`[stripe webhook] subscription.deleted ${sub.id}`)
+  }
+
   // Reverse affiliate commission when Stripe issues a refund
   if (event.type === 'charge.refunded') {
     const charge = event.data.object as Stripe.Charge
