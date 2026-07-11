@@ -1,36 +1,41 @@
 import { fal } from '@fal-ai/client'
-import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate } from './templates'
+import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate, Template } from './templates'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 //
-// easel-ai/advanced-face-swap: swaps ONLY the face into the target image.
-// Preserves the template's background, lighting, pose, and clothing.
+// half-moon-ai/ai-face-swap/faceswapimagemulti
 //
-// workflow_type:
-//   "user_hair"   → keeps the CUSTOMER's own hair
-//   "target_hair" → keeps the TEMPLATE model's hair
+// Replaced the deprecated easel-ai/advanced-face-swap. This model:
+//   - Takes source_face (customer URL) and target_image (template URL)
+//   - Handles skin-tone adaptation, shadow matching, and alignment automatically
+//   - No workflow_type or upscale params — the model handles these internally
+//   - Supports multiple faces in the target image (faceswapimagemulti variant)
 //
-// upscale: true adds 2× resolution boost for sharper output.
-//
-const MODEL = 'easel-ai/advanced-face-swap'
-const DEFAULT_WORKFLOW = 'user_hair'
+const MODEL = 'half-moon-ai/ai-face-swap/faceswapimagemulti'
 
-// With upscale:true, output images are typically 400–1200 KB.
-const MIN_VALID_SIZE_BYTES = 150_000
+// Minimum acceptable output file size. Outputs below this threshold are
+// typically failed/empty swaps or corrupted frames.
+const MIN_VALID_SIZE_BYTES = 80_000
+
+// Maximum number of customer photos to try per template before giving up.
+const MAX_ATTEMPTS_PER_TEMPLATE = 2
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FaceSwapInput = {
-  face_image_0: string
+  source_face: string
   target_image: string
-  workflow_type: string
-  upscale: boolean
 }
 
-type FaceSwapResult = {
-  image?: { url?: string; width?: number; height?: number }
+// fal.ai models return data under `data` key; the image URL may be nested
+// in different ways depending on model version. extractOutputUrl() handles all.
+type FaceSwapOutput = {
+  image?:   { url?: string; width?: number; height?: number; file_size?: number }
+  images?:  Array<{ url?: string }>
+  output?:  { url?: string } | string
+  url?:     string
 }
 
 export type QualityResult = {
@@ -40,14 +45,51 @@ export type QualityResult = {
   failReason?: string
 }
 
-// Tracks which fal.ai request belongs to which template — stored as JSON in orders.replicate_training_id
+// Tracks which fal.ai request belongs to which template
 export type JobEntry = {
   requestId: string
   templateId: string
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Extract the output image URL from whatever shape the fal.ai model returns.
+ * Guards against all known variants.
+ */
+function extractOutputUrl(result: unknown): string | null {
+  if (!result || typeof result !== 'object') return null
+  const r = result as { data?: FaceSwapOutput } & FaceSwapOutput
+
+  // Standard fal format: result.data.image.url
+  const data = r.data ?? r
+  if (!data || typeof data !== 'object') return null
+  const d = data as FaceSwapOutput
+
+  if (d.image?.url)         return d.image.url
+  if (d.images?.[0]?.url)   return d.images[0].url
+  if (d.url)                 return d.url
+  if (typeof d.output === 'string') return d.output
+  if (typeof d.output === 'object' && d.output?.url) return d.output.url
+
+  return null
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)
+    ),
+  ])
+}
+
 // ─── Quality control ──────────────────────────────────────────────────────────
 
+/**
+ * Score an output image by fetching its file size.
+ * A small file almost always means a failed or blank swap.
+ */
 export async function scoreOutput(url: string): Promise<QualityResult> {
   try {
     const head = await fetch(url, { method: 'HEAD' })
@@ -55,27 +97,28 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
       return { url, fileSizeBytes: 0, passed: false, failReason: `HTTP ${head.status}` }
     }
     const contentLength = parseInt(head.headers.get('content-length') ?? '0', 10)
-    if (contentLength > 0 && contentLength < MIN_VALID_SIZE_BYTES) {
-      return {
-        url,
-        fileSizeBytes: contentLength,
-        passed: false,
-        failReason: `Too small (${contentLength} bytes) — likely no-op or failed swap`,
+
+    if (contentLength > 0) {
+      if (contentLength < MIN_VALID_SIZE_BYTES) {
+        return {
+          url,
+          fileSizeBytes: contentLength,
+          passed: false,
+          failReason: `Too small (${contentLength}B) — likely failed swap`,
+        }
       }
+      return { url, fileSizeBytes: contentLength, passed: true }
     }
 
-    if (contentLength === 0) {
-      const resp = await fetch(url)
-      if (!resp.ok) return { url, fileSizeBytes: 0, passed: false, failReason: `GET ${resp.status}` }
-      const buf = await resp.arrayBuffer()
-      const size = buf.byteLength
-      if (size < MIN_VALID_SIZE_BYTES) {
-        return { url, fileSizeBytes: size, passed: false, failReason: `Too small (${size} bytes)` }
-      }
-      return { url, fileSizeBytes: size, passed: true }
+    // HEAD returned no Content-Length — do a full GET to measure
+    const resp = await fetch(url)
+    if (!resp.ok) return { url, fileSizeBytes: 0, passed: false, failReason: `GET ${resp.status}` }
+    const buf = await resp.arrayBuffer()
+    const size = buf.byteLength
+    if (size < MIN_VALID_SIZE_BYTES) {
+      return { url, fileSizeBytes: size, passed: false, failReason: `Too small (${size}B)` }
     }
-
-    return { url, fileSizeBytes: contentLength, passed: true }
+    return { url, fileSizeBytes: size, passed: true }
   } catch (err) {
     return { url, fileSizeBytes: 0, passed: false, failReason: String(err) }
   }
@@ -83,42 +126,52 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
 
 // ─── Preview (5 photos, synchronous, called before payment) ──────────────────
 
+/**
+ * Run 5 face-swap previews for the given customer face.
+ *
+ * Retry strategy: if the first attempt for a template produces a too-small
+ * output (likely a failed swap), we log the failure and move on — since
+ * preview only has one source photo available, there's nothing else to try.
+ * The job is still returned as a settled promise so the caller gets partial
+ * results rather than a hard failure.
+ */
 export async function runPreviewFaceSwaps(
   customerFaceUrl: string,
   preferredCategory?: string,
   hasTattoos?: boolean
 ): Promise<Record<string, string>> {
-  // Pick 5 templates from the customer's chosen category (with fallback variety)
   const templates = getPreviewTemplatesForCategory(preferredCategory ?? 'restaurant')
 
   if (hasTattoos) {
-    console.log('[preview] Customer has tattoos — face/neck tattoos transfer via face-swap; body tattoos follow template skin (model limitation)')
-  }
-
-  function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-    return Promise.race([
-      p,
-      new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error(`Job timed out after ${ms}ms`)), ms)
-      ),
-    ])
+    console.log('[preview] hasTattoos=true — visible face/neck tattoos will transfer via face-swap; body tattoos follow template skin')
   }
 
   const results = await Promise.allSettled(
-    templates.map((template, idx) => {
-      const customerUrl = pickCustomerPhotoForTemplate([customerFaceUrl], idx)
-      return withTimeout(
+    templates.map(async (template, idx) => {
+      // Per-template timeout: 70 s gives enough headroom for the model to finish
+      // even under queue pressure, while keeping total preview time under 5 min.
+      const raw = await withTimeout(
         fal.subscribe(MODEL, {
-          input: {
-            face_image_0: customerUrl,
-            target_image: template.url,
-            workflow_type: DEFAULT_WORKFLOW,
-            upscale: true,
-          } as FaceSwapInput,
+          input: { source_face: customerFaceUrl, target_image: template.url } as FaceSwapInput,
           logs: false,
-        }) as Promise<{ data: FaceSwapResult }>,
-        60_000
-      ).then(r => ({ r, template }))
+        }),
+        70_000
+      )
+
+      const url = extractOutputUrl(raw)
+      if (!url) {
+        throw new Error(`[preview] Job ${idx} (${template.id}): model returned no URL`)
+      }
+
+      const score = await scoreOutput(url)
+      if (!score.passed) {
+        throw new Error(
+          `[preview] Job ${idx} (${template.id}): quality check failed — ${score.failReason}`
+        )
+      }
+
+      console.log(`[preview] ✓ Job ${idx} (${template.id}) — ${score.fileSizeBytes}B`)
+      return { url, template }
     })
   )
 
@@ -126,15 +179,9 @@ export async function runPreviewFaceSwaps(
   for (let i = 0; i < results.length; i++) {
     const job = results[i]
     if (job.status === 'fulfilled') {
-      const url = job.value.r?.data?.image?.url
-      if (url) {
-        photos[String(i)] = url
-        console.log(`[preview] Job ${i} OK — ${job.value.template.id}`)
-      } else {
-        console.warn(`[preview] Job ${i} no URL — ${job.value.template.id}`)
-      }
+      photos[String(i)] = job.value.url
     } else {
-      console.error(`[preview] Job ${i} failed:`, job.reason)
+      console.error(`[preview] ✗ Job ${i}:`, job.reason instanceof Error ? job.reason.message : job.reason)
     }
   }
 
@@ -143,6 +190,16 @@ export async function runPreviewFaceSwaps(
 
 // ─── Paid generation (async queue, post-payment) ──────────────────────────────
 
+/**
+ * Submit async face-swap jobs for the paid generation flow.
+ *
+ * Smart source selection: rotates through customer photos so each template
+ * is attempted with a different source image, maximising variety and reducing
+ * the chance that a single low-quality upload ruins all outputs.
+ *
+ * If a job fails to submit (network error, model error), it is logged and
+ * skipped rather than crashing the whole batch.
+ */
 export async function submitFaceSwapJobs(
   customerPhotoUrls: string[],
   preferredCategory?: string,
@@ -150,25 +207,20 @@ export async function submitFaceSwapJobs(
 ): Promise<JobEntry[]> {
   if (!customerPhotoUrls.length) throw new Error('No customer photos provided')
 
-  // Use pickPaidTemplates for proper variety: 40% preferred category + 60% varied from others
   const templates = pickPaidTemplates(preferredCategory, 20)
 
   console.log(
-    `[faceswap] Submitting ${templates.length} jobs — workflow: ${DEFAULT_WORKFLOW}, tattoos: ${!!hasTattoos}, photos: ${customerPhotoUrls.length}`,
+    `[faceswap] Submitting ${templates.length} jobs — model: ${MODEL}`,
+    `photos: ${customerPhotoUrls.length}, tattoos: ${!!hasTattoos}`,
     templates.map(t => t.id)
   )
 
   const jobs = await Promise.allSettled(
     templates.map((template, idx) => {
-      const customerUrl = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
+      const sourceUrl = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
       return fal.queue
         .submit(MODEL, {
-          input: {
-            face_image_0: customerUrl,
-            target_image: template.url,
-            workflow_type: DEFAULT_WORKFLOW,
-            upscale: true,
-          } as FaceSwapInput,
+          input: { source_face: sourceUrl, target_image: template.url } as FaceSwapInput,
         })
         .then(result => ({ result, templateId: template.id }))
     })
@@ -205,24 +257,26 @@ export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
         const s = status.status as string
 
         if (s === 'COMPLETED') {
-          const result = await fal.queue.result(MODEL, { requestId }) as { data: FaceSwapResult }
-          const url = result?.data?.image?.url
+          const raw = await fal.queue.result(MODEL, { requestId })
+          const url = extractOutputUrl(raw)
+
           if (!url) {
             failedCount++
+            console.warn(`[faceswap] ✗ ${requestId} (${templateId}) — no URL in result`)
             return
           }
 
           const score = await scoreOutput(url)
           if (score.passed) {
             passed.push({ url, templateId })
-            console.log(`[faceswap] ✓ ${requestId} (${templateId}) — ${score.fileSizeBytes} bytes`)
+            console.log(`[faceswap] ✓ ${requestId} (${templateId}) — ${score.fileSizeBytes}B`)
           } else {
             failedCount++
             console.warn(`[faceswap] ✗ ${requestId} (${templateId}) — REJECTED: ${score.failReason}`)
           }
         } else if (s === 'FAILED' || s === 'CANCELLED') {
           failedCount++
-          console.warn(`[faceswap] Job ${requestId} (${templateId}) ${s}`)
+          console.warn(`[faceswap] ${s}: ${requestId} (${templateId})`)
         } else {
           pending.push({ requestId, templateId })
         }
