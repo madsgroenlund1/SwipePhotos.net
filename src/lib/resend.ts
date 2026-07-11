@@ -378,7 +378,59 @@ export async function sendReadyEmail(email: string, orderId: string, photoCount?
   })
 }
 
-// ─── 3. Affiliate application received ───────────────────────────────────────
+// ─── 3. Generation failed (sent when all quality gates reject) ───────────────
+
+export async function sendFailedEmail(email: string, orderId: string) {
+  const html = baseLayout(`
+
+    ${brandIcon(68, 18)}
+
+    <h1 style="margin:0 0 10px;font-family:${FONT};font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.5px;line-height:1.2;">
+      Something went wrong
+    </h1>
+    <p style="margin:0 0 36px;font-family:${FONT};font-size:15px;color:#a1a1aa;text-align:center;line-height:1.65;">
+      We ran into an issue generating your photos.<br />Your payment is completely safe — we'll sort this out.
+    </p>
+
+    <!-- What we'll do -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;border-collapse:collapse;">
+      <tr>
+        <td style="
+          background:#0d0d0d;
+          border:1px solid rgba(239,68,68,0.2);
+          border-radius:16px;
+          padding:24px;
+        ">
+          <div style="font-family:${FONT};font-size:13px;color:#a1a1aa;line-height:1.8;text-align:center;">
+            Our team has been notified and will either regenerate<br />your photos or issue a full refund — your choice.
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;border-collapse:collapse;">
+      <tr><td align="center">${ctaButton('mailto:support@swipephotos.net?subject=Order%20${orderId.slice(-8).toUpperCase()}%20failed', 'Contact Support →', 'secondary')}</td></tr>
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+      <tr><td align="center">${ctaButton(`${APP_URL}/dashboard`, 'Go to Dashboard →', 'secondary')}</td></tr>
+    </table>
+
+    ${divider}
+
+    <p style="margin:0;font-family:${FONT};font-size:11px;color:#3f3f46;text-align:center;">
+      Order <span style="font-family:monospace;letter-spacing:0.5px;">${orderId.slice(-8).toUpperCase()}</span>
+    </p>
+  `)
+
+  await getResend().emails.send({
+    from: `SwipePhotos.net <${FROM}>`,
+    to: email,
+    subject: 'Issue with your SwipePhotos order — we\'re on it',
+    html,
+  })
+}
+
+// ─── 4. Affiliate application received ───────────────────────────────────────
 
 export async function sendAffiliateApplicationEmail(email: string, name: string) {
   const html = baseLayout(`

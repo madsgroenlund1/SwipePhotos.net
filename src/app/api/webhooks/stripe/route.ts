@@ -69,14 +69,6 @@ export async function POST(req: NextRequest) {
     const preferredScene = selectedPresets.find(p => p !== 'has_tattoos')
     const hasTattoos = selectedPresets.includes('has_tattoos')
 
-    // Create affiliate commission if this order was referred
-    const refCode = orderRow?.referred_by_code
-    if (refCode) {
-      await createCommission(supabase, refCode, orderId, orderRow?.user_id, session).catch(e =>
-        console.error('[stripe webhook] Commission creation failed (non-fatal):', e)
-      )
-    }
-
     try {
       // Upload all customer photos to fal.ai storage so we can rotate through them per template
       const falPhotoUrls: string[] = []
@@ -103,6 +95,15 @@ export async function POST(req: NextRequest) {
         .eq('id', orderId)
 
       console.log(`[stripe webhook] ${entries.length} face-swap jobs queued for order ${orderId}`)
+
+      // Create affiliate commission ONLY after jobs are queued successfully.
+      // This prevents orphaned commissions for orders that never actually generated.
+      const refCode = orderRow?.referred_by_code
+      if (refCode) {
+        await createCommission(supabase, refCode, orderId, orderRow?.user_id, session).catch(e =>
+          console.error('[stripe webhook] Commission creation failed (non-fatal):', e)
+        )
+      }
     } catch (err) {
       console.error('[stripe webhook] Failed to start face-swaps:', err)
       await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)

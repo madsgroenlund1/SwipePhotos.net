@@ -35,6 +35,17 @@ export function AdminClient({
   const [tab, setTab] = useState<'orders' | 'affiliates'>('orders')
   const [updating, setUpdating] = useState<string | null>(null)
   const [approvingCommissions, setApprovingCommissions] = useState(false)
+  const [recovering, setRecovering] = useState(false)
+
+  async function runRecovery() {
+    if (!confirm('Scan for stuck orders and attempt recovery? This is safe to run multiple times.')) return
+    setRecovering(true)
+    const res  = await fetch('/api/admin/recovery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const json = await res.json()
+    setRecovering(false)
+    alert(`Recovery complete.\nStuck pending: ${json.scanned?.stuckPending ?? 0}\nStuck generating: ${json.scanned?.stuckGenerating ?? 0}\n\nDetails: ${JSON.stringify(json.summary, null, 2)}`)
+    window.location.reload()
+  }
 
   async function approveAllCommissions() {
     setApprovingCommissions(true)
@@ -69,7 +80,16 @@ export function AdminClient({
           <span className="text-blue-500 font-bold text-xl">.net</span>
           <span className="ml-3 text-xs bg-red-500/20 text-red-400 border border-red-500/30 rounded-full px-2 py-0.5">Admin</span>
         </div>
-        <span className="text-zinc-500 text-sm">Revenue: ${revenue.toLocaleString()}</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={runRecovery}
+            disabled={recovering}
+            className="text-xs bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-600/30 px-3 py-1.5 rounded-xl transition-all disabled:opacity-60"
+          >
+            {recovering ? 'Scanning…' : 'Recovery scan'}
+          </button>
+          <span className="text-zinc-500 text-sm">Revenue: ${revenue.toLocaleString()}</span>
+        </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-10">

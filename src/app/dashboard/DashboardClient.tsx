@@ -52,17 +52,35 @@ const PACKAGE_LABELS: Record<string, string> = { starter: 'Starter', popular: 'P
 async function downloadAll(photos: Photo[]) {
   for (let i = 0; i < photos.length; i++) {
     try {
-      const res = await fetch(photos[i].file_url)
+      const res  = await fetch(photos[i].file_url)
       const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `swipephoto-${i + 1}.webp`
+      const a    = document.createElement('a')
+      a.href     = URL.createObjectURL(blob)
+      a.download = `swipephoto-${String(i + 1).padStart(2, '0')}.jpg`
       a.click()
       URL.revokeObjectURL(a.href)
       await new Promise(r => setTimeout(r, 300))
     } catch {
       window.open(photos[i].file_url, '_blank')
     }
+  }
+}
+
+async function downloadZip(orderId: string, setLoading: (v: boolean) => void) {
+  setLoading(true)
+  try {
+    const res = await fetch(`/api/orders/${orderId}/download-zip`)
+    if (!res.ok) { alert('Download failed. Please try again.'); return }
+    const blob = await res.blob()
+    const a    = document.createElement('a')
+    a.href     = URL.createObjectURL(blob)
+    a.download = `swipephotos-${orderId.slice(-8).toUpperCase()}.zip`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  } catch {
+    alert('Download failed. Please try again.')
+  } finally {
+    setLoading(false)
   }
 }
 
@@ -143,7 +161,8 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
 }
 
 function OrderCard({ order, expanded = false }: { order: Order; expanded?: boolean }) {
-  const [open, setOpen] = useState(expanded)
+  const [open, setOpen]       = useState(expanded)
+  const [zipping, setZipping] = useState(false)
   const cfg    = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending
   const photos = order.generated_photos ?? []
   const isActive = ['pending', 'processing', 'training', 'generating'].includes(order.status)
@@ -181,9 +200,19 @@ function OrderCard({ order, expanded = false }: { order: Order; expanded?: boole
               <div className="flex items-center justify-between mb-3">
                 <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide">{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</p>
                 {photos.length > 1 && (
-                  <button onClick={() => downloadAll(photos)} className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
-                    <Download className="w-3.5 h-3.5" /> Download all
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => downloadZip(order.id, setZipping)}
+                      disabled={zipping}
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:brightness-110 disabled:opacity-60 text-white px-3 py-1.5 rounded-full transition-all"
+                    >
+                      <Download className="w-3 h-3" />
+                      {zipping ? 'Preparing…' : 'Download ZIP'}
+                    </button>
+                    <button onClick={() => downloadAll(photos)} className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
+                      <Download className="w-3.5 h-3.5" /> Individual
+                    </button>
+                  </div>
                 )}
               </div>
               <PhotoGrid photos={photos} orderId={order.id} />
