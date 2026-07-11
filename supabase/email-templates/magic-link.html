@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="supported-color-schemes" content="dark" />
+  <title>SwipePhotos.net</title>
+  <style>
+    :root { color-scheme: dark; }
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    u + #body a { color: inherit; text-decoration: none; font-size: inherit; }
+    @media only screen and (max-width: 600px) {
+      .card { padding: 32px 24px !important; }
+      .logo-cell { font-size: 19px !important; }
+      .headline { font-size: 22px !important; }
+    }
+  </style>
+</head>
+<body id="body" bgcolor="#080808" style="margin:0;padding:0;background-color:#080808;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+  bgcolor="#080808" style="background-color:#080808;min-width:100%;">
+  <tr>
+    <td align="center" bgcolor="#080808" style="padding:44px 16px 52px;background-color:#080808;">
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+        style="max-width:520px;width:100%;">
+
+        <!-- Wordmark -->
+        <tr>
+          <td align="center" bgcolor="#080808" style="padding-bottom:32px;background-color:#080808;">
+            <a href="https://swipephotos.net" style="text-decoration:none;">
+              <span class="logo-cell" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">SwipePhotos<span style="color:#3b82f6;">.net</span></span>
+            </a>
+          </td>
+        </tr>
+
+        <!-- Card -->
+        <tr>
+          <td class="card" bgcolor="#111111" style="background-color:#111111;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:48px 44px 44px;">
+
+            <!-- S Logo -->
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 28px;border-collapse:collapse;">
+              <tr>
+                <td width="68" height="68" style="background:linear-gradient(140deg,#2563eb 0%,#1d4ed8 100%);border-radius:50%;text-align:center;vertical-align:middle;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:34px;font-weight:800;color:#ffffff;letter-spacing:-1px;line-height:68px;">S</td>
+              </tr>
+            </table>
+
+            <h1 class="headline" style="margin:0 0 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.5px;line-height:1.2;">Sign in to SwipePhotos</h1>
+
+            <p style="margin:0 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;color:#a1a1aa;text-align:center;line-height:1.65;">Click the button below to sign in.<br />This link expires in 1 hour.</p>
+
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;margin:0 auto 28px;">
+              <tr>
+                <td style="background-color:#2563eb;border-radius:100px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;padding:16px 44px;white-space:nowrap;letter-spacing:-0.1px;line-height:1;">Sign in →</a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border-collapse:collapse;">
+              <tr><td style="border-top:1px solid rgba(255,255,255,0.06);font-size:0;line-height:0;">&nbsp;</td></tr>
+            </table>
+
+            <!-- Fallback link -->
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#52525b;text-align:center;line-height:1.7;">
+              Button not working? Copy this link into your browser:<br />
+              <a href="{{ .ConfirmationURL }}" style="color:#3b82f6;word-break:break-all;text-decoration:none;">{{ .ConfirmationURL }}</a>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" bgcolor="#080808" style="padding-top:28px;background-color:#080808;">
+            <p style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#52525b;line-height:1.7;">
+              <a href="https://swipephotos.net" style="color:#52525b;text-decoration:none;font-weight:600;">SwipePhotos.net</a>
+              &nbsp;&middot;&nbsp;
+              <a href="mailto:support@swipephotos.net" style="color:#52525b;text-decoration:none;">support@swipephotos.net</a>
+            </p>
+            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#3f3f46;line-height:1.6;">If you didn't request this email, you can safely ignore it.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
