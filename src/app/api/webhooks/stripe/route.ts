@@ -92,18 +92,17 @@ export async function POST(req: NextRequest) {
       }
       if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      // Submit 20 jobs — hasTattoos logged for reference (face/neck tattoos transfer naturally)
-      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene, hasTattoos)
+      const entries = await submitFaceSwapJobs(falPhotoUrls, preferredScene, hasTattoos)
 
-      if (!requestIds.length) throw new Error('No jobs submitted')
+      if (!entries.length) throw new Error('No jobs submitted')
 
-      // Store job IDs so the poll endpoint can check them
+      // Store {requestId, templateId}[] so the poll endpoint can trace each result back to its template
       await supabase
         .from('orders')
-        .update({ status: 'generating', replicate_training_id: JSON.stringify(requestIds) })
+        .update({ status: 'generating', replicate_training_id: JSON.stringify(entries) })
         .eq('id', orderId)
 
-      console.log(`[stripe webhook] ${requestIds.length} face-swap jobs queued for order ${orderId}`)
+      console.log(`[stripe webhook] ${entries.length} face-swap jobs queued for order ${orderId}`)
     } catch (err) {
       console.error('[stripe webhook] Failed to start face-swaps:', err)
       await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)

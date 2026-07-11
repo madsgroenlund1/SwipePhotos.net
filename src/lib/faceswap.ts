@@ -1,5 +1,5 @@
 import { fal } from '@fal-ai/client'
-import { getActiveTemplates, pickCustomerPhotoForTemplate } from './templates'
+import { getPreviewTemplates, pickPaidTemplates, pickCustomerPhotoForTemplate } from './templates'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -9,28 +9,22 @@ fal.config({ credentials: process.env.FAL_KEY })
 // Preserves the template's background, lighting, pose, and clothing.
 //
 // workflow_type:
-//   "user_hair"   → keeps the CUSTOMER's own hair. Better identity recognition —
-//                   the customer sees their own hairstyle. ← USED BY DEFAULT
-//   "target_hair" → keeps the TEMPLATE model's hair. More polished studio look
-//                   but customer may not recognise themselves as easily.
+//   "user_hair"   → keeps the CUSTOMER's own hair
+//   "target_hair" → keeps the TEMPLATE model's hair
 //
 // upscale: true adds 2× resolution boost for sharper output.
 //
 const MODEL = 'easel-ai/advanced-face-swap'
-
-// "user_hair" is the default — customers recognise themselves much better
-// when their own hairstyle is preserved rather than the template model's.
 const DEFAULT_WORKFLOW = 'user_hair'
 
 // With upscale:true, output images are typically 400–1200 KB.
-// Raise threshold from 80 KB to 150 KB to filter no-op / failed swaps.
 const MIN_VALID_SIZE_BYTES = 150_000
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FaceSwapInput = {
-  face_image_0: string   // customer face URL
-  target_image: string   // template (model photo) URL
+  face_image_0: string
+  target_image: string
   workflow_type: string
   upscale: boolean
 }
@@ -44,6 +38,12 @@ export type QualityResult = {
   fileSizeBytes: number
   passed: boolean
   failReason?: string
+}
+
+// Tracks which fal.ai request belongs to which template — stored as JSON in orders.replicate_training_id
+export type JobEntry = {
+  requestId: string
+  templateId: string
 }
 
 // ─── Quality control ──────────────────────────────────────────────────────────
@@ -88,17 +88,12 @@ export async function runPreviewFaceSwaps(
   preferredCategory?: string,
   hasTattoos?: boolean
 ): Promise<Record<string, string>> {
-  // Pick 5 templates by quality: preferred category first, then fill from others
-  const active = getActiveTemplates().sort((a, b) => b.quality - a.quality)
-  const preferred = preferredCategory ? active.filter(t => t.category === preferredCategory) : []
-  const rest = active.filter(t => t.category !== preferredCategory)
-  const ordered = [...preferred, ...rest].slice(0, 5)
+  // Use the dedicated preview selector — picks 5 high-quality varied templates
+  const templates = getPreviewTemplates()
 
-  // Always use "user_hair" so the customer recognises their own hair in the output.
-  // If the customer has tattoos, log it — face/neck tattoos transfer naturally through
-  // the face swap; body tattoos stay with the template model's skin (model limitation).
-  const workflowType = DEFAULT_WORKFLOW
-  if (hasTattoos) console.log('[preview] Customer has tattoos — face/neck tattoos will transfer; body tattoos follow template skin')
+  if (hasTattoos) {
+    console.log('[preview] Customer has tattoos — face/neck tattoos transfer via face-swap; body tattoos follow template skin (model limitation)')
+  }
 
   function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     return Promise.race([
@@ -110,36 +105,36 @@ export async function runPreviewFaceSwaps(
   }
 
   const results = await Promise.allSettled(
-    ordered.map((template, idx) => {
+    templates.map((template, idx) => {
       const customerUrl = pickCustomerPhotoForTemplate([customerFaceUrl], idx)
       return withTimeout(
         fal.subscribe(MODEL, {
           input: {
             face_image_0: customerUrl,
             target_image: template.url,
-            workflow_type: workflowType,
+            workflow_type: DEFAULT_WORKFLOW,
             upscale: true,
           } as FaceSwapInput,
           logs: false,
         }) as Promise<{ data: FaceSwapResult }>,
         60_000
-      )
+      ).then(r => ({ r, template }))
     })
   )
 
   const photos: Record<string, string> = {}
   for (let i = 0; i < results.length; i++) {
-    const r = results[i]
-    if (r.status === 'fulfilled') {
-      const url = r.value?.data?.image?.url
+    const job = results[i]
+    if (job.status === 'fulfilled') {
+      const url = job.value.r?.data?.image?.url
       if (url) {
         photos[String(i)] = url
-        console.log(`[preview] Job ${i} OK — ${ordered[i].id}`)
+        console.log(`[preview] Job ${i} OK — ${job.value.template.id}`)
       } else {
-        console.warn(`[preview] Job ${i} no URL in result — ${ordered[i].id}`)
+        console.warn(`[preview] Job ${i} no URL — ${job.value.template.id}`)
       }
     } else {
-      console.error(`[preview] Job ${i} failed (${ordered[i].id}):`, r.reason)
+      console.error(`[preview] Job ${i} failed:`, job.reason)
     }
   }
 
@@ -152,58 +147,59 @@ export async function submitFaceSwapJobs(
   customerPhotoUrls: string[],
   preferredCategory?: string,
   hasTattoos?: boolean
-): Promise<string[]> {
+): Promise<JobEntry[]> {
   if (!customerPhotoUrls.length) throw new Error('No customer photos provided')
 
-  // Use 100% from chosen category first, fill remaining slots with highest-quality from others
-  const active = getActiveTemplates().sort((a, b) => b.quality - a.quality)
-  const preferred = preferredCategory ? active.filter(t => t.category === preferredCategory) : []
-  const rest = active.filter(t => t.category !== preferredCategory)
-  const templates = [...preferred, ...rest].slice(0, 20)
+  // Use pickPaidTemplates for proper variety: 40% preferred category + 60% varied from others
+  const templates = pickPaidTemplates(preferredCategory, 20)
 
-  const workflowType = DEFAULT_WORKFLOW
-  console.log(`[faceswap] Submitting ${templates.length} jobs — workflow: ${workflowType}, tattoos: ${!!hasTattoos}, photos: ${customerPhotoUrls.length}`)
+  console.log(
+    `[faceswap] Submitting ${templates.length} jobs — workflow: ${DEFAULT_WORKFLOW}, tattoos: ${!!hasTattoos}, photos: ${customerPhotoUrls.length}`,
+    templates.map(t => t.id)
+  )
 
   const jobs = await Promise.allSettled(
     templates.map((template, idx) => {
       const customerUrl = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
-      return fal.queue.submit(MODEL, {
-        input: {
-          face_image_0: customerUrl,
-          target_image: template.url,
-          workflow_type: workflowType,
-          upscale: true,
-        } as FaceSwapInput,
-      })
+      return fal.queue
+        .submit(MODEL, {
+          input: {
+            face_image_0: customerUrl,
+            target_image: template.url,
+            workflow_type: DEFAULT_WORKFLOW,
+            upscale: true,
+          } as FaceSwapInput,
+        })
+        .then(result => ({ result, templateId: template.id }))
     })
   )
 
-  const requestIds: string[] = []
+  const entries: JobEntry[] = []
   for (const job of jobs) {
-    if (job.status === 'fulfilled' && job.value.request_id) {
-      requestIds.push(job.value.request_id)
+    if (job.status === 'fulfilled' && job.value.result.request_id) {
+      entries.push({ requestId: job.value.result.request_id, templateId: job.value.templateId })
     } else if (job.status === 'rejected') {
       console.error('[faceswap] Submit failed:', job.reason)
     }
   }
 
-  console.log(`[faceswap] Queued ${requestIds.length}/${templates.length} jobs`)
-  return requestIds
+  console.log(`[faceswap] Queued ${entries.length}/${templates.length} jobs`)
+  return entries
 }
 
 // ─── Polling (called every 10s from the poll endpoint) ───────────────────────
 
-export async function pollFaceSwapJobs(requestIds: string[]): Promise<{
-  passedUrls: string[]
-  failedUrls: string[]
-  pending: string[]
+export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
+  passed: { url: string; templateId: string }[]
+  failedCount: number
+  pending: JobEntry[]
 }> {
-  const passedUrls: string[] = []
-  const failedUrls: string[] = []
-  const pending: string[] = []
+  const passed: { url: string; templateId: string }[] = []
+  let failedCount = 0
+  const pending: JobEntry[] = []
 
   await Promise.allSettled(
-    requestIds.map(async (requestId) => {
+    entries.map(async ({ requestId, templateId }) => {
       try {
         const status = await fal.queue.status(MODEL, { requestId, logs: false })
         const s = status.status as string
@@ -212,32 +208,53 @@ export async function pollFaceSwapJobs(requestIds: string[]): Promise<{
           const result = await fal.queue.result(MODEL, { requestId }) as { data: FaceSwapResult }
           const url = result?.data?.image?.url
           if (!url) {
-            failedUrls.push(`no-url:${requestId}`)
+            failedCount++
             return
           }
 
           const score = await scoreOutput(url)
           if (score.passed) {
-            passedUrls.push(url)
-            console.log(`[faceswap] ✓ ${requestId} — ${score.fileSizeBytes} bytes`)
+            passed.push({ url, templateId })
+            console.log(`[faceswap] ✓ ${requestId} (${templateId}) — ${score.fileSizeBytes} bytes`)
           } else {
-            failedUrls.push(url)
-            console.warn(`[faceswap] ✗ ${requestId} — REJECTED: ${score.failReason}`)
+            failedCount++
+            console.warn(`[faceswap] ✗ ${requestId} (${templateId}) — REJECTED: ${score.failReason}`)
           }
         } else if (s === 'FAILED' || s === 'CANCELLED') {
-          failedUrls.push(`failed:${requestId}`)
-          console.warn(`[faceswap] Job ${requestId} ${s}`)
+          failedCount++
+          console.warn(`[faceswap] Job ${requestId} (${templateId}) ${s}`)
         } else {
-          pending.push(requestId)
+          pending.push({ requestId, templateId })
         }
       } catch (err) {
         console.error(`[faceswap] Poll error for ${requestId}:`, err)
-        pending.push(requestId)
+        pending.push({ requestId, templateId })
       }
     })
   )
 
-  return { passedUrls, failedUrls, pending }
+  return { passed, failedCount, pending }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Parse replicate_training_id from the orders table.
+ * Supports both old format (string[]) and new format (JobEntry[]).
+ */
+export function parseJobEntries(raw: string): JobEntry[] {
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed) || !parsed.length) return []
+    // Old format: ["uuid1", "uuid2", ...]
+    if (typeof parsed[0] === 'string') {
+      return parsed.map((id: string) => ({ requestId: id, templateId: 'unknown' }))
+    }
+    // New format: [{requestId, templateId}, ...]
+    return parsed as JobEntry[]
+  } catch {
+    return []
+  }
 }
 
 // ─── Legacy exports ───────────────────────────────────────────────────────────
@@ -246,16 +263,8 @@ export async function pollFaceSwapJobs(requestIds: string[]): Promise<{
 export async function submitFaceSwaps(
   customerPhotoUrl: string,
   preferredScene?: string
-): Promise<string[]> {
+): Promise<JobEntry[]> {
   return submitFaceSwapJobs([customerPhotoUrl], preferredScene)
-}
-
-/** @deprecated use pollFaceSwapJobs */
-export async function pollFaceSwaps(
-  requestIds: string[]
-): Promise<{ urls: string[]; pending: string[] }> {
-  const { passedUrls, pending } = await pollFaceSwapJobs(requestIds)
-  return { urls: passedUrls, pending }
 }
 
 export function pickBestFacePhoto(photoUrls: string[]): string {

@@ -69,16 +69,16 @@ export async function POST(req: NextRequest) {
       }
       if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      const requestIds = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
-      if (!requestIds.length) throw new Error('No jobs submitted')
+      const entries = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
+      if (!entries.length) throw new Error('No jobs submitted')
 
       await supabase.from('orders').update({
         status: 'generating',
-        replicate_training_id: JSON.stringify(requestIds),
+        replicate_training_id: JSON.stringify(entries),
       }).eq('id', orderId)
 
-      console.log('[verify] Face-swap pipeline started, jobs:', requestIds.length)
-      return NextResponse.json({ ok: true, jobs: requestIds.length })
+      console.log('[verify] Face-swap pipeline started, jobs:', entries.length)
+      return NextResponse.json({ ok: true, jobs: entries.length })
     } catch (err) {
       console.error('[verify] Failed to start face-swaps:', err)
       await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
