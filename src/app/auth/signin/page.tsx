@@ -6,6 +6,17 @@ import { createClient } from '@/lib/supabase/client'
 
 type Mode = 'signin' | 'forgot'
 
+// Supabase sometimes returns {} or [object Object] when the email provider fails.
+// Convert these to a real user-facing message.
+function sanitizeAuthError(msg: string | undefined): string {
+  if (!msg) return 'Something went wrong. Please try again.'
+  const trimmed = msg.trim()
+  if (trimmed === '{}' || trimmed === '[object Object]' || trimmed.startsWith('{') && trimmed.endsWith('}') && trimmed.length < 10) {
+    return 'Could not send sign-in link. Please try again in a moment.'
+  }
+  return trimmed
+}
+
 export default function SignInPage() {
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
@@ -30,7 +41,7 @@ export default function SignInPage() {
         email,
         options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` },
       })
-      if (error) setError(error.message || 'Something went wrong. Please try again.')
+      if (error) setError(sanitizeAuthError(error.message))
       else setSent(true)
     } catch {
       setError('Something went wrong. Please try again.')
@@ -48,7 +59,7 @@ export default function SignInPage() {
         options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` },
       })
       if (error) {
-        setError(error.message || 'Google sign-in failed. Please try again.')
+        setError(sanitizeAuthError(error.message))
         setGoogleLoading(false)
       }
       // No error: browser is being redirected to Google — don't reset loading

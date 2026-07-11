@@ -11,32 +11,33 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClientDirect()
 
-    // Create or fetch user via magic link
-    const { data: authData } = await supabase.auth.admin.createUser({
+    // Create or fetch user
+    const { data: authData, error: createErr } = await supabase.auth.admin.createUser({
       email,
       email_confirm: true,
     })
 
-    if (!authData.user) {
-      // User might already exist — look them up
+    let userId: string | undefined = authData?.user?.id
+
+    if (!userId) {
+      // User already exists — look up by email
       const { data: existing } = await supabase
         .from('users')
         .select('id')
         .eq('email', email)
         .single()
-      if (!existing) return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+      if (!existing) {
+        console.error('[signup] createUser failed and no existing user:', createErr?.message)
+        return NextResponse.json({ error: 'Failed to create account. Please try again.' }, { status: 500 })
+      }
+      userId = existing.id
     }
 
-    const userId = authData.user?.id
-
-    if (userId) {
-      // Upsert user row
-      await supabase.from('users').upsert({
-        id: userId,
-        email,
-        referral_code: generateReferralCode(),
-      })
-    }
+    // Ensure user row exists — only set referral_code on first insert, never overwrite
+    await supabase.from('users').upsert(
+      { id: userId, email, referral_code: generateReferralCode() },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
 
     // Track signup attribution via sw_ref cookie (passed from client via header)
     const swRef = req.cookies.get('sw_ref')?.value
