@@ -3,11 +3,11 @@ import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'How to Make AI Photos Look Real (and Undetectable) — SwipePhotos.net',
-  description: 'The techniques behind undetectable AI photos: LoRA training, EXIF injection, grain simulation, and more.',
+  title: 'How to Make AI Photos Look Real — SwipePhotos.net',
+  description: 'The techniques behind natural-looking AI photos: face-swap technology, lighting, and professional settings.',
   openGraph: {
-    title: 'How to Make AI Photos Look Real (and Undetectable)',
-    description: 'A deep dive into the technology that makes SwipePhotos photos pass every AI detector.',
+    title: 'How to Make AI Photos Look Real',
+    description: 'A deep dive into the technology behind SwipePhotos: face-swap AI, natural lighting, and professional settings.',
     type: 'article',
   },
 }
