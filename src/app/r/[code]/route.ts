@@ -52,6 +52,7 @@ export async function GET(
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     })
   }
 

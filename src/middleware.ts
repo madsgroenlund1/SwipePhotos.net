@@ -39,11 +39,12 @@ export async function middleware(request: NextRequest) {
   // Capture ?ref=CODE for affiliate attribution (first-click wins, 30-day cookie)
   const refCode = request.nextUrl.searchParams.get('ref')
   if (refCode && !request.cookies.get('sw_ref')) {
-    supabaseResponse.cookies.set('sw_ref', refCode, {
+    supabaseResponse.cookies.set('sw_ref', refCode.toUpperCase(), {
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     })
   }
 

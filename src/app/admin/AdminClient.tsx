@@ -34,6 +34,16 @@ export function AdminClient({
 }) {
   const [tab, setTab] = useState<'orders' | 'affiliates'>('orders')
   const [updating, setUpdating] = useState<string | null>(null)
+  const [approvingCommissions, setApprovingCommissions] = useState(false)
+
+  async function approveAllCommissions() {
+    setApprovingCommissions(true)
+    const res = await fetch('/api/admin/commissions/approve-all', { method: 'POST' })
+    const json = await res.json()
+    setApprovingCommissions(false)
+    alert(`Approved ${json.approved ?? 0} pending commissions`)
+    window.location.reload()
+  }
 
   async function updateOrderStatus(orderId: string, status: string) {
     setUpdating(orderId)
@@ -137,6 +147,16 @@ export function AdminClient({
         )}
 
         {tab === 'affiliates' && (
+          <>
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={approveAllCommissions}
+              disabled={approvingCommissions}
+              className="bg-blue-600 hover:brightness-110 text-white text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-60"
+            >
+              {approvingCommissions ? 'Approving...' : 'Approve pending commissions'}
+            </button>
+          </div>
           <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden">
             <table className="w-full">
               <thead>
@@ -178,6 +198,7 @@ export function AdminClient({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </main>
     </div>

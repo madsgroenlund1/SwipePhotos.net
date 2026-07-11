@@ -109,6 +109,37 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Reverse affiliate commission when Stripe issues a refund
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge
+    const sessionId = typeof charge.payment_intent === 'string'
+      ? (await stripe.paymentIntents.retrieve(charge.payment_intent).then(pi => pi.latest_charge).catch(() => null))
+      : null
+
+    // Find commission by stripe_session_id (session was stored at checkout time)
+    // We need to look up via payment_intent → checkout session
+    let stripeSessionId: string | null = null
+    try {
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: charge.payment_intent as string, limit: 1 })
+      stripeSessionId = sessions.data[0]?.id ?? null
+    } catch { /* noop */ }
+
+    if (stripeSessionId) {
+      const supabase = createAdminClientDirect()
+      const { error } = await supabase
+        .from('commissions')
+        .update({ status: 'reversed', reversed_at: new Date().toISOString() })
+        .eq('stripe_session_id', stripeSessionId)
+        .in('status', ['pending', 'approved'])
+
+      if (error) {
+        console.error('[stripe webhook] Failed to reverse commission for session', stripeSessionId, error)
+      } else {
+        console.log('[stripe webhook] Commission reversed for session', stripeSessionId)
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true })
 }
 
