@@ -4,10 +4,13 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export function Navbar() {
+// initialLoggedIn: server-rendered auth state. Passed by server components so the
+// button renders correctly on first paint with no async round-trip required.
+// onAuthStateChange then keeps it in sync for sign-in / sign-out events.
+export function Navbar({ initialLoggedIn }: { initialLoggedIn?: boolean }) {
   const [scrolled, setScrolled] = useState(false)
-  // null = auth check not yet complete (hide button to prevent flash)
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
+  // Use server-provided value if available; null = auth check still pending (hides button)
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(initialLoggedIn ?? null)
 
   useEffect(() => {
     function onScroll() {
@@ -19,13 +22,8 @@ export function Navbar() {
 
   useEffect(() => {
     const supabase = createClient()
-
-    // Read session from local storage/cookie synchronously on mount
-    supabase.auth.getSession().then(({ data }) => {
-      setLoggedIn(!!data.session)
-    })
-
-    // Keep in sync with sign-in / sign-out across tabs and route changes
+    // onAuthStateChange fires immediately with INITIAL_SESSION event,
+    // so we don't need a separate getSession() call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setLoggedIn(!!session)
     })

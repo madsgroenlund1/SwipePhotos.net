@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import { Navbar } from '@/components/Navbar'
+import { createClient } from '@/lib/supabase/server'
 
 const PRESETS = [
   { id: 'outdoor-adventure', name: 'Outdoor Adventure', desc: 'Hiking, nature, golden hour lighting. Perfect for showing an active lifestyle.', emoji: '🏔️', category: 'Outdoor', premium: false },
@@ -15,10 +16,12 @@ const PRESETS = [
 
 const CATEGORIES = ['All', 'Outdoor', 'Indoor', 'Social', 'Lifestyle']
 
-export default function PresetsPage() {
+export default async function PresetsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+      <Navbar initialLoggedIn={!!user} />
       <main className="max-w-6xl mx-auto px-6 pt-28 pb-20">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">Style Presets</h1>

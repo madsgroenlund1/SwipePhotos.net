@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Terms of Service — SwipePhotos.net',
@@ -8,10 +9,12 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+      <Navbar initialLoggedIn={!!user} />
       <main className="max-w-3xl mx-auto px-6 pt-28 pb-20 text-zinc-400 text-sm leading-relaxed">
         <h1 className="text-3xl font-bold text-white mb-2">Terms of Service</h1>
         <p className="text-zinc-600 mb-10">Last updated: July 11, 2026</p>

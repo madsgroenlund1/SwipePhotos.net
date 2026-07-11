@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Blog — SwipePhotos.net',
@@ -34,10 +35,12 @@ const POSTS = [
   },
 ]
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+      <Navbar initialLoggedIn={!!user} />
       <main className="max-w-4xl mx-auto px-6 pt-28 pb-20">
         <h1 className="text-4xl font-bold text-white mb-3">Blog</h1>
         <p className="text-zinc-400 text-lg mb-12">Tips and strategies for getting more matches on dating apps.</p>

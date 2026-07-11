@@ -4,11 +4,15 @@ import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { BeforeAfterCarousel } from '@/components/BeforeAfterCarousel'
 import { TestimonialsScroll } from '@/components/TestimonialsScroll'
+import { createClient } from '@/lib/supabase/server'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+      <Navbar initialLoggedIn={!!user} />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="pt-32 pb-8 px-6 text-center max-w-4xl mx-auto">

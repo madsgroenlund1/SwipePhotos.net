@@ -87,7 +87,8 @@ function BeforeAfterCard({ id, name, age, city, beforeCount, beforeExt, afterExt
 function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction: 'left' | 'right' }) {
   const repsRef = useRef(6)
   const [reps, setReps] = useState(6)
-  const [dur, setDur] = useState<number | null>(null)
+  // Pre-compute dur from default reps so the animation never restarts on first mount.
+  const [dur, setDur] = useState(() => repsRef.current * baseCards.length * CARD_STEP / SPEED_PX_S)
   const [reducedMotion, setReducedMotion] = useState(false)
 
   useEffect(() => {
@@ -135,7 +136,7 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
       className={reducedMotion ? 'flex gap-4 overflow-x-auto' : `flex gap-4 ${direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right'}`}
       style={reducedMotion ? { width: '100%' } : {
         width: 'max-content',
-        ...(dur !== null ? { animationDuration: `${dur}s` } : {}),
+        animationDuration: `${dur}s`,
       }}
       aria-hidden={direction === 'right' ? 'true' : undefined}
     >
@@ -143,12 +144,16 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
       {half.map((card, i) => (
         <BeforeAfterCard key={`${direction}-a-${i}`} {...card} />
       ))}
-      {/* Duplicate second half for seamless loop — hidden from assistive tech */}
+      {/* Duplicate second half for seamless loop — hidden from assistive tech.
+          The zero-width trailing spacer makes the flex row's total width equal to
+          2 × (reps × baseCards.length × CARD_STEP), so translateX(-50%) lands
+          exactly at the start of the second half with no sub-pixel gap. */}
       {!reducedMotion && (
         <span aria-hidden="true" style={{ display: 'contents' }}>
           {half.map((card, i) => (
             <BeforeAfterCard key={`${direction}-b-${i}`} {...card} />
           ))}
+          <div style={{ width: 0, flexShrink: 0 }} />
         </span>
       )}
     </div>

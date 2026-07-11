@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'The 3 Photos Every Man Needs on His Dating Profile — SwipePhotos.net',
@@ -12,10 +13,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function BlogPost3() {
+export default async function BlogPost3() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+      <Navbar initialLoggedIn={!!user} />
       <main className="max-w-2xl mx-auto px-6 pt-28 pb-20">
         <Link href="/blog" className="text-zinc-500 hover:text-zinc-400 text-sm mb-8 inline-block">
           ← Back to Blog
