@@ -796,6 +796,26 @@ export function getPreviewTemplates(): Template[] {
 }
 
 /**
+ * Pick 5 preview templates focused on the customer's chosen style/category.
+ * Returns templates primarily from that category, padding with variety from others.
+ */
+export function getPreviewTemplatesForCategory(category: string): Template[] {
+  const resolved = (STYLE_TO_CATEGORY[category] ?? category) as Category
+  const pool = TEMPLATES.filter(t => t.active).sort((a, b) => b.quality - a.quality)
+
+  const primary = pool.filter(t => t.category === resolved)
+  const secondary = pool.filter(t => t.category !== resolved)
+
+  // Take as many as possible from the primary category (up to 5), pad with variety
+  const picked: Template[] = [
+    ...primary.slice(0, 5),
+    ...secondary.slice(0, Math.max(0, 5 - primary.length)),
+  ]
+
+  return picked.slice(0, 5)
+}
+
+/**
  * Pick up to `count` templates for the paid photo set.
  * Prioritises variety: different categories, expressions, crops, face angles.
  * Put preferredCategory first.

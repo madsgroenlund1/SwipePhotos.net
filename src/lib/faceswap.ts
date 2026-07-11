@@ -1,5 +1,5 @@
 import { fal } from '@fal-ai/client'
-import { getPreviewTemplates, pickPaidTemplates, pickCustomerPhotoForTemplate } from './templates'
+import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate } from './templates'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -88,8 +88,8 @@ export async function runPreviewFaceSwaps(
   preferredCategory?: string,
   hasTattoos?: boolean
 ): Promise<Record<string, string>> {
-  // Use the dedicated preview selector — picks 5 high-quality varied templates
-  const templates = getPreviewTemplates()
+  // Pick 5 templates from the customer's chosen category (with fallback variety)
+  const templates = getPreviewTemplatesForCategory(preferredCategory ?? 'restaurant')
 
   if (hasTattoos) {
     console.log('[preview] Customer has tattoos — face/neck tattoos transfer via face-swap; body tattoos follow template skin (model limitation)')

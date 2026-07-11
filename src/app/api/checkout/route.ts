@@ -4,7 +4,7 @@ import { createAdminClientDirect } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { packageId, priceId: customPriceId, email, presets, style, hasTattoos } = await req.json()
+    const { packageId, priceId: customPriceId, email, presets, style, hasTattoos, selectedPreviewUrl } = await req.json()
     console.log('[checkout] packageId:', packageId, 'email:', email)
 
     // Allow custom priceId (for yearly billing), fall back to PACKAGES lookup
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
         ],
         email: email || null,
         referred_by_code: referredByCode,
+        ...(selectedPreviewUrl ? { selected_preview_url: selectedPreviewUrl } : {}),
       })
       .select()
       .single()

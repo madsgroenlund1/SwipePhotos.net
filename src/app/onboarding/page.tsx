@@ -17,27 +17,13 @@ const STYLE_OPTIONS = [
   { id: 'beach', label: 'Beach Club', src: '/photos/presets/scene-beach.jpg', free: true },
 ]
 
-const CAROUSEL_PHOTOS: Record<string, string[]> = {
-  restaurant: [
-    '/photos/before-after/julius/after/1.jpg',
-    '/photos/before-after/alex/after/1.jpg',
-    '/photos/before-after/benni/after/1.jpg',
-  ],
-  formal: [
-    '/photos/before-after/andreas/after/1.jpg',
-    '/photos/before-after/jason/after/1.jpg',
-    '/photos/before-after/black/after/1.jpg',
-  ],
-  rooftop: [
-    '/photos/before-after/benni/after/1.jpg',
-    '/photos/before-after/julius/after/1.jpg',
-    '/photos/before-after/alex/after/1.jpg',
-  ],
-  beach: [
-    '/photos/before-after/black/after/1.jpg',
-    '/photos/before-after/jason/after/1.jpg',
-    '/photos/before-after/benni/after/1.jpg',
-  ],
+// Style preset thumbnails used as placeholder when AI generation hasn't completed.
+// These are NOT customer results — they show the setting aesthetic only.
+const STYLE_PLACEHOLDERS: Record<string, string[]> = {
+  restaurant: ['/photos/presets/scene-restaurant.jpg'],
+  formal:     ['/photos/presets/scene-formal.jpg'],
+  rooftop:    ['/photos/presets/scene-rooftop.jpg'],
+  beach:      ['/photos/presets/scene-beach.jpg'],
 }
 
 const DID_YOU_KNOW = [
@@ -115,11 +101,11 @@ export default function OnboardingPage() {
   const targetProgressRef = useRef(0)
   const displayProgressRef = useRef(0)
   const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
-  const fallbackPhotos = CAROUSEL_PHOTOS[selectedStyle] ?? CAROUSEL_PHOTOS.restaurant
+  const stylePlaceholders = STYLE_PLACEHOLDERS[selectedStyle] ?? STYLE_PLACEHOLDERS.restaurant
   const generatedArray = Object.values(generatedPhotos).filter(Boolean) as string[]
   const hasGenerated = generatedArray.length > 0
   const selectedAiPhoto = pickedPreviewUrl
-    ?? (hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : fallbackPhotos[carouselIdx % fallbackPhotos.length])
+    ?? (hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : stylePlaceholders[0])
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -282,7 +268,7 @@ export default function OnboardingPage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos === true }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos === true, selectedPreviewUrl: pickedPreviewUrl }),
       })
       const data = await res.json()
       console.log('[checkout response]', data)
@@ -613,42 +599,44 @@ export default function OnboardingPage() {
                   {/* Main image */}
                   <img
                     key={carouselIdx}
-                    src={hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : fallbackPhotos[carouselIdx % fallbackPhotos.length]}
+                    src={hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : stylePlaceholders[0]}
                     alt={`Preview ${carouselIdx + 1}`}
-                    className="w-full h-full object-cover object-top select-none"
+                    className={`w-full h-full object-cover object-top select-none ${!hasGenerated ? 'opacity-40' : ''}`}
                     style={{ animation: 'fadeIn 0.3s ease-out' }}
                     onContextMenu={e => e.preventDefault()}
                     draggable={false}
                   />
+                  {/* Overlay when no generated photos yet */}
+                  {!hasGenerated && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <div className="w-10 h-10 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin mb-3" />
+                      <p className="text-white text-sm font-medium">Generating your preview…</p>
+                    </div>
+                  )}
 
-                  {/* Watermark overlay */}
-                  <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ zIndex: 15 }}>
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <div key={i} className="absolute whitespace-nowrap" style={{ top: `${(i * 18) - 10}%`, left: '-20%', width: '140%', transform: 'rotate(-30deg)', transformOrigin: 'center' }}>
-                        <span className="text-white/18 font-bold text-sm tracking-widest" style={{ letterSpacing: '0.15em' }}>
-                          SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net &nbsp;&nbsp;&nbsp; SwipePhotos.net
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Corner watermark */}
+                  {/* Subtle corner attribution — no full-screen watermark */}
                   <div className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-none select-none" style={{ zIndex: 16 }}>
-                    <span className="text-white/30 font-bold text-xs tracking-widest px-3 py-1 rounded-full" style={{ backdropFilter: 'blur(2px)', background: 'rgba(0,0,0,0.15)' }}>
+                    <span className="text-white/25 font-medium text-[10px] tracking-wide px-2.5 py-0.5 rounded-full" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.25)' }}>
                       SwipePhotos.net
                     </span>
                   </div>
 
-                  {/* Left/Right tap zones */}
-                  <button onClick={() => setCarouselIdx(i => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label="Previous" />
-                  <button onClick={() => setCarouselIdx(i => Math.min((hasGenerated ? generatedArray.length : fallbackPhotos.length) - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label="Next" />
+                  {/* Left/Right tap zones — only active when real photos exist */}
+                  {hasGenerated && (
+                    <>
+                      <button onClick={() => setCarouselIdx(i => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label="Previous" />
+                      <button onClick={() => setCarouselIdx(i => Math.min(generatedArray.length - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label="Next" />
+                    </>
+                  )}
 
                   {/* Dot indicators */}
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
-                    {(hasGenerated ? generatedArray : fallbackPhotos).map((_, i) => (
-                      <button key={i} onClick={() => setCarouselIdx(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`} />
-                    ))}
-                  </div>
+                  {hasGenerated && (
+                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+                      {generatedArray.map((_, i) => (
+                        <button key={i} onClick={() => setCarouselIdx(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`} />
+                      ))}
+                    </div>
+                  )}
 
                   {/* Style label */}
                   <div className="absolute top-3 left-3 z-20">
@@ -657,30 +645,35 @@ export default function OnboardingPage() {
                     </span>
                   </div>
 
-                  {/* Photo counter */}
-                  <div className="absolute top-3 right-3 z-20">
-                    <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
-                      {carouselIdx + 1} / {hasGenerated ? generatedArray.length : fallbackPhotos.length}
-                    </span>
-                  </div>
+                  {/* Photo counter — only when real photos exist */}
+                  {hasGenerated && (
+                    <div className="absolute top-3 right-3 z-20">
+                      <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+                        {carouselIdx + 1} / {generatedArray.length}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Thumbnail strip — tap to select */}
-              <div className="px-4 pb-3">
-                <div className="flex gap-2">
-                  {(hasGenerated ? generatedArray : fallbackPhotos).map((src, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCarouselIdx(i)}
-                      className={`flex-1 rounded-xl overflow-hidden transition-all ${i === carouselIdx ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-50 hover:opacity-75'}`}
-                      style={{ aspectRatio: '3/4' }}
-                    >
-                      <img src={src} alt="" className="w-full h-full object-cover object-top" />
-                    </button>
-                  ))}
+              {/* Thumbnail strip — only shown when real AI photos exist */}
+              {hasGenerated && (
+                <div className="px-4 pb-3">
+                  <div className="flex gap-2">
+                    {generatedArray.map((src, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCarouselIdx(i)}
+                        className={`flex-1 rounded-xl overflow-hidden transition-all ${i === carouselIdx ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                        style={{ aspectRatio: '3/4' }}
+                        onContextMenu={e => e.preventDefault()}
+                      >
+                        <img src={src} alt="" className="w-full h-full object-cover object-top" draggable={false} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* More styles teaser */}
               <div className="px-4 pb-3">
@@ -831,7 +824,7 @@ export default function OnboardingPage() {
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos === true }),
+                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos === true, selectedPreviewUrl: pickedPreviewUrl }),
                       })
                       const data = await res.json()
                       if (!res.ok || data.error) {
@@ -863,9 +856,11 @@ export default function OnboardingPage() {
                           // Not logged in — OAuth then redirect to Stripe
                           localStorage.setItem('sw_pending_checkout', data.url)
                           if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
+                          if (pickedPreviewUrl) localStorage.setItem('sw_pending_preview_url', pickedPreviewUrl)
+                          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
                           await supabase.auth.signInWithOAuth({
                             provider: 'google',
-                            options: { redirectTo: `${window.location.origin}/auth/callback?next=/go-checkout` },
+                            options: { redirectTo: `${siteUrl}/auth/callback?next=/go-checkout` },
                           })
                         }
                       } else {
