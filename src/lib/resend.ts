@@ -505,8 +505,7 @@ export async function sendAffiliateApplicationEmail(email: string, name: string)
 
 // ─── 4. Affiliate approved ────────────────────────────────────────────────────
 
-export async function sendAffiliateApprovedEmail(email: string, refCode: string) {
-  const refLink = `${APP_URL}/?ref=${refCode}`
+export async function sendAffiliateApprovedEmail(email: string, refLink: string) {
 
   const html = baseLayout(`
 

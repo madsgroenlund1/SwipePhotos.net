@@ -800,11 +800,21 @@ export function getPreviewTemplates(): Template[] {
  * Prioritises variety: different categories, expressions, crops, face angles.
  * Put preferredCategory first.
  */
+// Map onboarding style IDs that don't exactly match template categories
+const STYLE_TO_CATEGORY: Record<string, Category> = {
+  rooftop: 'outdoor',
+  beach:   'outdoor',
+}
+
 export function pickPaidTemplates(preferredCategory?: string, count = 20): Template[] {
   const pool = getActiveTemplates().sort((a, b) => b.quality - a.quality)
 
-  const preferred = pool.filter(t => t.category === preferredCategory)
-  const rest = pool.filter(t => t.category !== preferredCategory)
+  const resolved = preferredCategory
+    ? (STYLE_TO_CATEGORY[preferredCategory] ?? preferredCategory as Category)
+    : undefined
+
+  const preferred = pool.filter(t => t.category === resolved)
+  const rest = pool.filter(t => t.category !== resolved)
 
   // Interleave: 40% preferred, 60% variety
   const preferredCount = Math.min(Math.round(count * 0.4), preferred.length)
