@@ -3,10 +3,10 @@ import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'How to Make AI Photos Look Real — SwipePhotos.net',
+  title: 'How to Make AI Photos Look Natural and Convincing — SwipePhotos.net',
   description: 'The techniques behind natural-looking AI photos: face-swap technology, lighting, and professional settings.',
   openGraph: {
-    title: 'How to Make AI Photos Look Real',
+    title: 'How to Make AI Photos Look Natural and Convincing',
     description: 'A deep dive into the technology behind SwipePhotos: face-swap AI, natural lighting, and professional settings.',
     type: 'article',
   },
@@ -27,7 +27,7 @@ export default function BlogPost2() {
         </div>
 
         <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
-          How to Make AI Photos Look Real (and Undetectable)
+          How to Make AI Photos Look Natural and Convincing
         </h1>
 
         <div className="prose prose-invert max-w-none space-y-6 text-zinc-300 leading-relaxed">

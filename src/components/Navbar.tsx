@@ -38,16 +38,23 @@ export function Navbar() {
         scrolled ? 'backdrop-blur-md bg-[#0A0A0A]/80 border-b border-white/5' : ''
       }`}
     >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-0.5">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+        <Link href="/" className="flex items-center gap-0.5 flex-shrink-0">
           <span className="text-white font-bold text-xl tracking-tight">SwipePhotos</span>
           <span className="text-blue-500 font-bold text-xl">.net</span>
         </Link>
 
+        {/* Desktop nav links */}
+        <nav className="hidden md:flex items-center gap-6">
+          <Link href="/#how-it-works" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">How it works</Link>
+          <Link href="/#results" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Results</Link>
+          <Link href="/blog" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Blog</Link>
+        </nav>
+
         {/* Hidden until auth check resolves — prevents "Sign in" flash for logged-in users */}
         <Link
           href={loggedIn ? '/dashboard' : '/auth/signin'}
-          className={`text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all duration-150 ${
+          className={`flex-shrink-0 text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all duration-150 ${
             loggedIn === null ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           tabIndex={loggedIn === null ? -1 : undefined}

@@ -6,22 +6,25 @@ import { CookieBanner } from '@/components/CookieBanner'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'SwipePhotos.net — Get 10x More Matches with Professional AI Dating Photos',
+  title: 'SwipePhotos.net — Professional AI Dating Photos for Men',
   description:
-    'The best AI photo generator for men on dating apps. Upload a few photos of yourself. Generate 40+ professional dating photos in 1-click that look exactly like you.',
-  keywords: ['AI dating photos', 'Tinder photos', 'Hinge photos', 'dating app photos', 'AI photo generator'],
+    'Generate professional dating photos with AI. Upload a few clear selfies — we place your real face in premium settings. No photographer, no photoshoot. Plans from $19.',
+  keywords: ['AI dating photos', 'Tinder photos', 'Hinge photos', 'dating app photos', 'AI photo generator', 'dating profile photos'],
+  alternates: {
+    canonical: 'https://swipephotos.net',
+  },
   openGraph: {
-    title: 'SwipePhotos.net — Get 10x More Matches with Professional AI Dating Photos',
+    title: 'SwipePhotos.net — Professional AI Dating Photos for Men',
     description:
-      'Upload 10-20 selfies. Our AI learns your face and generates 40+ professional dating photos. No photographer needed.',
+      'Upload 3–5 clear selfies. Our AI places your real face in professional settings and delivers 20–80 photos to your email. No photographer needed.',
     url: 'https://swipephotos.net',
     siteName: 'SwipePhotos.net',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SwipePhotos.net — Get 10x More Matches',
-    description: 'Professional AI photos for dating apps. Upload selfies → get pro-quality photos.',
+    title: 'SwipePhotos.net — Professional AI Dating Photos',
+    description: 'Upload a few selfies. Get professional dating photos delivered to your email. No photographer needed.',
   },
   robots: { index: true, follow: true },
 }

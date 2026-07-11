@@ -65,27 +65,27 @@ const GAP = 12             // px — gap-3
 
 // ── Card components ───────────────────────────────────────────────────────────
 
-function LandscapeCard({ src, base }: { src: string; base: 'hinge-proof' | 'testimonials-coach-coner' }) {
+function LandscapeCard({ src, base, alt = '' }: { src: string; base: 'hinge-proof' | 'testimonials-coach-coner'; alt?: string }) {
   return (
     <div
       className="flex-shrink-0 rounded-xl overflow-hidden bg-[#111] border border-white/8 flex items-center justify-center p-2"
       style={{ width: LANDSCAPE_W, height: ROW_H }}
     >
       <div className="relative w-full h-full">
-        <Image src={`/${base}/${src}`} alt="Proof" fill className="object-contain" unoptimized />
+        <Image src={`/${base}/${src}`} alt={alt} fill className="object-contain" unoptimized />
       </div>
     </div>
   )
 }
 
-function PortraitCard({ file }: { file: string }) {
+function PortraitCard({ file, alt = '' }: { file: string; alt?: string }) {
   return (
     <div
       className="flex-shrink-0 rounded-xl overflow-hidden bg-[#111] border border-white/8 flex items-center justify-center p-2"
       style={{ width: PORTRAIT_W, height: ROW_H }}
     >
       <div className="relative w-full h-full">
-        <Image src={`/hinge-proof/${file}`} alt="Proof" fill className="object-contain" unoptimized />
+        <Image src={`/hinge-proof/${file}`} alt={alt} fill className="object-contain" unoptimized />
       </div>
     </div>
   )
@@ -254,11 +254,13 @@ export function TestimonialsScroll() {
           subtitle="Real DMs — they reached out before he did"
         />
         <MarqueeTrack direction="left" reducedMotion={reducedMotion}>
-          {row1Items.map((item, i) =>
-            item.kind === 'landscape-coach'
-              ? <LandscapeCard key={`r1-${i}`} src={item.file} base="testimonials-coach-coner" />
-              : <LandscapeCard key={`r1-${i}`} src={item.file} base="hinge-proof" />
-          )}
+          {row1Items.map((item, i) => {
+            const isDuplicate = i >= row1Base.length
+            const alt = isDuplicate ? '' : (item.kind === 'landscape-coach' ? 'Dating coach screenshot showing match results' : 'Screenshot of a woman messaging first on Hinge')
+            return item.kind === 'landscape-coach'
+              ? <LandscapeCard key={`r1-${i}`} src={item.file} base="testimonials-coach-coner" alt={alt} />
+              : <LandscapeCard key={`r1-${i}`} src={item.file} base="hinge-proof" alt={alt} />
+          })}
         </MarqueeTrack>
       </div>
 
@@ -283,11 +285,13 @@ export function TestimonialsScroll() {
           </div>
         ) : (
           <MarqueeTrack direction="right" reducedMotion={false}>
-            {row2Items.map((item, i) =>
-              item.kind === 'portrait'
-                ? <PortraitCard key={`r2-${i}`} file={item.file} />
-                : <LandscapeCard key={`r2-${i}`} src={item.file} base="hinge-proof" />
-            )}
+            {row2Items.map((item, i) => {
+              const isDuplicate = i >= row2Interleaved.length
+              const alt = isDuplicate ? '' : 'Screenshot showing increased match count after using SwipePhotos'
+              return item.kind === 'portrait'
+                ? <PortraitCard key={`r2-${i}`} file={item.file} alt={alt} />
+                : <LandscapeCard key={`r2-${i}`} src={item.file} base="hinge-proof" alt={alt} />
+            })}
           </MarqueeTrack>
         )}
       </div>
@@ -300,13 +304,15 @@ export function TestimonialsScroll() {
           subtitle="Screenshots, clips and reactions from real users"
         />
         <MarqueeTrack direction="left" reducedMotion={reducedMotion}>
-          {row3Items.map((item, i) =>
-            item.kind === 'video'
+          {row3Items.map((item, i) => {
+            const isDuplicate = i >= row3Interleaved.length
+            const alt = isDuplicate ? '' : (item.kind === 'video' ? 'Video clip of dating app results' : 'Screenshot of dating app results after using SwipePhotos')
+            return item.kind === 'video'
               ? <VideoCard key={`r3-${i}`} src={item.file} />
               : item.kind === 'portrait'
-              ? <PortraitCard key={`r3-${i}`} file={item.file} />
-              : <LandscapeCard key={`r3-${i}`} src={item.file} base="hinge-proof" />
-          )}
+              ? <PortraitCard key={`r3-${i}`} file={item.file} alt={alt} />
+              : <LandscapeCard key={`r3-${i}`} src={item.file} base="hinge-proof" alt={alt} />
+          })}
         </MarqueeTrack>
       </div>
 

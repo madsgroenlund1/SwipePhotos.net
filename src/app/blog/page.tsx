@@ -18,8 +18,8 @@ const POSTS = [
   },
   {
     slug: 'how-to-make-ai-photos-look-real',
-    title: 'How to Make AI Photos Look Real (and Undetectable)',
-    excerpt: 'A deep dive into the techniques that make AI-generated photos pass every detector — from SynthID to reverse image search.',
+    title: 'How to Make AI Photos Look Natural and Convincing',
+    excerpt: 'A deep dive into the techniques behind natural-looking AI photos: face-swap technology, realistic lighting, and professional settings.',
     readTime: '8 min read',
     date: 'June 8, 2026',
     tag: 'How-To Guide',
