@@ -603,7 +603,7 @@ export default function OnboardingPage() {
                 </h2>
                 {hasGenerated
                   ? <p className="text-zinc-400 text-sm mt-1">Swipe through your {generatedArray.length} previews and choose the one you like best.</p>
-                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Undetectable AI photos in 40+ styles, delivered to your email.</p>
+                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Professional AI photos in 40+ styles, delivered to your email.</p>
                 }
               </div>
 

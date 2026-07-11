@@ -271,7 +271,7 @@ export default function AffiliatePage() {
           <ul className="space-y-1.5 text-xs text-zinc-400 mb-4">
             <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;POV: you upload selfies and get photos that look like a pro took them&rdquo;</li>
             <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;How I went from 2 matches a week to 20+ with one simple change&rdquo;</li>
-            <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;The AI tool that passes every AI detector (I tested it myself)&rdquo;</li>
+            <li className="flex gap-2"><span className="text-zinc-600">•</span>&ldquo;The AI tool that generates photos that actually look like you&rdquo;</li>
           </ul>
           <p className="text-zinc-500 text-xs mb-1.5">Your link (after approval):</p>
           <code className="block bg-white/5 rounded-lg px-3 py-2 text-blue-400 text-xs">

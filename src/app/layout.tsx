@@ -6,14 +6,14 @@ import { CookieBanner } from '@/components/CookieBanner'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'SwipePhotos.net — Get 10x More Matches with Undetectable AI Photos',
+  title: 'SwipePhotos.net — Get 10x More Matches with Professional AI Dating Photos',
   description:
-    'The best AI photo generator for men on dating apps. Upload a few photos of yourself. Generate photos in 1-click that fully look like you. Proven to work. Undetectable.',
+    'The best AI photo generator for men on dating apps. Upload a few photos of yourself. Generate 40+ professional dating photos in 1-click that look exactly like you.',
   keywords: ['AI dating photos', 'Tinder photos', 'Hinge photos', 'dating app photos', 'AI photo generator'],
   openGraph: {
-    title: 'SwipePhotos.net — Get 10x More Matches with Undetectable AI Photos',
+    title: 'SwipePhotos.net — Get 10x More Matches with Professional AI Dating Photos',
     description:
-      'Upload 10-20 selfies. Our AI learns your face and generates 40+ professional dating photos. Undetectable. Proven to work.',
+      'Upload 10-20 selfies. Our AI learns your face and generates 40+ professional dating photos. No photographer needed.',
     url: 'https://swipephotos.net',
     siteName: 'SwipePhotos.net',
     type: 'website',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'SwipePhotos.net — Get 10x More Matches',
-    description: 'Undetectable AI photos for dating apps. Upload selfies → get professional photos.',
+    description: 'Professional AI photos for dating apps. Upload selfies → get pro-quality photos.',
   },
   robots: { index: true, follow: true },
 }
