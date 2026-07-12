@@ -2,15 +2,21 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from './AuthProvider'
 
-// initialLoggedIn: server-rendered auth state. Passed by server components so the
-// button renders correctly on first paint with no async round-trip required.
-// onAuthStateChange then keeps it in sync for sign-in / sign-out events.
-export function Navbar({ initialLoggedIn }: { initialLoggedIn?: boolean }) {
+/**
+ * Navbar — reads auth state from AuthProvider (set in root layout from the server).
+ *
+ * This eliminates the "Sign in" flash on refresh: the server already determined
+ * whether the user is logged in and seeded the provider, so the button renders
+ * correctly from the very first paint without waiting for onAuthStateChange.
+ *
+ * `initialLoggedIn` is kept as an optional prop for backward compatibility but
+ * is no longer needed — AuthProvider handles the initial state.
+ */
+export function Navbar({ initialLoggedIn: _ignored }: { initialLoggedIn?: boolean }) {
+  const { user, loading } = useAuth()
   const [scrolled, setScrolled] = useState(false)
-  // Use server-provided value if available; null = auth check still pending (hides button)
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(initialLoggedIn ?? null)
 
   useEffect(() => {
     function onScroll() {
@@ -20,15 +26,11 @@ export function Navbar({ initialLoggedIn }: { initialLoggedIn?: boolean }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    const supabase = createClient()
-    // onAuthStateChange fires immediately with INITIAL_SESSION event,
-    // so we don't need a separate getSession() call.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoggedIn(!!session)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+  // Three states:
+  //   loading=true  → hide the button (avoids signed-out flash while verifying)
+  //   user != null  → "Dashboard"
+  //   user == null  → "Sign in"
+  const buttonVisible = !loading
 
   return (
     <nav
@@ -49,16 +51,15 @@ export function Navbar({ initialLoggedIn }: { initialLoggedIn?: boolean }) {
           <Link href="/blog" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Blog</Link>
         </nav>
 
-        {/* Hidden until auth check resolves — prevents "Sign in" flash for logged-in users */}
         <Link
-          href={loggedIn ? '/dashboard' : '/auth/signin'}
+          href={user ? '/dashboard' : '/auth/signin'}
           className={`flex-shrink-0 text-zinc-400 hover:text-white text-sm font-medium border border-white/10 hover:border-white/25 px-4 py-2 rounded-full transition-all duration-150 ${
-            loggedIn === null ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            buttonVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
-          tabIndex={loggedIn === null ? -1 : undefined}
-          aria-hidden={loggedIn === null}
+          tabIndex={buttonVisible ? undefined : -1}
+          aria-hidden={!buttonVisible}
         >
-          {loggedIn ? 'Dashboard' : 'Sign in'}
+          {user ? 'Dashboard' : 'Sign in'}
         </Link>
       </div>
     </nav>

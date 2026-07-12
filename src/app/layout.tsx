@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { CookieBanner } from '@/components/CookieBanner'
+import { AuthProvider } from '@/components/AuthProvider'
+import { createClient } from '@/lib/supabase/server'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -29,12 +31,20 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Fetch user once at the root — the AuthProvider seeds all client components.
+  // The middleware already refreshed the access token (if needed) before this runs,
+  // so getUser() here always reflects the current, valid session state.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-[#0A0A0A] text-white">
-        {children}
-        <CookieBanner />
+        <AuthProvider initialUser={user ?? null}>
+          {children}
+          <CookieBanner />
+        </AuthProvider>
       </body>
     </html>
   )
