@@ -21,7 +21,10 @@ const CARDS = [
 const CARD_WIDTH = 400
 const CARD_GAP   = 16
 const CARD_STEP  = CARD_WIDTH + CARD_GAP   // 416 px
-const SPEED_PX_S = 80
+// Same visual speed as the Hinge-proof rows (TestimonialsScroll): 60 px/s
+// on desktop, 45 px/s on mobile.
+const SPEED_PX_S = 60
+const SPEED_PX_S_MOBILE = 45
 
 type CardData = typeof CARDS[0]
 
@@ -107,7 +110,10 @@ function MarqueeRow() {
 
   // Correct reps before the first browser paint so the animation starts with
   // the right seqPx. useLayoutEffect is client-only; during SSR it is a no-op.
+  const [isMobile, setIsMobile] = useState(false)
+
   useLayoutEffect(() => {
+    setIsMobile(window.innerWidth < 768)
     const needed = computeReps(window.innerWidth)
     if (needed > repsRef.current) {
       repsRef.current = needed
@@ -141,7 +147,7 @@ function MarqueeRow() {
   // 4-card cycle; no two identical cards are ever adjacent).
   const seq   = Array.from({ length: reps }, () => CARDS).flat()
   const seqPx = seq.length * CARD_STEP             // exact, integer math
-  const dur   = seqPx / SPEED_PX_S
+  const dur   = seqPx / (isMobile ? SPEED_PX_S_MOBILE : SPEED_PX_S)
 
   if (reducedMotion) {
     return (
