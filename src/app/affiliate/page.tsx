@@ -64,10 +64,13 @@ export default function AffiliatePage() {
 
   // Load saved slug from localStorage on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
     const stored = localStorage.getItem('sw_affiliate_slug')
     if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSavedSlug(stored)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSubmitted(true)
     }
   }, [])

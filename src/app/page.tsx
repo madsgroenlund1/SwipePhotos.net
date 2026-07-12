@@ -87,7 +87,7 @@ export default async function HomePage() {
                 { icon: '✓', text: 'YOUR REAL FEATURES', color: 'text-blue-400' },
                 { icon: '✓', text: 'COACH-APPROVED TEMPLATES', color: 'text-blue-400' },
                 { icon: '✓', text: 'NATURAL LIGHTING', color: 'text-blue-400' },
-                { icon: '✓', text: '20–80 PHOTOS DELIVERED', color: 'text-blue-400' },
+                { icon: '✓', text: '5–45 PHOTOS / MONTH', color: 'text-blue-400' },
                 { icon: '✓', text: 'NO PHOTOGRAPHER NEEDED', color: 'text-blue-400' },
               ].map(({ icon, text, color }, i) => (
                 <div key={i} className="flex items-center gap-6 px-8">
@@ -130,8 +130,8 @@ export default async function HomePage() {
             {
               step: '3',
               title: 'Choose a plan',
-              desc: 'Pick 20, 40, or 80 photos across different styles. Plans from $19/month.',
-              badge: 'Plans from $19',
+              desc: 'Pick 5, 15, or 45 photos across different styles. Plans from €29/month.',
+              badge: 'Plans from €29',
               badgeColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
             },
             {
@@ -486,9 +486,9 @@ export default async function HomePage() {
         </p>
         <div className="grid md:grid-cols-3 gap-4 text-left">
           {[
-            { name: 'Starter', price: '$19', photos: '20 photos', presets: '2 styles', delivery: '~60 min delivery' },
-            { name: 'Popular', price: '$39', photos: '40 photos', presets: '8 styles', delivery: '~30 min priority', highlight: true },
-            { name: 'Elite', price: '$79', photos: '80 photos', presets: '8 styles', delivery: '~30 min priority' },
+            { name: 'Starter',  price: '€29', photos: '5 photos / month',  presets: '2 style presets', delivery: '~60 min delivery',      highlight: false },
+            { name: 'Premium',  price: '€49', photos: '15 photos / month', presets: 'All 40 templates',  delivery: '~30 min priority',       highlight: true  },
+            { name: 'Pro',      price: '€74', photos: '45 photos / month', presets: 'All 40 templates',  delivery: '~30 min priority',       highlight: false },
           ].map(({ name, price, photos, presets, delivery, highlight }) => (
             <div key={name} className={`rounded-2xl border p-5 flex flex-col gap-3 ${highlight ? 'border-blue-500/40 bg-blue-600/5' : 'border-white/8 bg-white/[0.02]'}`}>
               <div className="flex items-center justify-between">

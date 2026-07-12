@@ -101,7 +101,9 @@ function computeReps(vw: number): number {
 function MarqueeRow() {
   const repsRef = useRef(4)                        // start large → no jump on most viewports
   const [reps, setReps]                   = useState(4)
-  const [reducedMotion, setReducedMotion] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
 
   // Correct reps before the first browser paint so the animation starts with
   // the right seqPx. useLayoutEffect is client-only; during SSR it is a no-op.
@@ -116,7 +118,6 @@ function MarqueeRow() {
   // Prefers-reduced-motion.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReducedMotion(mq.matches)
     const h = (e: MediaQueryListEvent) => setReducedMotion(e.matches)
     mq.addEventListener('change', h)
     return () => mq.removeEventListener('change', h)

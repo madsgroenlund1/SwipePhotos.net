@@ -23,16 +23,11 @@ const STYLE_PLACEHOLDERS: Record<string, string> = {
   beach:      '/photos/presets/scene-beach.jpg',
 }
 
-const PACKAGES = {
-  monthly: [
-    { id: 'starter',        name: 'Starter',  priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID,        price: '$19',  perMonth: '$19',    photos: '20 AI photos / month', popular: false },
-    { id: 'popular',        name: 'Popular',  priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_PRICE_ID,        price: '$39',  perMonth: '$39',    photos: '40 AI photos / month', popular: true  },
-  ],
-  yearly: [
-    { id: 'starter_yearly', name: 'Starter',  priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_YEARLY_PRICE_ID, price: '$114', perMonth: '$9.50',  photos: '20 AI photos / month', popular: false },
-    { id: 'popular_yearly', name: 'Popular',  priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_YEARLY_PRICE_ID, price: '$234', perMonth: '$19.50', photos: '40 AI photos / month', popular: true  },
-  ],
-}
+const PACKAGES = [
+  { id: 'starter', name: 'Starter',  priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID, price: '€29', photos: '5 AI photos / month',  popular: false },
+  { id: 'popular', name: 'Premium',  priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_PRICE_ID, price: '€49', photos: '15 AI photos / month', popular: true  },
+  { id: 'elite',   name: 'Pro',      priceId: process.env.NEXT_PUBLIC_STRIPE_ELITE_PRICE_ID,   price: '€74', photos: '45 AI photos / month', popular: false },
+]
 
 // ─── Refinement steps (honest, no fake percentages) ──────────────────────────
 
@@ -161,7 +156,6 @@ export default function OnboardingPage() {
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
   const [selectedStyle, setSelectedStyle]   = useState('restaurant')
   const [selectedPackage, setSelectedPackage] = useState('popular')
-  const [billing, setBilling]               = useState<'monthly'|'yearly'>('monthly')
   const [email, setEmail]                   = useState('')
   const [agreedToTerms, setAgreedToTerms]   = useState(false)
   const [loading, setLoading]               = useState(false)
@@ -223,6 +217,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step !== 4) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGenStatus('idle'); setGenError(null); setPreviewUrls([]); setPickedIdx(0)
     const abortCtrl = new AbortController()
 
@@ -278,6 +273,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step !== 6) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRefineStatus('idle'); setRefineError(null); setRefinedUrl(null)
     const abortCtrl = new AbortController()
 
@@ -335,8 +331,7 @@ export default function OnboardingPage() {
     if (!email.includes('@') || !agreedToTerms) return
     setLoading(true); setCheckoutError(null)
     try {
-      const currentPkgs = PACKAGES[billing]
-      const pkg = currentPkgs.find(p => p.id === selectedPackage) || currentPkgs.find(p => p.popular) || currentPkgs[0]
+      const pkg = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES.find(p => p.popular) || PACKAGES[1]
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
@@ -736,16 +731,8 @@ export default function OnboardingPage() {
                 <p className="text-zinc-500 text-sm text-center">Cancel any time. Your photos stay yours.</p>
               </div>
               <div className="px-4 pb-2">
-                {/* Billing toggle */}
-                <div className="flex bg-white/5 rounded-2xl p-1 mb-3">
-                  <button onClick={() => { setBilling('monthly'); setSelectedPackage('popular') }} className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all', billing==='monthly' ? 'bg-white text-black' : 'text-zinc-400')}>Monthly</button>
-                  <button onClick={() => { setBilling('yearly');  setSelectedPackage('popular_yearly') }} className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2', billing==='yearly' ? 'bg-white text-black' : 'text-zinc-400')}>
-                    Yearly <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', billing==='yearly' ? 'bg-green-500 text-white' : 'bg-green-500/20 text-green-400')}>50% OFF</span>
-                  </button>
-                </div>
-                {/* Packages */}
                 <div className="space-y-2 mb-3">
-                  {PACKAGES[billing].map(pkg => (
+                  {PACKAGES.map(pkg => (
                     <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)} className={cn('flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all', selectedPackage===pkg.id ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20')}>
                       <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0', selectedPackage===pkg.id ? 'border-blue-500 bg-blue-500' : 'border-zinc-600')}>
                         {selectedPackage===pkg.id && <div className="w-2 h-2 bg-white rounded-full" />}
@@ -757,10 +744,7 @@ export default function OnboardingPage() {
                         </div>
                         <span className="text-zinc-500 text-xs">{pkg.photos}</span>
                       </div>
-                      <div className="text-right">
-                        <div><span className="text-white font-bold">{pkg.perMonth}</span><span className="text-zinc-500 text-xs">/mo</span></div>
-                        {billing==='yearly' && <div className="text-zinc-600 text-[10px]">{pkg.price}/yr</div>}
-                      </div>
+                      <div><span className="text-white font-bold">{pkg.price}</span><span className="text-zinc-500 text-xs">/mo</span></div>
                     </div>
                   ))}
                 </div>
@@ -784,8 +768,7 @@ export default function OnboardingPage() {
                 <button disabled={loading} onClick={async () => {
                   setLoading(true); setCheckoutError(null)
                   try {
-                    const currentPkgsG = PACKAGES[billing]
-                    const pkgG = currentPkgsG.find(p => p.id === selectedPackage) || currentPkgsG[0]
+                    const pkgG = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES[1]
                     const res = await fetch('/api/checkout', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),

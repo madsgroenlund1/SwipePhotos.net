@@ -6,8 +6,8 @@ export function CookieBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const accepted = localStorage.getItem('cookie-consent')
-    if (!accepted) setVisible(true)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!localStorage.getItem('cookie-consent')) setVisible(true)
   }, [])
 
   function accept() {

@@ -207,7 +207,7 @@ export default async function PrivacyPage() {
             <ul className="list-disc ml-5 space-y-1">
               <li><strong className="text-white">Access</strong> — request a copy of the data we hold about you</li>
               <li><strong className="text-white">Rectification</strong> — request correction of inaccurate data</li>
-              <li><strong className="text-white">Erasure</strong> — request deletion of your data ("right to be forgotten")</li>
+              <li><strong className="text-white">Erasure</strong> — request deletion of your data (&quot;right to be forgotten&quot;)</li>
               <li><strong className="text-white">Restriction</strong> — request that we limit how we process your data</li>
               <li><strong className="text-white">Portability</strong> — receive your data in a machine-readable format</li>
               <li><strong className="text-white">Objection</strong> — object to processing based on legitimate interests</li>

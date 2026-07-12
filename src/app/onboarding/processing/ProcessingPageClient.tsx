@@ -29,6 +29,7 @@ export function ProcessingPageClient() {
 
   // Start polling for order status immediately — face-swap is fast (~30-60 sec)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!orderId || orderId === 'undefined') { setFailed(true); return }
 
     let stopped = false

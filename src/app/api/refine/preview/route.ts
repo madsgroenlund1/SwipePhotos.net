@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
 
         if (!quality.passed) {
           // Log failure and surface error
+          try {
           await createAdminClientDirect()
             .from('preview_refinements')
             .insert({
@@ -79,8 +80,7 @@ export async function POST(req: NextRequest) {
               created_at: startedAt,
               completed_at: new Date().toISOString(),
             })
-            .then(() => {})
-            .catch(() => {})
+        } catch { /* non-critical */ }
 
           send({ status: 'error', error: 'Quality check failed — please go back and try a different photo' })
           controller.close()
@@ -90,23 +90,22 @@ export async function POST(req: NextRequest) {
         // ── 8. Persist refinement record ──────────────────────────────────────
         send({ status: 'saving' })
 
-        await createAdminClientDirect()
-          .from('preview_refinements')
-          .insert({
-            order_id: orderId,
-            input_url: inputUrl,
-            output_url: inputUrl,   // same URL — quality verified, no re-generation needed
-            status: 'passed',
-            quality_passed: true,
-            quality_details: { file_size_bytes: quality.fileSizeBytes },
-            created_at: startedAt,
-            completed_at: new Date().toISOString(),
-          })
-          .then(() => {})
-          .catch((err: unknown) => {
-            // Non-critical — table may not exist yet in dev; log and continue
-            console.warn('[refine] DB insert skipped:', err instanceof Error ? err.message : err)
-          })
+        try {
+          await createAdminClientDirect()
+            .from('preview_refinements')
+            .insert({
+              order_id: orderId,
+              input_url: inputUrl,
+              output_url: inputUrl,
+              status: 'passed',
+              quality_passed: true,
+              quality_details: { file_size_bytes: quality.fileSizeBytes },
+              created_at: startedAt,
+              completed_at: new Date().toISOString(),
+            })
+        } catch (err: unknown) {
+          console.warn('[refine] DB insert skipped:', err instanceof Error ? err.message : err)
+        }
 
         await delay(500)
 

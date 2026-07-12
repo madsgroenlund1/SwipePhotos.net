@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'SwipePhotos.net — Professional AI Dating Photos for Men',
     description:
-      'Upload 3–5 clear selfies. Our AI places your real face in professional settings and delivers 20–80 photos to your email. No photographer needed.',
+      'Upload 3 selfies. Our AI places your real face in professional settings and delivers 5–45 photos to your email. No photographer needed.',
     url: 'https://swipephotos.net',
     siteName: 'SwipePhotos.net',
     type: 'website',
