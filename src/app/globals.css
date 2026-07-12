@@ -13,9 +13,8 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* No scroll-behavior: smooth — the animated scroll gets cancelled by layout
+   shifts (lazy images / marquee) so #hash anchors never reach their target. */
 
 body {
   background: var(--background);
@@ -23,7 +22,9 @@ body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  /* clip (not hidden): hidden turns body into its own scroll container,
+     which breaks window scrolling and #hash anchor navigation */
+  overflow-x: clip;
 }
 
 @keyframes marquee-left {
