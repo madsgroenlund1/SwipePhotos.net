@@ -31,6 +31,7 @@ export type Template = {
   active: boolean
   previewEligible: boolean
   skinTone: 'any' | 'light' | 'medium' | 'dark'
+  isMannequin?: boolean
 }
 
 const BASE = 'https://uxllirottbektcirajjm.supabase.co/storage/v1/object/public/references'

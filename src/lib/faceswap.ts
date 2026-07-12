@@ -5,37 +5,30 @@ fal.config({ credentials: process.env.FAL_KEY })
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 //
-// half-moon-ai/ai-face-swap/faceswapimagemulti
+// bytedance/seedream/v5/pro/edit
 //
-// Replaced the deprecated easel-ai/advanced-face-swap. This model:
-//   - Takes source_face (customer URL) and target_image (template URL)
-//   - Handles skin-tone adaptation, shadow matching, and alignment automatically
-//   - No workflow_type or upscale params — the model handles these internally
-//   - Supports multiple faces in the target image (faceswapimagemulti variant)
+// Region-precise image editing model. Accepts up to 10 reference images.
+// Input: { image_urls: [template, customer1, customer2?], prompt: string }
+// Output: { images: [{ url, width, height }] }
 //
-const MODEL = 'half-moon-ai/ai-face-swap/faceswapimagemulti'
+// Replaces the deprecated half-moon-ai/ai-face-swap/faceswapimagemulti.
+//
+const MODEL = 'bytedance/seedream/v5/pro/edit'
 
-// Minimum acceptable output file size. Outputs below this threshold are
-// typically failed/empty swaps or corrupted frames.
 const MIN_VALID_SIZE_BYTES = 80_000
-
-// Maximum number of customer photos to try per template before giving up.
 const MAX_ATTEMPTS_PER_TEMPLATE = 2
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type FaceSwapInput = {
-  source_face: string
-  target_image: string
+type SeedreamInput = {
+  image_urls: string[]
+  prompt: string
 }
 
-// fal.ai models return data under `data` key; the image URL may be nested
-// in different ways depending on model version. extractOutputUrl() handles all.
-type FaceSwapOutput = {
-  image?:   { url?: string; width?: number; height?: number; file_size?: number }
-  images?:  Array<{ url?: string }>
-  output?:  { url?: string } | string
-  url?:     string
+type SeedreamOutput = {
+  images?: Array<{ url?: string; width?: number; height?: number }>
+  image?:  { url?: string }
+  url?:    string
 }
 
 export type QualityResult = {
@@ -45,32 +38,50 @@ export type QualityResult = {
   failReason?: string
 }
 
-// Tracks which fal.ai request belongs to which template
 export type JobEntry = {
   requestId: string
   templateId: string
 }
 
+// ─── Prompt builder ───────────────────────────────────────────────────────────
+
+function buildPrompt(template: Template, customerPhotoCount: number): string {
+  const refPhotos = customerPhotoCount >= 2
+    ? '#2 and #3 are reference photos of the same real person from different angles. Use both to reconstruct the exact identity.'
+    : '#2 is a reference photo of the real person.'
+
+  const glassesNote = template.hasGlasses
+    ? ' Keep the sunglasses exactly as positioned in #1.'
+    : ''
+
+  const isMannequin = template.isMannequin ?? false
+  const headNote = isMannequin
+    ? 'The figure in #1 has a blank mannequin head. Replace it with'
+    : 'Replace the face and head in #1 with'
+
+  return `#1 is the target scene. Preserve every detail of #1 exactly: the ${template.setting} setting, clothing, body, arms, hands, pose, lighting and camera angle. Do not change anything in #1 except the face and head.
+
+${refPhotos} Extract the exact identity: face shape, eyes, eyebrows, nose, lips, jawline, skin tone, skin texture, hair colour, hairline and hairstyle.
+
+${headNote} the exact identity from the reference photos. Adapt the head naturally to the angle, expression and lighting of #1. Blend seamlessly at the hairline, neck and ears.${glassesNote}
+
+Do not idealise, slim or smooth the face. Reproduce the exact real person from the reference photos.
+
+The result must look like one authentic photograph of this specific real person in the scene from #1.`
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Extract the output image URL from whatever shape the fal.ai model returns.
- * Guards against all known variants.
- */
 function extractOutputUrl(result: unknown): string | null {
   if (!result || typeof result !== 'object') return null
-  const r = result as { data?: FaceSwapOutput } & FaceSwapOutput
+  const r = result as { data?: SeedreamOutput } & SeedreamOutput
 
-  // Standard fal format: result.data.image.url
-  const data = r.data ?? r
+  const data = (r.data ?? r) as SeedreamOutput
   if (!data || typeof data !== 'object') return null
-  const d = data as FaceSwapOutput
 
-  if (d.image?.url)         return d.image.url
-  if (d.images?.[0]?.url)   return d.images[0].url
-  if (d.url)                 return d.url
-  if (typeof d.output === 'string') return d.output
-  if (typeof d.output === 'object' && d.output?.url) return d.output.url
+  if (data.images?.[0]?.url) return data.images[0].url
+  if (data.image?.url)        return data.image.url
+  if (data.url)               return data.url
 
   return null
 }
@@ -86,10 +97,6 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 
 // ─── Quality control ──────────────────────────────────────────────────────────
 
-/**
- * Score an output image by fetching its file size.
- * A small file almost always means a failed or blank swap.
- */
 export async function scoreOutput(url: string): Promise<QualityResult> {
   try {
     const head = await fetch(url, { method: 'HEAD' })
@@ -100,17 +107,11 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
 
     if (contentLength > 0) {
       if (contentLength < MIN_VALID_SIZE_BYTES) {
-        return {
-          url,
-          fileSizeBytes: contentLength,
-          passed: false,
-          failReason: `Too small (${contentLength}B) — likely failed swap`,
-        }
+        return { url, fileSizeBytes: contentLength, passed: false, failReason: `Too small (${contentLength}B)` }
       }
       return { url, fileSizeBytes: contentLength, passed: true }
     }
 
-    // HEAD returned no Content-Length — do a full GET to measure
     const resp = await fetch(url)
     if (!resp.ok) return { url, fileSizeBytes: 0, passed: false, failReason: `GET ${resp.status}` }
     const buf = await resp.arrayBuffer()
@@ -124,51 +125,37 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
   }
 }
 
-// ─── Preview (5 photos, synchronous, called before payment) ──────────────────
+// ─── Preview (synchronous, called before payment) ────────────────────────────
 
-/**
- * Run 5 face-swap previews for the given customer face.
- *
- * Retry strategy: if the first attempt for a template produces a too-small
- * output (likely a failed swap), we log the failure and move on — since
- * preview only has one source photo available, there's nothing else to try.
- * The job is still returned as a settled promise so the caller gets partial
- * results rather than a hard failure.
- */
 export async function runPreviewFaceSwaps(
-  customerFaceUrl: string,
+  customerPhotoUrls: string[],
   preferredCategory?: string,
   hasTattoos?: boolean
 ): Promise<Record<string, string>> {
   const templates = getPreviewTemplatesForCategory(preferredCategory ?? 'restaurant')
 
   if (hasTattoos) {
-    console.log('[preview] hasTattoos=true — visible face/neck tattoos will transfer via face-swap; body tattoos follow template skin')
+    console.log('[preview] hasTattoos=true — face/neck tattoos may transfer; body tattoos follow template')
   }
 
   const results = await Promise.allSettled(
     templates.map(async (template, idx) => {
-      // Per-template timeout: 70 s gives enough headroom for the model to finish
-      // even under queue pressure, while keeping total preview time under 5 min.
+      const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
+      const prompt = buildPrompt(template, customerPhotoUrls.length)
+
       const raw = await withTimeout(
         fal.subscribe(MODEL, {
-          input: { source_face: customerFaceUrl, target_image: template.url } as FaceSwapInput,
+          input: { image_urls: imageUrls, prompt } as SeedreamInput,
           logs: false,
         }),
-        70_000
+        120_000
       )
 
       const url = extractOutputUrl(raw)
-      if (!url) {
-        throw new Error(`[preview] Job ${idx} (${template.id}): model returned no URL`)
-      }
+      if (!url) throw new Error(`[preview] Job ${idx} (${template.id}): no URL in result`)
 
       const score = await scoreOutput(url)
-      if (!score.passed) {
-        throw new Error(
-          `[preview] Job ${idx} (${template.id}): quality check failed — ${score.failReason}`
-        )
-      }
+      if (!score.passed) throw new Error(`[preview] Job ${idx} (${template.id}): quality failed — ${score.failReason}`)
 
       console.log(`[preview] ✓ Job ${idx} (${template.id}) — ${score.fileSizeBytes}B`)
       return { url, template }
@@ -190,16 +177,6 @@ export async function runPreviewFaceSwaps(
 
 // ─── Paid generation (async queue, post-payment) ──────────────────────────────
 
-/**
- * Submit async face-swap jobs for the paid generation flow.
- *
- * Smart source selection: rotates through customer photos so each template
- * is attempted with a different source image, maximising variety and reducing
- * the chance that a single low-quality upload ruins all outputs.
- *
- * If a job fails to submit (network error, model error), it is logged and
- * skipped rather than crashing the whole batch.
- */
 export async function submitFaceSwapJobs(
   customerPhotoUrls: string[],
   preferredCategory?: string,
@@ -217,11 +194,16 @@ export async function submitFaceSwapJobs(
 
   const jobs = await Promise.allSettled(
     templates.map((template, idx) => {
-      const sourceUrl = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
+      // Rotate customer photos for variety; always include the second photo if available
+      const primary = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
+      const secondary = customerPhotoUrls.find(u => u !== primary)
+      const imageUrls = secondary
+        ? [template.url, primary, secondary]
+        : [template.url, primary]
+      const prompt = buildPrompt(template, imageUrls.length - 1)
+
       return fal.queue
-        .submit(MODEL, {
-          input: { source_face: sourceUrl, target_image: template.url } as FaceSwapInput,
-        })
+        .submit(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput })
         .then(result => ({ result, templateId: template.id }))
     })
   )
@@ -239,7 +221,7 @@ export async function submitFaceSwapJobs(
   return entries
 }
 
-// ─── Polling (called every 10s from the poll endpoint) ───────────────────────
+// ─── Polling ──────────────────────────────────────────────────────────────────
 
 export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
   passed: { url: string; templateId: string }[]
@@ -262,7 +244,7 @@ export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
 
           if (!url) {
             failedCount++
-            console.warn(`[faceswap] ✗ ${requestId} (${templateId}) — no URL in result`)
+            console.warn(`[faceswap] ✗ ${requestId} (${templateId}) — no URL`)
             return
           }
 
@@ -292,26 +274,18 @@ export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Parse replicate_training_id from the orders table.
- * Supports both old format (string[]) and new format (JobEntry[]).
- */
 export function parseJobEntries(raw: string): JobEntry[] {
   try {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed) || !parsed.length) return []
-    // Old format: ["uuid1", "uuid2", ...]
     if (typeof parsed[0] === 'string') {
       return parsed.map((id: string) => ({ requestId: id, templateId: 'unknown' }))
     }
-    // New format: [{requestId, templateId}, ...]
     return parsed as JobEntry[]
   } catch {
     return []
   }
 }
-
-// ─── Legacy exports ───────────────────────────────────────────────────────────
 
 /** @deprecated use submitFaceSwapJobs */
 export async function submitFaceSwaps(

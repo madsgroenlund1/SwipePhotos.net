@@ -212,6 +212,10 @@ export default function OnboardingPage() {
         const compressed = await compressImage(photos[0])
         const fd = new FormData()
         fd.append('photo', compressed)
+        if (photos[1]) {
+          const compressed2 = await compressImage(photos[1])
+          fd.append('photo2', compressed2)
+        }
         fd.append('style', selectedStyle)
         fd.append('hasTattoos', String(hasTattoos === true))
         const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
