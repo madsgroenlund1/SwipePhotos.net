@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
 import { BeforeAfterCarousel } from '@/components/BeforeAfterCarousel'
+import { AnimatedAIDetection } from '@/components/AnimatedAIDetection'
 import { TestimonialsScroll } from '@/components/TestimonialsScroll'
 import { createClient } from '@/lib/supabase/server'
 
@@ -34,19 +35,15 @@ export default async function HomePage() {
           ))}
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-4">
-          More Matches.
+        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-6">
+          Get <span className="text-blue-500">10x more likes</span> with
           <br />
-          <span className="text-blue-500">Better Photos.</span>
+          undetectable AI photos
         </h1>
 
-        <p className="text-zinc-500 text-base md:text-lg mb-6 italic">
-          (Without a Photoshoot, Expensive Camera, or Leaving Your House)
-        </p>
-
         <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-          Upload a few selfies. We generate ultra-realistic photos that look exactly like you —
-          in professional settings with the lighting and composition of a real photographer.
+          The best AI photo generator for men on dating apps. Upload 3 photos of yourself —
+          get photos that fully look like you. Proven to work. Undetectable.
         </p>
 
         {/* Social proof row */}
@@ -115,8 +112,8 @@ export default async function HomePage() {
           {[
             {
               step: '1',
-              title: 'Upload 3–5 selfies',
-              desc: 'Clear photos of your face in good lighting. No photographer needed.',
+              title: 'Upload 3 photos',
+              desc: 'One from each angle — left, front, right. No photographer needed.',
               badge: 'Free · No account required',
               badgeColor: 'text-green-400 bg-green-500/10 border-green-500/20',
             },
@@ -180,6 +177,9 @@ export default async function HomePage() {
         <BeforeAfterCarousel />
       </section>
 
+      {/* ── UNDETECTABLE (animated phone demo) ───────────────────────────── */}
+      <AnimatedAIDetection />
+
       {/* ── PHOTO GUIDE ──────────────────────────────────────────────────── */}
       <section className="py-24 px-6 max-w-5xl mx-auto">
         <div className="text-center mb-14">
@@ -199,15 +199,16 @@ export default async function HomePage() {
               <span className="text-green-400 font-bold text-lg" aria-hidden="true">✓</span>
               <span className="text-green-400 font-bold text-lg">Good</span>
             </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
+            <div className="p-4 grid grid-cols-3 gap-2">
               {[
-                { src: '/photos/guide/1.webp', label: 'Clear face, good light' },
-                { src: '/photos/guide/4.webp', label: 'Smiling, relaxed pose' },
+                { src: '/photos/upload-examples/left.jpg',   label: 'Left angle'  },
+                { src: '/photos/upload-examples/front.webp', label: 'Front' },
+                { src: '/photos/upload-examples/right.jpg',  label: 'Right angle' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
-                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 33vw" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-                    <span className="text-green-400 text-xs font-semibold">✓ {label}</span>
+                  <Image src={src} alt={label} fill className="object-cover" style={{ objectPosition: '50% 10%', transform: 'scale(1.35)', transformOrigin: '50% 18%' }} sizes="(max-width: 768px) 33vw, 200px" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
+                    <span className="text-green-400 text-[11px] font-semibold">✓ {label}</span>
                   </div>
                 </div>
               ))}
