@@ -9,8 +9,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const CARDS = [
   { id: 'benni',  name: 'Benni',  age: 29, city: 'Berlin',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '6x'  },
-  { id: 'jason',  name: 'Jason',  age: 31, city: 'Vienna',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '10x' },
-  { id: 'black',  name: 'Marcus', age: 26, city: 'Madrid',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '15x' },
+  { id: 'jason',  name: 'Lukas',  age: 31, city: 'Vienna',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '10x' },
+  { id: 'black',  name: 'Mateo',  age: 26, city: 'Madrid',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '15x' },
   { id: 'julius', name: 'Julius', age: 23, city: 'Copenhagen', beforeCount: 3, beforeExt: 'jpeg', afterExt: 'jpg',  multiplier: '20x' },
 ]
 

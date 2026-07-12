@@ -291,8 +291,6 @@ export default async function HomePage() {
                 <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Before</p>
                 <ul className="space-y-1.5 text-zinc-400 text-sm">
                   <li>• Getting only a few likes a month</li>
-                  <li>• Had to always make the first move</li>
-                  <li>• Never had a rose sent to him</li>
                   <li>• Thought the problem was his looks</li>
                 </ul>
               </div>
@@ -300,9 +298,7 @@ export default async function HomePage() {
                 <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-2">After SwipePhotos</p>
                 <ul className="space-y-1.5 text-white text-sm">
                   <li>• 142 likes in the first 3 days</li>
-                  <li>• Now averages 20+ likes a day</li>
                   <li>• Women message him first</li>
-                  <li>• Gets roses sent to him daily</li>
                 </ul>
               </div>
             </div>
@@ -330,8 +326,6 @@ export default async function HomePage() {
               <div>
                 <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Before</p>
                 <ul className="space-y-1.5 text-zinc-400 text-sm">
-                  <li>• Friends said he was good-looking</li>
-                  <li>• Rarely opened the app anymore</li>
                   <li>• Barely got matches back from likes</li>
                   <li>• No idea what was wrong</li>
                 </ul>
@@ -340,9 +334,7 @@ export default async function HomePage() {
                 <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-2">After SwipePhotos</p>
                 <ul className="space-y-1.5 text-white text-sm">
                   <li>• 55 likes in under 24 hours</li>
-                  <li>• More in 1 day than in 2 months before</li>
                   <li>• Booked dates the first weekend</li>
-                  <li>• Likes from women he actually wants</li>
                 </ul>
               </div>
             </div>
@@ -363,7 +355,7 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="bg-blue-600/10 border-y border-blue-500/20 px-6 py-4">
-              <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Julius, 22 · Vienna</div>
+              <div className="text-blue-400 text-sm font-semibold uppercase tracking-wide mb-1">Julius, 22 · Copenhagen</div>
               <div className="text-white font-bold text-xl">New to apps → <span className="text-green-400">20 likes/day</span></div>
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -372,8 +364,6 @@ export default async function HomePage() {
                 <ul className="space-y-1.5 text-zinc-400 text-sm">
                   <li>• Had never used Hinge before</li>
                   <li>• No idea what photos to use</li>
-                  <li>• Would have got zero results</li>
-                  <li>• Would have thought he was the problem</li>
                 </ul>
               </div>
               <div>
@@ -381,8 +371,6 @@ export default async function HomePage() {
                 <ul className="space-y-1.5 text-white text-sm">
                   <li>• 20 likes a day, consistently</li>
                   <li>• 5 dates booked in under a week</li>
-                  <li>• Top profile performance on Hinge</li>
-                  <li>• Women message him first</li>
                 </ul>
               </div>
             </div>
@@ -414,9 +402,24 @@ export default async function HomePage() {
             Girls started messaging me first. That had never happened before. And not one person
             has ever mentioned &lsquo;AI&rsquo;. This isn&apos;t AI slop. It looks completely real.&rdquo;
           </blockquote>
-          <p className="text-zinc-400 text-base">
+          <p className="text-zinc-400 text-base mb-8">
             That&apos;s why I built SwipePhotos — so anyone can get the same experience, in minutes, without a photographer.
           </p>
+
+          {/* From → To */}
+          <div className="flex items-center justify-center gap-3 md:gap-5">
+            <div className="relative w-36 md:w-44 rounded-2xl overflow-hidden border border-white/10" style={{ aspectRatio: '3/4' }}>
+              <Image src="/photos/founder/before.jpg" alt="Mads' real photo before SwipePhotos" fill className="object-cover object-top" sizes="176px" />
+              <span className="absolute bottom-2 left-2 text-red-400 text-[10px] font-bold uppercase tracking-wide bg-black/50 px-1.5 py-0.5 rounded">✗ My old photo</span>
+            </div>
+            <svg className="w-7 h-7 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12l-7.5 7.5M21 12H3" />
+            </svg>
+            <div className="relative w-36 md:w-44 rounded-2xl overflow-hidden border border-blue-500/30" style={{ aspectRatio: '3/4' }}>
+              <Image src="/photos/founder/after.jpg" alt="Mads' AI photo made with SwipePhotos" fill className="object-cover object-top" sizes="176px" />
+              <span className="absolute bottom-2 left-2 text-green-400 text-[10px] font-bold uppercase tracking-wide bg-black/50 px-1.5 py-0.5 rounded">✓ SwipePhotos</span>
+            </div>
+          </div>
         </div>
       </section>
 

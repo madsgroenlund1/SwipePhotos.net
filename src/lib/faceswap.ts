@@ -1,5 +1,5 @@
 import { fal } from '@fal-ai/client'
-import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate, Template } from './templates'
+import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate, Template, TEMPLATES } from './templates'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -134,16 +134,28 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
 
 // ─── Preview: exactly 2 results, with streaming status callbacks ─────────────
 
+// Each onboarding style maps to EXACTLY ONE mannequin template — rooftop and
+// beach are both category 'outdoor', so category lookup alone picks the wrong
+// scene for one of them.
+const STYLE_TO_TEMPLATE_ID: Record<string, string> = {
+  restaurant: 'mannequin-italian-restaurant',
+  formal:     'mannequin-smart-formal',
+  rooftop:    'mannequin-rooftop-pool',
+  beach:      'mannequin-beach-club',
+}
+
 export async function runTwoPreviewFaceSwaps(
   customerPhotoUrls: string[],
-  category: string,
+  style: string,
   hasTattoos: boolean,
   onStatus: (status: string) => void
 ): Promise<string[]> {
-  // Both previews use the customer's CHOSEN setting (the top-quality template
-  // for the category — the mannequin scene), differentiated by expression:
-  // one "bad boy" serious, one closed-mouth slight smile.
-  const template = getPreviewTemplatesForCategory(category)[0]
+  // Both previews use the customer's CHOSEN setting (its mannequin scene),
+  // differentiated by expression: one "bad boy" serious, one slight smile.
+  const templateId = STYLE_TO_TEMPLATE_ID[style]
+  const template =
+    (templateId && TEMPLATES.find(t => t.id === templateId)) ||
+    getPreviewTemplatesForCategory(style)[0]
   if (!template) return []
   const variants = PREVIEW_EXPRESSIONS.slice(0, 2)
 

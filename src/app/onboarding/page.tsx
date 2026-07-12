@@ -559,7 +559,7 @@ export default function OnboardingPage() {
           {step === 4 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-0">
-                <ProgressBar step={4} total={TOTAL_STEPS} />
+                <ProgressBar step={4} total={TOTAL_STEPS} onBack={() => setStep(3)} />
               </div>
               <div className="relative px-6 py-12 min-h-[380px] flex flex-col items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden opacity-20 select-none pointer-events-none">

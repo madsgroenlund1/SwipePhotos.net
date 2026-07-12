@@ -4,14 +4,6 @@ import { runTwoPreviewFaceSwaps } from '@/lib/faceswap'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
-// Map onboarding style IDs → template category names
-const STYLE_TO_CATEGORY: Record<string, string> = {
-  restaurant: 'restaurant',
-  formal:     'formal',
-  rooftop:    'city',
-  beach:      'outdoor',
-}
-
 export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
@@ -59,11 +51,10 @@ export async function POST(req: NextRequest) {
         console.log('[preview] Uploaded', uploadedUrls.length, 'photo(s), style:', style, 'hasTattoos:', hasTattoos)
 
         send({ status: 'preparing' })
-        const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
 
         const urls = await runTwoPreviewFaceSwaps(
           uploadedUrls,
-          category,
+          style,
           hasTattoos,
           (status) => send({ status })
         )
