@@ -176,7 +176,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── BEFORE/AFTER CAROUSEL ────────────────────────────────────────── */}
-      <section id="results" aria-label="Before and after photo examples">
+      <section aria-label="Before and after photo examples">
         <BeforeAfterCarousel />
       </section>
 
@@ -462,7 +462,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── TESTIMONIALS / PROOF ROWS ─────────────────────────────────────── */}
-      <section className="py-8 bg-[#0A0A0A]" aria-label="Social proof — user results">
+      <section id="results" className="py-8 bg-[#0A0A0A] scroll-mt-24" aria-label="Social proof — user results">
         <div className="text-center mb-6 px-6">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             &ldquo;It&apos;s honestly been life-changing&rdquo;

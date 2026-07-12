@@ -457,12 +457,12 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { src: '/photos/before-after/julius/before/1.jpeg', label: 'Front' },
-                      { src: '/photos/before-after/julius/before/2.jpeg', label: 'Left'  },
-                      { src: '/photos/before-after/julius/before/3.jpeg', label: 'Right' },
+                      { src: '/photos/upload-examples/left.jpg',   label: 'Left'  },
+                      { src: '/photos/upload-examples/front.webp', label: 'Front' },
+                      { src: '/photos/upload-examples/right.jpg',  label: 'Right' },
                     ].map(({ src, label }) => (
                       <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
-                        <img src={src} alt={label} className="w-full h-full object-cover" style={{ objectPosition: '50% 8%', transform: 'scale(1.35)', transformOrigin: 'top center' }} />
+                        <img src={src} alt={label} className="w-full h-full object-cover" style={{ objectPosition: '50% 12%' }} />
                         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
                       </div>
                     ))}
@@ -471,8 +471,8 @@ export default function OnboardingPage() {
                 {/* Upload slots */}
                 <div className="mb-4">
                   {([
-                    { angle: 'front' as const, label: 'Front photo',       guide: 'Face the camera directly'        },
                     { angle: 'left'  as const, label: 'Left-angle photo',  guide: 'Turn your head slightly left'    },
+                    { angle: 'front' as const, label: 'Front photo',       guide: 'Face the camera directly'        },
                     { angle: 'right' as const, label: 'Right-angle photo', guide: 'Turn your head slightly right'   },
                   ]).map(({ angle, label, guide }) => (
                     <UploadSlot key={angle} angle={angle} label={label} guide={guide}
