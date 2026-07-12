@@ -1,22 +1,31 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+// ─── Card data ────────────────────────────────────────────────────────────────
+// Order is deliberately shuffled so no two adjacent slots show the same person
+// at the loop seam (julius → benni transition is intentional, not a duplicate).
 
 const CARDS = [
   { id: 'benni',  name: 'Benni',  age: 29, city: 'Berlin',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '6x'  },
-  { id: 'black',  name: 'Marcus', age: 26, city: 'Madrid',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '15x' },
   { id: 'jason',  name: 'Jason',  age: 31, city: 'Vienna',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '10x' },
+  { id: 'black',  name: 'Marcus', age: 26, city: 'Madrid',     beforeCount: 3, beforeExt: 'jpg',  afterExt: 'jpg',  multiplier: '15x' },
   { id: 'julius', name: 'Julius', age: 23, city: 'Copenhagen', beforeCount: 3, beforeExt: 'jpeg', afterExt: 'jpg',  multiplier: '20x' },
 ]
 
-// CSS card width + gap-4 (16px). Must match w-[400px] in BeforeAfterCard.
+// ─── Layout constants ─────────────────────────────────────────────────────────
+// These must match the Tailwind classes on BeforeAfterCard (w-[400px]).
+// With integer px values, seqPx = N × CARD_STEP exactly — no sub-pixel drift.
+
 const CARD_WIDTH = 400
 const CARD_GAP   = 16
-const CARD_STEP  = CARD_WIDTH + CARD_GAP
+const CARD_STEP  = CARD_WIDTH + CARD_GAP   // 416 px
 const SPEED_PX_S = 80
 
 type CardData = typeof CARDS[0]
+
+// ─── BeforeAfterCard ──────────────────────────────────────────────────────────
 
 function BeforeAfterCard({ id, name, age, city, beforeCount, beforeExt, afterExt, multiplier }: CardData) {
   const beforeNums = Array.from({ length: Math.min(beforeCount, 3) }, (_, i) => i + 1)
@@ -63,44 +72,48 @@ function BeforeAfterCard({ id, name, age, city, beforeCount, beforeExt, afterExt
   )
 }
 
-// ─── MarqueeRow ───────────────────────────────────────────────────────────────
+// ─── Infinite marquee ─────────────────────────────────────────────────────────
 //
-// Seamless-loop architecture:
-//   The track holds [COPY A][COPY B] where A === B (identical card sequence).
-//   For direction="left":  animation runs translateX(0) → translateX(-seqPx)
-//   For direction="right": animation runs translateX(-seqPx) → translateX(0)
-//   When the animation resets, it jumps from showing the start of B back to
-//   showing the start of A — since A === B, the eye sees no discontinuity.
+// Architecture: [COPY A][COPY B]  (A === B, identical)
 //
-// seqPx is the distance from card[0] of copy A to card[0] of copy B, measured
-// from the ACTUAL DOM via getBoundingClientRect(). This eliminates sub-pixel
-// accumulation errors at any zoom level or devicePixelRatio.
+//   The track animates translateX(0) → translateX(-seqPx).
+//   seqPx = the pixel width of COPY A (including the trailing gap before B).
 //
-// Enough repetitions are added so that the sequence is always ≥ 3× the
-// viewport width — covering zoom-out, ultrawide monitors, and browser chrome.
+//   At 100 % progress Copy B[0] sits at screen-left.
+//   The animation resets instantly to 0 % → Copy A[0] sits at screen-left.
+//   Since A === B the eye sees nothing.
+//
+// seqPx is computed, not measured — card widths are exact integers:
+//   seqPx = N × CARD_STEP  (N = seq.length = reps × CARDS.length)
+//
+// Proof (flex gap 16 px, N cards in Copy A):
+//   N cards × 400 px + N gaps × 16 px = N × 416 px = N × CARD_STEP  ✓
+//   (The gap AFTER the last A card and BEFORE the first B card is included.)
+//
+// repsRef never decreases — once expanded for a wide viewport the DOM stays
+// large so zooming back in never creates a seam.
 
-function MarqueeRow({ baseCards }: { baseCards: CardData[] }) {
-  const trackRef  = useRef<HTMLDivElement>(null)  // the animated strip
-  const splitRef  = useRef<HTMLDivElement>(null)  // wrapper around copy B's first card
-  const repsRef   = useRef(2)                     // never decreases
-  const [reps, setReps]                   = useState(2)
-  const [seqPx, setSeqPx]                = useState(0)
+function computeReps(vw: number): number {
+  const baseW = CARDS.length * CARD_STEP          // width of one 4-card pass
+  return Math.max(2, Math.ceil((vw * 2.5) / baseW))
+}
+
+function MarqueeRow() {
+  const repsRef = useRef(4)                        // start large → no jump on most viewports
+  const [reps, setReps]                   = useState(4)
   const [reducedMotion, setReducedMotion] = useState(false)
 
-  // Build the repeated sequence — same for both copies.
-  const seq = Array.from({ length: reps }, () => baseCards).flat()
-
-  // Measure the exact pixel distance from the start of copy A to the start of
-  // copy B. getBoundingClientRect() values are affected equally by the track's
-  // CSS transform, so the difference is always the true layout distance.
-  const measure = useCallback(() => {
-    const track = trackRef.current
-    const split = splitRef.current
-    if (!track || !split) return
-    const px = split.getBoundingClientRect().left - track.getBoundingClientRect().left
-    if (px > 0) setSeqPx(px)
+  // Correct reps before the first browser paint so the animation starts with
+  // the right seqPx. useLayoutEffect is client-only; during SSR it is a no-op.
+  useLayoutEffect(() => {
+    const needed = computeReps(window.innerWidth)
+    if (needed > repsRef.current) {
+      repsRef.current = needed
+      setReps(needed)
+    }
   }, [])
 
+  // Prefers-reduced-motion.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReducedMotion(mq.matches)
@@ -109,51 +122,30 @@ function MarqueeRow({ baseCards }: { baseCards: CardData[] }) {
     return () => mq.removeEventListener('change', h)
   }, [])
 
+  // Increase reps when viewport grows (ultrawide, zoom-out, window resize).
   useEffect(() => {
     if (reducedMotion) return
-
-    function update() {
-      const vw     = window.innerWidth
-      const baseW  = baseCards.length * CARD_STEP
-      const needed = Math.max(1, Math.ceil((vw * 2.5) / baseW))
+    const ro = new ResizeObserver(() => {
+      const needed = computeReps(window.innerWidth)
       if (needed > repsRef.current) {
         repsRef.current = needed
         setReps(needed)
-        // measure() will be called by the [reps] effect after the re-render.
-        return
       }
-      measure()
-    }
-
-    update()
-
-    const ro = new ResizeObserver(update)
+    })
     ro.observe(document.documentElement)
+    return () => ro.disconnect()
+  }, [reducedMotion])
 
-    // Re-measure after fonts and images settle — they can shift layout.
-    document.fonts.ready.then(update)
-    window.addEventListener('load', update, { once: true })
-
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('load', update)
-    }
-  }, [reducedMotion, baseCards.length, measure])
-
-  // Re-measure after reps changes (new DOM nodes are present).
-  useEffect(() => {
-    if (!reducedMotion) measure()
-  }, [reps, reducedMotion, measure])
-
-  // Fallback: computed value used before the DOM measurement is ready.
-  const fallbackPx = reps * baseCards.length * CARD_STEP
-  const animPx     = seqPx > 0 ? seqPx : fallbackPx
-  const dur        = animPx / SPEED_PX_S
+  // seq = all CARDS repeated `reps` times (each unique card appears once per
+  // 4-card cycle; no two identical cards are ever adjacent).
+  const seq   = Array.from({ length: reps }, () => CARDS).flat()
+  const seqPx = seq.length * CARD_STEP             // exact, integer math
+  const dur   = seqPx / SPEED_PX_S
 
   if (reducedMotion) {
     return (
-      <div className="flex gap-4 overflow-x-auto w-full">
-        {baseCards.map((card, i) => <BeforeAfterCard key={i} {...card} />)}
+      <div className="flex gap-4 overflow-x-auto w-full py-2">
+        {CARDS.map((card, i) => <BeforeAfterCard key={i} {...card} />)}
       </div>
     )
   }
@@ -161,32 +153,28 @@ function MarqueeRow({ baseCards }: { baseCards: CardData[] }) {
   return (
     <div className="w-full overflow-hidden">
       <div
-        ref={trackRef}
         style={{
-          display: 'flex',
-          flexWrap: 'nowrap',
-          gap: `${CARD_GAP}px`,
-          width: 'max-content',
-          animationName:            'marquee-left',
-          animationDuration:        `${dur}s`,
-          animationTimingFunction:  'linear',
-          animationIterationCount:  'infinite',
-          ['--marquee-x' as string]: `-${animPx}px`,
+          display:                'flex',
+          flexWrap:               'nowrap',
+          gap:                    `${CARD_GAP}px`,
+          width:                  'max-content',
+          // Inline animationName keeps animationDuration from being overridden
+          // by the CSS class shorthand (which also sets duration).
+          animationName:          'marquee-left',
+          animationDuration:      `${dur}s`,
+          animationTimingFunction: 'linear',
+          animationIterationCount: 'infinite',
+          ['--marquee-x' as string]: `-${seqPx}px`,
         }}
       >
-        {/* ── Copy A (semantic, visible to screen readers) ── */}
+        {/* ── Copy A — visible to assistive technology ── */}
         {seq.map((card, i) => (
           <BeforeAfterCard key={`a${i}`} {...card} />
         ))}
 
-        {/* ── Copy B (hidden from AT; exact duplicate for seamless loop) ── */}
+        {/* ── Copy B — identical duplicate; hidden from screen readers ── */}
         {seq.map((card, i) => (
-          <div
-            key={`b${i}`}
-            ref={i === 0 ? splitRef : undefined}
-            aria-hidden="true"
-            style={{ flexShrink: 0 }}
-          >
+          <div key={`b${i}`} aria-hidden="true" style={{ flexShrink: 0 }}>
             <BeforeAfterCard {...card} />
           </div>
         ))}
@@ -195,12 +183,12 @@ function MarqueeRow({ baseCards }: { baseCards: CardData[] }) {
   )
 }
 
-// ─── Public component ─────────────────────────────────────────────────────────
+// ─── Public export ────────────────────────────────────────────────────────────
 
 export function BeforeAfterCarousel() {
   return (
     <div className="w-full overflow-hidden py-8">
-      <MarqueeRow baseCards={CARDS} />
+      <MarqueeRow />
     </div>
   )
 }
