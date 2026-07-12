@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { PLANS } from '@/lib/pricing'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -38,11 +39,7 @@ const STYLE_PLACEHOLDERS: Record<string, string> = {
   beach:      '/photos/presets/scene-beach.jpg',
 }
 
-const PACKAGES = [
-  { id: 'starter', name: 'Starter',  priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID, price: '€29', photos: '5 AI photos / month',  popular: false },
-  { id: 'popular', name: 'Premium',  priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_PRICE_ID, price: '€49', photos: '15 AI photos / month', popular: true  },
-  { id: 'elite',   name: 'Pro',      priceId: process.env.NEXT_PUBLIC_STRIPE_ELITE_PRICE_ID,   price: '€74', photos: '45 AI photos / month', popular: false },
-].filter(p => p.priceId)
+const PACKAGES = PLANS
 
 // ─── Refinement steps (honest, no fake percentages) ──────────────────────────
 
@@ -199,6 +196,8 @@ export default function OnboardingPage() {
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
   const [selectedStyle, setSelectedStyle]   = useState('restaurant')
   const [selectedPackage, setSelectedPackage] = useState('popular')
+  const [billing, setBilling] = useState<'monthly'|'yearly'>('monthly')
+  const priceIdFor = (pkg: typeof PACKAGES[number]) => billing === 'yearly' ? pkg.yearlyPriceId : pkg.monthlyPriceId
   const [email, setEmail]                   = useState('')
   const [agreedToTerms, setAgreedToTerms]   = useState(false)
   const [loading, setLoading]               = useState(false)
@@ -385,7 +384,7 @@ export default function OnboardingPage() {
       const pkg = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES.find(p => p.popular) || PACKAGES[1]
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: priceIdFor(pkg), email, style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
       })
       const data = await res.json()
       if (!res.ok || data.error) { setCheckoutError(data.error || `Something went wrong (${res.status})`); setLoading(false); return }
@@ -825,6 +824,18 @@ export default function OnboardingPage() {
                 <p className="text-zinc-500 text-sm text-center">Cancel any time. Your photos stay yours.</p>
               </div>
               <div className="px-4 pb-2">
+                {/* Monthly / Yearly toggle */}
+                <div className="flex bg-white/[0.04] border border-white/10 rounded-2xl p-1 mb-3">
+                  <button onClick={() => setBilling('monthly')}
+                    className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all', billing==='monthly' ? 'bg-white/10 text-white' : 'text-zinc-500')}>
+                    Monthly
+                  </button>
+                  <button onClick={() => setBilling('yearly')}
+                    className={cn('flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5', billing==='yearly' ? 'bg-white/10 text-white' : 'text-zinc-500')}>
+                    Yearly
+                    <span className="bg-green-500/15 text-green-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full">50% OFF</span>
+                  </button>
+                </div>
                 <div className="space-y-2 mb-3">
                   {PACKAGES.map(pkg => (
                     <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)} className={cn('flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all', selectedPackage===pkg.id ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20')}>
@@ -838,7 +849,16 @@ export default function OnboardingPage() {
                         </div>
                         <span className="text-zinc-500 text-xs">{pkg.photos}</span>
                       </div>
-                      <div><span className="text-white font-bold">{pkg.price}</span><span className="text-zinc-500 text-xs">/mo</span></div>
+                      <div className="text-right">
+                        {billing === 'yearly' ? (
+                          <>
+                            <div><span className="text-green-400 font-bold">€{Math.round(pkg.yearly/12)}</span><span className="text-zinc-500 text-xs">/mo</span></div>
+                            <div className="text-zinc-600 text-[10px]">€{pkg.yearly}/yr</div>
+                          </>
+                        ) : (
+                          <div><span className="text-white font-bold">€{pkg.monthly}</span><span className="text-zinc-500 text-xs">/mo</span></div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -865,7 +885,7 @@ export default function OnboardingPage() {
                     const pkgG = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES[1]
                     const res = await fetch('/api/checkout', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
+                      body: JSON.stringify({ packageId: pkgG.id, priceId: priceIdFor(pkgG), email: '', style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
                     })
                     const data = await res.json()
                     if (!res.ok || data.error) { setCheckoutError(data.error || `Something went wrong (${res.status})`); setLoading(false); return }

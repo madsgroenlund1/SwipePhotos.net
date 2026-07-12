@@ -1,25 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
-import { refCodeFromEmail } from '@/lib/utils'
-
-type Admin = ReturnType<typeof createAdminClientDirect>
-
-// Username-based code from the user's email, with a numeric suffix on clash:
-// madsgroenlund1 → madsgroenlund1, madsgroenlund12, madsgroenlund13, …
-async function uniqueRefCode(admin: Admin, email: string, ownUserId: string): Promise<string> {
-  const base = refCodeFromEmail(email)
-  for (let i = 0; i < 20; i++) {
-    const candidate = i === 0 ? base : `${base}${i + 1}`
-    const { data: clash } = await admin
-      .from('users')
-      .select('id')
-      .ilike('referral_code', candidate)
-      .maybeSingle()
-    if (!clash || clash.id === ownUserId) return candidate
-  }
-  // Extremely unlikely — fall back to base + random digits
-  return `${base}${Math.floor(1000 + Math.random() * 9000)}`
-}
+import { uniqueRefCode, ensureUsernameRefCode } from '@/lib/referral'
 
 export async function POST() {
   const supabase = await createClient()
@@ -28,6 +9,7 @@ export async function POST() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClientDirect()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
   // Check if already an affiliate
   const { data: existing } = await admin
@@ -45,22 +27,13 @@ export async function POST() {
       .eq('id', user.id)
       .single()
 
-    let code = userRow?.referral_code ?? null
-    const desired = user.email ? await uniqueRefCode(admin, user.email, user.id) : null
-    if (desired && code !== desired) {
-      const { error: updErr } = await admin
-        .from('users')
-        .update({ referral_code: desired })
-        .eq('id', user.id)
-      if (!updErr) code = desired
-    }
+    const code = await ensureUsernameRefCode(admin, user.id, user.email, userRow?.referral_code ?? null)
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
     return NextResponse.json({
       ok: true,
       status: existing.status,
       refCode: code,
-      refLink: code ? `${appUrl}/r/${code}` : null,
+      refLink: code ? `${appUrl}/${code}` : null,
     })
   }
 
@@ -87,11 +60,10 @@ export async function POST() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
   return NextResponse.json({
     ok: true,
     status: 'approved',
     refCode,
-    refLink: `${appUrl}/r/${refCode}`,
+    refLink: `${appUrl}/${refCode}`,
   })
 }

@@ -132,14 +132,14 @@ export default async function HomePage() {
               title: 'Choose a plan',
               desc: 'Pick 5, 15, or 45 photos across different styles. Plans from €29/month.',
               badge: 'Plans from €29',
-              badgeColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+              badgeColor: 'text-green-400 bg-green-500/10 border-green-500/20',
             },
             {
               step: '4',
               title: 'Download your photos',
               desc: 'Your full set of professional photos is delivered to your email within ~30–60 minutes.',
               badge: '~30–60 min delivery',
-              badgeColor: 'text-zinc-400 bg-white/5 border-white/10',
+              badgeColor: 'text-green-400 bg-green-500/10 border-green-500/20',
             },
           ].map(({ step, title, desc, badge, badgeColor }) => (
             <div key={step} className="bg-white/[0.03] border border-white/8 rounded-2xl p-5 flex flex-col gap-3">

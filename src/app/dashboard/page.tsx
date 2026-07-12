@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { DashboardClient } from './DashboardClient'
 import { stripe } from '@/lib/stripe'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { ensureUsernameRefCode } from '@/lib/referral'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -107,13 +109,16 @@ export default async function DashboardPage() {
     const approvedCents = commRows?.filter(c => c.status === 'approved') .reduce((s, c) => s + c.commission_cents, 0) ?? 0
     const paidCents     = commRows?.filter(c => c.status === 'paid')     .reduce((s, c) => s + c.commission_cents, 0) ?? 0
 
-    const refCode = userRow?.referral_code ?? null
+    // Upgrade legacy random codes to the username-based format on load
+    const refCode = await ensureUsernameRefCode(
+      createAdminClientDirect(), user.id, user.email, userRow?.referral_code ?? null
+    )
 
     affiliateData = {
       id: affRow.id,
       status: affRow.status,
       refCode,
-      refLink: refCode ? `${appUrl}/r/${refCode}` : null,
+      refLink: refCode ? `${appUrl}/${refCode}` : null,
       clicks: affRow.clicks ?? 0,
       signups: affRow.signups ?? 0,
       conversions: affRow.conversions ?? 0,
