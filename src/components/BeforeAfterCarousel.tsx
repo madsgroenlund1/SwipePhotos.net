@@ -79,11 +79,11 @@ function BeforeAfterCard({ id, name, age, city, beforeCount, beforeExt, afterExt
 // Enough repetitions are added so that the sequence is always ≥ 3× the
 // viewport width — covering zoom-out, ultrawide monitors, and browser chrome.
 
-function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction: 'left' | 'right' }) {
+function MarqueeRow({ baseCards }: { baseCards: CardData[] }) {
   const trackRef  = useRef<HTMLDivElement>(null)  // the animated strip
   const splitRef  = useRef<HTMLDivElement>(null)  // wrapper around copy B's first card
-  const repsRef   = useRef(6)                     // never decreases
-  const [reps, setReps]                   = useState(6)
+  const repsRef   = useRef(2)                     // never decreases
+  const [reps, setReps]                   = useState(2)
   const [seqPx, setSeqPx]                = useState(0)
   const [reducedMotion, setReducedMotion] = useState(false)
 
@@ -113,10 +113,9 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
     if (reducedMotion) return
 
     function update() {
-      // Ensure the sequence is ≥ 3× the current viewport width.
       const vw     = window.innerWidth
       const baseW  = baseCards.length * CARD_STEP
-      const needed = Math.max(4, Math.ceil((vw * 3) / baseW))
+      const needed = Math.max(1, Math.ceil((vw * 2.5) / baseW))
       if (needed > repsRef.current) {
         repsRef.current = needed
         setReps(needed)
@@ -168,13 +167,10 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
           flexWrap: 'nowrap',
           gap: `${CARD_GAP}px`,
           width: 'max-content',
-          // Use animationName so the duration inline style is never shadowed
-          // by the CSS class shorthand that also sets duration.
-          animationName:            direction === 'left' ? 'marquee-left' : 'marquee-right',
+          animationName:            'marquee-left',
           animationDuration:        `${dur}s`,
           animationTimingFunction:  'linear',
           animationIterationCount:  'infinite',
-          // --marquee-x is read by the @keyframes in globals.css.
           ['--marquee-x' as string]: `-${animPx}px`,
         }}
       >
@@ -185,8 +181,6 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
 
         {/* ── Copy B (hidden from AT; exact duplicate for seamless loop) ── */}
         {seq.map((card, i) => (
-          // The wrapper div lets us attach a ref without modifying BeforeAfterCard.
-          // flexShrink:0 keeps it the same size as copy A's direct-child cards.
           <div
             key={`b${i}`}
             ref={i === 0 ? splitRef : undefined}
@@ -204,13 +198,9 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
 // ─── Public component ─────────────────────────────────────────────────────────
 
 export function BeforeAfterCarousel() {
-  // Row 2 is offset by 2 cards so adjacent rows show different people side-by-side.
-  const row2base = [...CARDS.slice(2), ...CARDS.slice(0, 2)]
-
   return (
-    <div className="w-full overflow-hidden py-8 space-y-4">
-      <MarqueeRow baseCards={CARDS}    direction="left"  />
-      <MarqueeRow baseCards={row2base} direction="right" />
+    <div className="w-full overflow-hidden py-8">
+      <MarqueeRow baseCards={CARDS} />
     </div>
   )
 }
