@@ -27,7 +27,7 @@ const PACKAGES = [
   { id: 'starter', name: 'Starter',  priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID, price: '€29', photos: '5 AI photos / month',  popular: false },
   { id: 'popular', name: 'Premium',  priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_PRICE_ID, price: '€49', photos: '15 AI photos / month', popular: true  },
   { id: 'elite',   name: 'Pro',      priceId: process.env.NEXT_PUBLIC_STRIPE_ELITE_PRICE_ID,   price: '€74', photos: '45 AI photos / month', popular: false },
-]
+].filter(p => p.priceId)
 
 // ─── Refinement steps (honest, no fake percentages) ──────────────────────────
 

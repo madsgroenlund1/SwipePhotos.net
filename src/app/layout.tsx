@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: 'SwipePhotos.net — Professional AI Dating Photos for Men',
   description:
-    'Generate professional dating photos with AI. Upload a few clear selfies — we place your real face in premium settings. No photographer, no photoshoot. Plans from $19.',
+    'Generate professional dating photos with AI. Upload a few clear selfies — we place your real face in premium settings. No photographer, no photoshoot. Plans from €29.',
   keywords: ['AI dating photos', 'Tinder photos', 'Hinge photos', 'dating app photos', 'AI photo generator', 'dating profile photos'],
   alternates: {
     canonical: 'https://swipephotos.net',

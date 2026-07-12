@@ -72,16 +72,16 @@ export default async function TermsPage() {
           <p className="mb-3">SwipePhotos offers the following subscription plans:</p>
           <div className="space-y-3 mb-4">
             <div className="bg-white/[0.02] border border-white/8 rounded-xl px-4 py-3">
-              <div className="text-white font-medium">Starter — $19/month</div>
-              <div className="text-zinc-500 mt-1">20 AI photos · 2 style presets · ~60 min estimated delivery</div>
+              <div className="text-white font-medium">Starter — €29/month</div>
+              <div className="text-zinc-500 mt-1">5 AI photos / month · 2 style presets</div>
             </div>
             <div className="bg-white/[0.02] border border-white/8 rounded-xl px-4 py-3">
-              <div className="text-white font-medium">Popular — $39/month</div>
-              <div className="text-zinc-500 mt-1">40 AI photos · All 8 style presets · ~30 min priority estimated delivery</div>
+              <div className="text-white font-medium">Premium — €49/month</div>
+              <div className="text-zinc-500 mt-1">15 AI photos / month · All 40 templates</div>
             </div>
             <div className="bg-white/[0.02] border border-white/8 rounded-xl px-4 py-3">
-              <div className="text-white font-medium">Elite — $79/month</div>
-              <div className="text-zinc-500 mt-1">80 AI photos · All presets · ~30 min priority estimated delivery · Affiliate dashboard</div>
+              <div className="text-white font-medium">Pro — €74/month</div>
+              <div className="text-zinc-500 mt-1">45 AI photos / month · All 40 templates · Priority generation</div>
             </div>
           </div>
           <p className="mb-3">

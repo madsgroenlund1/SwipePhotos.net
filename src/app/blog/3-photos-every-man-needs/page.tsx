@@ -103,7 +103,7 @@ export default async function BlogPost3() {
 
         <div className="mt-12 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 text-center">
           <h3 className="text-white font-bold text-xl mb-2">Get all 3 photo types in one order</h3>
-          <p className="text-zinc-400 text-sm mb-4">40+ photos across 8 style presets. Starting at $39.</p>
+          <p className="text-zinc-400 text-sm mb-4">AI photos across 40 style templates. Starting at €29.</p>
           <Link
             href="/onboarding"
             className="inline-block bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3 rounded-full transition-all"
