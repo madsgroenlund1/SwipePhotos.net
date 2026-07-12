@@ -462,9 +462,9 @@ export default function OnboardingPage() {
               </div>
               <div className="relative px-4 mt-1 mb-2 overflow-hidden" style={{ height: 80 }}>
                 <div className="grid grid-cols-4 gap-1.5 opacity-50">
-                  {STYLE_OPTIONS.map(opt => (
-                    <div key={opt.id} className="aspect-[3/4] rounded-xl overflow-hidden">
-                      <img src={opt.src} alt="" className="w-full h-full object-cover object-top" />
+                  {['1', '2', '3', '4'].map(n => (
+                    <div key={n} className="aspect-[3/4] rounded-xl overflow-hidden">
+                      <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   ))}
                 </div>
@@ -512,7 +512,7 @@ export default function OnboardingPage() {
                       { src: '/photos/upload-examples/right.jpg',  label: 'Right' },
                     ].map(({ src, label }) => (
                       <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
-                        <img src={src} alt={label} className="w-full h-full object-cover" style={{ objectPosition: '50% 12%' }} />
+                        <img src={src} alt={label} className="w-full h-full object-cover" style={{ objectPosition: '50% 10%', transform: 'scale(1.45)', transformOrigin: '50% 18%' }} />
                         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
                       </div>
                     ))}
