@@ -7,7 +7,22 @@ import { createClient } from '@/lib/supabase/client'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 9
+const TOTAL_STEPS = 11
+
+// ─── AI-trace items (UnrealPhotos-style detection flow) ──────────────────────
+const AI_TRACES = [
+  'SynthID watermark detected',
+  'AI generation metadata',
+  'Missing camera EXIF data',
+  'Incorrect file dimensions',
+  'AI noise pattern',
+  'Missing mobile compression',
+  'Perfect color uniformity',
+  'No lens distortion artifacts',
+  'Uniform sharpness profile',
+  'Missing GPS coordinates',
+  'Incorrect JPEG quantization',
+]
 
 const STYLE_OPTIONS = [
   { id: 'restaurant', label: 'Italian Restaurant', src: '/photos/presets/scene-restaurant.jpg' },
@@ -133,6 +148,32 @@ function UploadSlot({ angle, label, guide, slot, onFile, onRemove }: {
   )
 }
 
+// Mock AI-detector result card (visual only — the actual work is the real
+// AuraSR refinement pass that runs behind the "Remove all AI traces" button)
+function DetectorCard({ img, brand, detected }: { img: string; brand: 'TruthScan' | 'sightengine' | 'IsThisAI'; detected: boolean }) {
+  const verdict = {
+    TruthScan:   detected ? 'AI Probability: 99%' : 'AI Probability: 10%',
+    sightengine: detected ? 'Likely AI · 92%'     : 'Not likely AI · 3%',
+    IsThisAI:    detected ? 'AI-Generated · 99%'  : 'Likely Real · 90%',
+  }[brand]
+  return (
+    <div className={cn('rounded-2xl border-2 overflow-hidden bg-white', detected ? 'border-red-500/70' : 'border-green-500/70')}>
+      <div className="px-2 py-1.5 text-center">
+        <span className="text-gray-900 text-[10px] font-bold">{brand}</span>
+      </div>
+      <div className="px-2">
+        <img src={img} alt="" className="w-full aspect-[3/4] object-cover object-top rounded-lg" onContextMenu={e => e.preventDefault()} />
+      </div>
+      <div className="px-2 py-1.5 text-center">
+        <span className={cn('text-[9px] font-bold rounded-full px-1.5 py-0.5 inline-block text-white', detected ? 'bg-red-500' : 'bg-green-600')}>{verdict}</span>
+      </div>
+      <div className={cn('py-1 text-center text-[10px] font-bold', detected ? 'text-red-500' : 'text-green-600')}>
+        {detected ? '✕ AI Detected' : '✓ Human'}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
@@ -147,10 +188,12 @@ export default function OnboardingPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [pickedIdx, setPickedIdx]     = useState(0)
 
-  // Refinement
+  // Refinement (runs behind the "Remove all AI traces" button on step 7)
   const [refineStatus, setRefineStatus] = useState<RefineStatus>('idle')
   const [refineError, setRefineError]   = useState<string|null>(null)
   const [refinedUrl, setRefinedUrl]     = useState<string|null>(null)
+  const [removingTraces, setRemovingTraces] = useState(false)
+  const [tracesCleared, setTracesCleared]   = useState(0)
 
   // Other
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
@@ -269,10 +312,10 @@ export default function OnboardingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // ─── Step 6: streaming refinement ─────────────────────────────────────────
+  // ─── Step 7: streaming refinement (triggered by "Remove all AI traces") ───
 
   useEffect(() => {
-    if (step !== 6) return
+    if (step !== 7 || !removingTraces) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRefineStatus('idle'); setRefineError(null); setRefinedUrl(null)
     const abortCtrl = new AbortController()
@@ -314,16 +357,24 @@ export default function OnboardingPage() {
     run()
     return () => abortCtrl.abort()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }, [step, removingTraces])
 
-  // Auto-advance step 6 → 7 when refinement completes
+  // Trace-clearing animation: tick one item green every ~1.6s while the real
+  // refinement runs; hold the last item until refinement completes.
   useEffect(() => {
-    if (step === 6 && refineStatus === 'done') {
-      const t = setTimeout(next, 700)
+    if (!removingTraces || refineStatus === 'error') return
+    if (refineStatus === 'done') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTracesCleared(AI_TRACES.length)
+      const t = setTimeout(next, 900)
       return () => clearTimeout(t)
     }
+    const iv = setInterval(() => {
+      setTracesCleared(n => Math.min(n + 1, AI_TRACES.length - 1))
+    }, 1600)
+    return () => clearInterval(iv)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, refineStatus])
+  }, [removingTraces, refineStatus])
 
   // ─── Checkout ─────────────────────────────────────────────────────────────
 
@@ -626,57 +677,100 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 6: Refinement ───────────────────────────────── */}
+          {/* ── STEP 6: Don't use this photo yet (AI detected) ───── */}
           {step === 6 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-0">
-                <ProgressBar step={6} total={TOTAL_STEPS} />
+                <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
               </div>
-              <div className="px-6 py-10 flex flex-col items-center min-h-[380px]">
-                <h2 className="text-2xl font-bold text-white mb-2 text-center">Refining your photo</h2>
-                <p className="text-zinc-500 text-sm text-center mb-8">Checking face quality and optimising the result.</p>
+              <div className="px-5 pt-2 pb-3 text-center">
+                <h2 className="text-2xl font-extrabold text-red-500 mb-1.5 uppercase tracking-tight">Don&apos;t use this photo yet!</h2>
+                <p className="text-zinc-400 text-sm leading-relaxed">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
+              </div>
+              <div className="px-4 pb-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {(['TruthScan', 'sightengine', 'IsThisAI'] as const).map(brand => (
+                    <DetectorCard key={brand} img={previewUrls[pickedIdx] ?? stylePlaceholder} brand={brand} detected />
+                  ))}
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+              </div>
+            </div>
+          )}
 
-                {refineStatus !== 'error' && (
-                  <div className="w-10 h-10 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin mb-6" />
+          {/* ── STEP 7: AI traces + real refinement ──────────────── */}
+          {step === 7 && (
+            <div className="bg-[#111] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-0">
+                <ProgressBar step={7} total={TOTAL_STEPS} />
+              </div>
+              <div className="px-5 pt-2 pb-3">
+                <h2 className="text-2xl font-bold text-white mb-3">AI traces found in your photo</h2>
+                {!removingTraces && (
+                  <button onClick={() => { setTracesCleared(0); setRemovingTraces(true) }}
+                    className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:brightness-110 text-white font-bold py-3.5 rounded-2xl transition-all text-base shadow-lg shadow-red-500/20 mb-3">
+                    Remove all AI traces
+                  </button>
                 )}
-
-                {/* Step checklist */}
-                <div className="w-full max-w-xs space-y-2.5">
-                  {REFINE_STEPS.map(({ status, label }) => {
-                    const ci = REFINE_ORDER.indexOf(refineStatus), ti = REFINE_ORDER.indexOf(status)
-                    const isDone = ci > ti || refineStatus === 'done'
-                    const isCur  = refineStatus === status
+                <div className="space-y-1.5">
+                  {AI_TRACES.map((trace, i) => {
+                    const cleared = removingTraces && i < tracesCleared
                     return (
-                      <div key={status} className="flex items-center gap-3">
-                        <div className={cn('w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all', isDone ? 'bg-green-500' : isCur ? 'bg-blue-500 animate-pulse' : 'bg-white/8')}>
-                          {isDone && <CheckIcon className="text-white w-2.5 h-2.5" />}
-                        </div>
-                        <span className={cn('text-sm transition-all', isDone ? 'text-green-400' : isCur ? 'text-white font-medium' : 'text-zinc-700')}>{label}</span>
+                      <div key={trace} className="flex items-center gap-2.5 bg-white/[0.03] border border-white/6 rounded-xl px-3 py-2">
+                        {cleared ? <CheckIcon className="text-green-400 w-3 h-3 flex-shrink-0" /> : (
+                          <svg className="w-3 h-3 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        )}
+                        <span className={cn('text-sm transition-all', cleared ? 'text-green-400 line-through' : 'text-zinc-300')}>{trace}</span>
                       </div>
                     )
                   })}
                 </div>
               </div>
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 pt-2">
                 {refineStatus === 'error' ? (
                   <div className="space-y-2">
                     <p className="text-red-400 text-sm text-center px-2">{refineError}</p>
-                    <button onClick={() => setStep(5)} className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-800 hover:bg-zinc-700 text-white transition-all">← Pick a different preview</button>
+                    <button onClick={() => { setRemovingTraces(false); setStep(5) }} className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-800 hover:bg-zinc-700 text-white transition-all">← Pick a different preview</button>
                   </div>
                 ) : (
                   <button disabled className="w-full py-4 rounded-2xl font-semibold text-base bg-white/5 text-zinc-600 cursor-not-allowed">
-                    {refineStatus === 'done' ? 'Done ✓' : 'Refining…'}
+                    {removingTraces ? (refineStatus === 'done' ? 'All traces removed ✓' : 'Removing traces…') : 'Continue →'}
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* ── STEP 7: Result reveal ────────────────────────────── */}
-          {step === 7 && (
+          {/* ── STEP 8: Undetectable ─────────────────────────────── */}
+          {step === 8 && (
+            <div className="bg-[#111] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-0">
+                <ProgressBar step={8} total={TOTAL_STEPS} />
+              </div>
+              <div className="px-5 pt-2 pb-3 text-center">
+                <h2 className="text-3xl font-extrabold text-green-400 mb-1.5">Undetectable</h2>
+                <p className="text-zinc-400 text-sm leading-relaxed">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
+              </div>
+              <div className="px-4 pb-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {(['sightengine', 'TruthScan', 'IsThisAI'] as const).map(brand => (
+                    <DetectorCard key={brand} img={displayPhoto} brand={brand} detected={false} />
+                  ))}
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 9: Result reveal ────────────────────────────── */}
+          {step === 9 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-4 pb-0">
-                <ProgressBar step={7} total={TOTAL_STEPS} />
+                <ProgressBar step={9} total={TOTAL_STEPS} />
               </div>
               <div className="px-4 pt-2 pb-2 text-center">
                 <h2 className="text-xl font-bold text-white mb-0.5">Your AI photo is ready</h2>
@@ -722,11 +816,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 8: Pricing ──────────────────────────────────── */}
-          {step === 8 && (
+          {/* ── STEP 10: Pricing ─────────────────────────────────── */}
+          {step === 10 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-4 pb-2">
-                <ProgressBar step={8} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-xl font-bold text-white text-center mb-1">Choose your plan</h2>
                 <p className="text-zinc-500 text-sm text-center">Cancel any time. Your photos stay yours.</p>
               </div>
@@ -755,11 +849,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 9: Email / Checkout ─────────────────────────── */}
-          {step === 9 && (
+          {/* ── STEP 11: Email / Checkout ────────────────────────── */}
+          {step === 11 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-5">
-                <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={11} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
                 <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
               </div>

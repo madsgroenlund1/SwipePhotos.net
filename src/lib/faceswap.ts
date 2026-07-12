@@ -45,7 +45,14 @@ export type JobEntry = {
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 
-function buildPrompt(template: Template, customerPhotoCount: number): string {
+// Preview expression variants — both previews use the customer's chosen
+// setting, differentiated by facial expression.
+export const PREVIEW_EXPRESSIONS = [
+  'Give him a confident, slightly serious "bad boy" expression: closed mouth, relaxed jaw, direct gaze with a hint of intensity.',
+  'Give him a warm, closed-mouth slight smile: relaxed, approachable, soft eyes.',
+] as const
+
+function buildPrompt(template: Template, customerPhotoCount: number, expressionNote?: string): string {
   const refPhotos = customerPhotoCount >= 2
     ? '#2 and #3 are reference photos of the same real person from different angles. Use both to reconstruct the exact identity.'
     : '#2 is a reference photo of the real person.'
@@ -63,7 +70,7 @@ function buildPrompt(template: Template, customerPhotoCount: number): string {
 
 ${refPhotos} Extract the exact identity: face shape, eyes, eyebrows, nose, lips, jawline, skin tone, skin texture, hair colour, hairline and hairstyle.
 
-${headNote} the exact identity from the reference photos. Adapt the head naturally to the angle, expression and lighting of #1. Blend seamlessly at the hairline, neck and ears.${glassesNote}
+${headNote} the exact identity from the reference photos. Adapt the head naturally to the angle and lighting of #1. Blend seamlessly at the hairline, neck and ears.${glassesNote}${expressionNote ? ` ${expressionNote}` : ''}
 
 Do not idealise, slim or smooth the face. Reproduce the exact real person from the reference photos.
 
@@ -133,8 +140,12 @@ export async function runTwoPreviewFaceSwaps(
   hasTattoos: boolean,
   onStatus: (status: string) => void
 ): Promise<string[]> {
-  const templates = getPreviewTemplatesForCategory(category).slice(0, 2)
-  if (!templates.length) return []
+  // Both previews use the customer's CHOSEN setting (the top-quality template
+  // for the category — the mannequin scene), differentiated by expression:
+  // one "bad boy" serious, one closed-mouth slight smile.
+  const template = getPreviewTemplatesForCategory(category)[0]
+  if (!template) return []
+  const variants = PREVIEW_EXPRESSIONS.slice(0, 2)
 
   if (hasTattoos) {
     console.log('[preview] hasTattoos=true — face/neck tattoos may transfer')
@@ -142,12 +153,12 @@ export async function runTwoPreviewFaceSwaps(
 
   onStatus('gen_1')
 
-  const results: (string | null)[] = new Array(templates.length).fill(null)
+  const results: (string | null)[] = new Array(variants.length).fill(null)
   let firstDone = false
 
-  const jobs = templates.map((template, idx) => {
+  const jobs = variants.map((expressionNote, idx) => {
     const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
-    const prompt = buildPrompt(template, customerPhotoUrls.length)
+    const prompt = buildPrompt(template, customerPhotoUrls.length, expressionNote)
 
     return withTimeout(
       fal.subscribe(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput, logs: false }),
@@ -166,7 +177,7 @@ export async function runTwoPreviewFaceSwaps(
       .finally(() => {
         if (!firstDone) {
           firstDone = true
-          if (templates.length > 1) onStatus('gen_2')
+          if (variants.length > 1) onStatus('gen_2')
         }
       })
   })
