@@ -18,7 +18,7 @@ export async function GET(
   const { data: userRow } = await supabase
     .from('users')
     .select('id')
-    .eq('referral_code', code.toUpperCase())
+    .ilike('referral_code', code)
     .maybeSingle()
 
   if (userRow?.id) {
@@ -47,7 +47,7 @@ export async function GET(
 
   // Set attribution cookie (first-click wins — don't overwrite if already set)
   if (!req.cookies.get('sw_ref')) {
-    response.cookies.set('sw_ref', code.toUpperCase(), {
+    response.cookies.set('sw_ref', code.toLowerCase(), {
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
       httpOnly: true,

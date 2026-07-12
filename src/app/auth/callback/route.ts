@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         const { data: refUserRow } = await admin
           .from('users')
           .select('id')
-          .eq('referral_code', swRef.toUpperCase())
+          .ilike('referral_code', swRef)
           .maybeSingle()
 
         if (refUserRow?.id && refUserRow.id !== user.id) {

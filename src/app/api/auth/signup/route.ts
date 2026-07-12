@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClientDirect } from '@/lib/supabase/server'
-import { generateReferralCode } from '@/lib/utils'
+import { refCodeFromEmail } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     // Ensure user row exists — only set referral_code on first insert, never overwrite
     await supabase.from('users').upsert(
-      { id: userId, email, referral_code: generateReferralCode() },
+      { id: userId, email, referral_code: refCodeFromEmail(email) },
       { onConflict: 'id', ignoreDuplicates: true }
     )
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       const { data: refUserRow } = await supabase
         .from('users')
         .select('id')
-        .eq('referral_code', swRef.toUpperCase())
+        .ilike('referral_code', swRef)
         .maybeSingle()
 
       if (refUserRow?.id && refUserRow.id !== userId) {

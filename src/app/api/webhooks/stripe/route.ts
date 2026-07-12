@@ -183,7 +183,7 @@ async function createCommission(
   const { data: userRef } = await supabase
     .from('users')
     .select('id')
-    .eq('referral_code', refCode)
+    .ilike('referral_code', refCode)
     .single()
 
   if (userRef?.id) {
