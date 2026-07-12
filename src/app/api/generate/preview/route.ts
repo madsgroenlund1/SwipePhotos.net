@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { fal } from '@fal-ai/client'
-import { runPreviewFaceSwaps } from '@/lib/faceswap'
+import { runTwoPreviewFaceSwaps } from '@/lib/faceswap'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
 // Map onboarding style IDs → template category names
-// 'casual' has 0 active templates — beach maps to outdoor (pool/waterfront scenes)
 const STYLE_TO_CATEGORY: Record<string, string> = {
   restaurant: 'restaurant',
   formal:     'formal',
@@ -16,41 +15,87 @@ const STYLE_TO_CATEGORY: Record<string, string> = {
 export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
-  try {
-    let formData: FormData
-    try { formData = await req.formData() } catch {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
-    }
+  const encoder = new TextEncoder()
 
-    const file  = formData.get('photo')  as File | null
-    const file2 = formData.get('photo2') as File | null
-    const style = (formData.get('style') as string) || 'restaurant'
-    const hasTattoos = formData.get('hasTattoos') === 'true'
-    if (!file || file.size === 0) return NextResponse.json({ error: 'No photo' }, { status: 400 })
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(data: object) {
+        try { controller.enqueue(encoder.encode(JSON.stringify(data) + '\n')) } catch {}
+      }
 
-    const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
+      try {
+        let formData: FormData
+        try { formData = await req.formData() } catch {
+          send({ status: 'error', error: 'Invalid request body' })
+          controller.close()
+          return
+        }
 
-    // Upload both customer photos to fal.ai storage; second is optional
-    const [faceUrl, faceUrl2] = await Promise.all([
-      fal.storage.upload(file),
-      file2 && file2.size > 0 ? fal.storage.upload(file2) : Promise.resolve(null),
-    ])
-    const customerUrls = faceUrl2 ? [faceUrl, faceUrl2] : [faceUrl]
-    console.log('[preview] Uploaded', customerUrls.length, 'photo(s), category:', category, 'hasTattoos:', hasTattoos)
+        // Accept front/left/right (new) or photo/photo2 (legacy)
+        const frontFile  = formData.get('front')  as File | null
+        const leftFile   = formData.get('left')   as File | null
+        const rightFile  = formData.get('right')  as File | null
+        const legacyFile  = formData.get('photo')  as File | null
+        const legacyFile2 = formData.get('photo2') as File | null
+        const style      = (formData.get('style') as string) || 'restaurant'
+        const hasTattoos = formData.get('hasTattoos') === 'true'
 
-    const photos = await runPreviewFaceSwaps(customerUrls, category, hasTattoos)
+        const files: File[] = []
+        if (frontFile?.size)  files.push(frontFile)
+        if (leftFile?.size)   files.push(leftFile)
+        if (rightFile?.size)  files.push(rightFile)
+        // Legacy fallback
+        if (!files.length && legacyFile?.size)  files.push(legacyFile)
+        if (!files.length && legacyFile2?.size) files.push(legacyFile2)
 
-    const count = Object.keys(photos).length
-    console.log('[preview] Done —', count, 'photos returned')
+        if (!files.length) {
+          send({ status: 'error', error: 'No photos provided' })
+          controller.close()
+          return
+        }
 
-    if (count === 0) {
-      return NextResponse.json({ error: 'Face swap failed — please try again' }, { status: 500 })
-    }
+        send({ status: 'uploading' })
+        const uploadedUrls = await Promise.all(files.map(f => fal.storage.upload(f)))
+        console.log('[preview] Uploaded', uploadedUrls.length, 'photo(s), style:', style, 'hasTattoos:', hasTattoos)
 
-    return NextResponse.json({ photos, done: true })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[preview] Error:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
-  }
+        send({ status: 'preparing' })
+        const category = STYLE_TO_CATEGORY[style] ?? 'restaurant'
+
+        const urls = await runTwoPreviewFaceSwaps(
+          uploadedUrls,
+          category,
+          hasTattoos,
+          (status) => send({ status })
+        )
+
+        send({ status: 'checking' })
+
+        if (!urls.length) {
+          send({ status: 'error', error: 'Generation failed — please try a different photo' })
+          controller.close()
+          return
+        }
+
+        send({ status: 'saving' })
+        await new Promise<void>(r => setTimeout(r, 400))
+
+        send({ status: 'done', urls })
+        console.log('[preview] Done —', urls.length, 'preview(s)')
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[preview] Error:', msg)
+        send({ status: 'error', error: msg })
+      }
+
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type':      'application/x-ndjson',
+      'Cache-Control':     'no-cache, no-store',
+      'X-Accel-Buffering': 'no',
+    },
+  })
 }

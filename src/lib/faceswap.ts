@@ -125,6 +125,56 @@ export async function scoreOutput(url: string): Promise<QualityResult> {
   }
 }
 
+// ─── Preview: exactly 2 results, with streaming status callbacks ─────────────
+
+export async function runTwoPreviewFaceSwaps(
+  customerPhotoUrls: string[],
+  category: string,
+  hasTattoos: boolean,
+  onStatus: (status: string) => void
+): Promise<string[]> {
+  const templates = getPreviewTemplatesForCategory(category).slice(0, 2)
+  if (!templates.length) return []
+
+  if (hasTattoos) {
+    console.log('[preview] hasTattoos=true — face/neck tattoos may transfer')
+  }
+
+  onStatus('gen_1')
+
+  const results: (string | null)[] = new Array(templates.length).fill(null)
+  let firstDone = false
+
+  const jobs = templates.map((template, idx) => {
+    const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
+    const prompt = buildPrompt(template, customerPhotoUrls.length)
+
+    return withTimeout(
+      fal.subscribe(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput, logs: false }),
+      120_000
+    )
+      .then(raw => {
+        const url = extractOutputUrl(raw)
+        if (url) {
+          results[idx] = url
+          console.log(`[preview] ✓ Job ${idx} (${template.id})`)
+        }
+      })
+      .catch(err => {
+        console.error(`[preview] ✗ Job ${idx} (${template.id}):`, err instanceof Error ? err.message : err)
+      })
+      .finally(() => {
+        if (!firstDone) {
+          firstDone = true
+          if (templates.length > 1) onStatus('gen_2')
+        }
+      })
+  })
+
+  await Promise.allSettled(jobs)
+  return results.filter((u): u is string => u !== null)
+}
+
 // ─── Preview (synchronous, called before payment) ────────────────────────────
 
 export async function runPreviewFaceSwaps(

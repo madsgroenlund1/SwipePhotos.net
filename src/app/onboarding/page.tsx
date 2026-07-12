@@ -17,28 +17,12 @@ const STYLE_OPTIONS = [
   { id: 'beach', label: 'Beach Club', src: '/photos/presets/scene-beach.jpg', free: true },
 ]
 
-// Style preset thumbnails used as placeholder when AI generation hasn't completed.
-// These are NOT customer results — they show the setting aesthetic only.
 const STYLE_PLACEHOLDERS: Record<string, string[]> = {
   restaurant: ['/photos/presets/scene-restaurant.jpg'],
   formal:     ['/photos/presets/scene-formal.jpg'],
   rooftop:    ['/photos/presets/scene-rooftop.jpg'],
   beach:      ['/photos/presets/scene-beach.jpg'],
 }
-
-const DID_YOU_KNOW = [
-  'The templates are picked by professional dating coaches',
-  'The bottom 50% of profiles only get 4% of the likes!',
-  'Better photos = less texting needed',
-  'SwipePhotos users report more matches after upgrading their profile',
-  'Top 10% of profiles get 58% of all likes on Hinge',
-  'Your first photo determines 90% of your swipe rate',
-  'Professional-looking photos can double your match rate',
-  'Most dating coaches recommend quality photos above all',
-  'We preserve your real hair, skin tone, and features',
-  'Natural lighting is the most important factor in a good photo',
-  'Face-forward photos perform best on Hinge and Bumble',
-]
 
 const PACKAGES = {
   monthly: [
@@ -68,6 +52,40 @@ const AI_TRACES_BAD = [
   'Compression artifact patterns',
 ]
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type SlotState = {
+  file: File
+  previewUrl: string
+  status: 'accepted' | 'rejected'
+  error?: string
+}
+
+type AngleSlots = { front: SlotState | null; left: SlotState | null; right: SlotState | null }
+
+type GenStatus =
+  | 'idle'
+  | 'uploading'
+  | 'preparing'
+  | 'gen_1'
+  | 'gen_2'
+  | 'checking'
+  | 'saving'
+  | 'done'
+  | 'error'
+
+const GEN_STATUS_LABEL: Record<GenStatus, string> = {
+  idle:      '',
+  uploading: 'Validating photos',
+  preparing: 'Preparing your setting',
+  gen_1:     'Generating preview 1 of 2',
+  gen_2:     'Generating preview 2 of 2',
+  checking:  'Checking quality',
+  saving:    'Saving previews',
+  done:      'Ready',
+  error:     'Something went wrong',
+}
+
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
 function ProgressBar({ step, total, onBack }: { step: number; total: number; onBack?: () => void }) {
@@ -90,58 +108,171 @@ function ProgressBar({ step, total, onBack }: { step: number; total: number; onB
   )
 }
 
+// ─── Upload Slot ──────────────────────────────────────────────────────────────
+
+function UploadSlot({
+  angle,
+  label,
+  guide,
+  slot,
+  onFile,
+  onRemove,
+}: {
+  angle: string
+  label: string
+  guide: string
+  slot: SlotState | null
+  onFile: (file: File) => void
+  onRemove: () => void
+}) {
+  const inputId = `slot-${angle}`
+
+  const borderColor = slot?.status === 'accepted'
+    ? 'rgba(34,197,94,0.7)'
+    : slot?.status === 'rejected'
+    ? 'rgba(239,68,68,0.7)'
+    : 'rgba(255,255,255,0.12)'
+
+  return (
+    <div className="flex items-start gap-3 mb-3">
+      {/* Thumbnail / upload trigger */}
+      <div
+        className="relative flex-shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all"
+        style={{ width: 72, height: 72, border: `2px solid ${borderColor}` }}
+        onClick={() => document.getElementById(inputId)?.click()}
+      >
+        <input
+          id={inputId}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={e => {
+            const f = e.target.files?.[0]
+            if (f) { onFile(f); e.target.value = '' }
+          }}
+        />
+        {slot?.previewUrl ? (
+          <>
+            <img
+              src={slot.previewUrl}
+              alt={label}
+              className="w-full h-full object-cover"
+              style={{ objectPosition: '50% 10%' }}
+            />
+            <div
+              className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+              style={{ background: slot.status === 'accepted' ? '#22c55e' : '#ef4444' }}
+            >
+              {slot.status === 'accepted' ? (
+                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-white/[0.04] gap-1">
+            <svg className="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Text */}
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className="text-white text-sm font-semibold leading-tight">{label}</p>
+        <p className="text-zinc-500 text-xs mt-0.5 leading-snug">{guide}</p>
+        {slot?.error && <p className="text-red-400 text-xs mt-0.5">{slot.error}</p>}
+      </div>
+
+      {/* Remove button */}
+      {slot && (
+        <button
+          onClick={onRemove}
+          className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-zinc-600 hover:text-white hover:bg-white/10 transition-all"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [photos, setPhotos] = useState<File[]>([])
-  const [dragOver, setDragOver] = useState(false)
+
+  // Upload slots
+  const [slots, setSlots] = useState<AngleSlots>({ front: null, left: null, right: null })
+
+  // Generation
+  const [genStatus, setGenStatus] = useState<GenStatus>('idle')
+  const [genError, setGenError] = useState<string | null>(null)
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  const [pickedIdx, setPickedIdx] = useState(0)
+
+  // Other state
   const [hasTattoos, setHasTattoos] = useState<boolean | null>(null)
   const [selectedStyle, setSelectedStyle] = useState<string>('restaurant')
-  const [progress, setProgress] = useState(0)
-  const [didYouKnowIdx, setDidYouKnowIdx] = useState(0)
-  const [carouselIdx, setCarouselIdx] = useState(0)
   const [selectedPackage, setSelectedPackage] = useState<string>('popular')
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
-  const [genError, setGenError] = useState<string | null>(null)
-  const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null)
   const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
   const [cleanedCount, setCleanedCount] = useState(0)
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const targetProgressRef = useRef(0)
-  const displayProgressRef = useRef(0)
-  const userPhotoUrl = photos.length > 0 ? URL.createObjectURL(photos[0]) : null
+
   const stylePlaceholders = STYLE_PLACEHOLDERS[selectedStyle] ?? STYLE_PLACEHOLDERS.restaurant
-  const generatedArray = Object.values(generatedPhotos).filter(Boolean) as string[]
-  const hasGenerated = generatedArray.length > 0
-  const selectedAiPhoto = pickedPreviewUrl
-    ?? (hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : stylePlaceholders[0])
-
-  const handleFileDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
-    setPhotos(prev => [...prev, ...files].slice(0, 20))
-  }, [])
-
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'))
-    setPhotos(prev => [...prev, ...files].slice(0, 20))
-  }, [])
+  const selectedAiPhoto = previewUrls[pickedIdx] ?? stylePlaceholders[0]
 
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
-  // Compress + resize image to max 1024px, JPEG 85% — keeps under Vercel's 4.5MB request limit
+  // ─── Slot validation ─────────────────────────────────────────────────────
+
+  function validateSlotFile(file: File): string | null {
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      return 'Please upload a JPEG, PNG, or WebP image'
+    }
+    if (file.size < 15_000) return 'This photo is too small — minimum 15 KB'
+    if (file.size > 25_000_000) return 'Photo too large — maximum 25 MB'
+    return null
+  }
+
+  function handleSlotFile(angle: keyof AngleSlots, file: File) {
+    const previewUrl = URL.createObjectURL(file)
+    const error = validateSlotFile(file)
+    setSlots(prev => ({
+      ...prev,
+      [angle]: { file, previewUrl, status: error ? 'rejected' : 'accepted', error: error ?? undefined },
+    }))
+  }
+
+  function clearSlot(angle: keyof AngleSlots) {
+    setSlots(prev => {
+      const old = prev[angle]
+      if (old?.previewUrl) URL.revokeObjectURL(old.previewUrl)
+      return { ...prev, [angle]: null }
+    })
+  }
+
+  const allSlotsAccepted =
+    slots.front?.status === 'accepted' &&
+    slots.left?.status === 'accepted' &&
+    slots.right?.status === 'accepted'
+
+  // ─── Image compress ──────────────────────────────────────────────────────
+
   function compressImage(file: File, maxPx = 1024, quality = 0.85): Promise<File> {
     return new Promise((resolve) => {
       const img = new Image()
@@ -152,12 +283,12 @@ export default function OnboardingPage() {
         const w = Math.round(img.width * scale)
         const h = Math.round(img.height * scale)
         const canvas = document.createElement('canvas')
-        canvas.width = w
-        canvas.height = h
+        canvas.width = w; canvas.height = h
         canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
         canvas.toBlob(blob => {
-          // Fall back to original if blob is null or empty (can happen on mobile Safari)
-          resolve((blob && blob.size > 0) ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file)
+          resolve((blob && blob.size > 0)
+            ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })
+            : file)
         }, 'image/jpeg', quality)
       }
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
@@ -165,134 +296,94 @@ export default function OnboardingPage() {
     })
   }
 
-  // Step 4: submit preview jobs to fal.ai queue, then poll for results
+  // ─── Step 4: Streaming generation ────────────────────────────────────────
+
   useEffect(() => {
     if (step !== 4) return
-    setProgress(0)
-    setDidYouKnowIdx(0)
-    setGeneratedPhotos({})
+
+    setGenStatus('idle')
     setGenError(null)
-    setPickedPreviewUrl(null)
-    setCarouselIdx(0)
-    targetProgressRef.current = 0
-    displayProgressRef.current = 0
+    setPreviewUrls([])
+    setPickedIdx(0)
 
-    // Time-based progress: always moves forward over ~110 seconds, never stops
-    const START_TIME = Date.now()
-    const DURATION_MS = 110_000 // 110 seconds to reach 95% on its own
-    let didYouKnowTick = 0
+    const abortCtrl = new AbortController()
 
-    progressRef.current = setInterval(() => {
-      didYouKnowTick++
-      setDidYouKnowIdx(Math.floor(didYouKnowTick / 20) % DID_YOU_KNOW.length)
-
-      const elapsed = Date.now() - START_TIME
-      // Ease-out curve: fast start, slows near 95%
-      const timePct = Math.min(95, (elapsed / DURATION_MS) * 100 * (1 - elapsed / DURATION_MS / 3))
-      const target = Math.max(targetProgressRef.current, timePct)
-      targetProgressRef.current = target
-
-      const current = displayProgressRef.current
-      if (current < target) {
-        const diff = target - current
-        const step = Math.max(0.15, diff * 0.06)
-        const next = Math.min(target, current + step)
-        displayProgressRef.current = next
-        setProgress(next)
-      }
-    }, 100)
-
-    async function startGeneration() {
-      if (photos.length === 0) {
-        targetProgressRef.current = 100
-        return
-      }
-
+    async function run() {
       try {
-        const compressed = await compressImage(photos[0])
-        const fd = new FormData()
-        fd.append('photo', compressed)
-        if (photos[1]) {
-          const compressed2 = await compressImage(photos[1])
-          fd.append('photo2', compressed2)
+        const frontFile = slots.front?.file
+        const leftFile  = slots.left?.file
+        const rightFile = slots.right?.file
+
+        if (!frontFile) {
+          setGenStatus('error')
+          setGenError('Front photo missing — please go back and upload your photos')
+          return
         }
+
+        const [front, left, right] = await Promise.all([
+          compressImage(frontFile),
+          leftFile  ? compressImage(leftFile)  : Promise.resolve(null),
+          rightFile ? compressImage(rightFile) : Promise.resolve(null),
+        ])
+
+        const fd = new FormData()
+        fd.append('front', front)
+        if (left)  fd.append('left',  left)
+        if (right) fd.append('right', right)
         fd.append('style', selectedStyle)
         fd.append('hasTattoos', String(hasTattoos === true))
-        const res = await fetch('/api/generate/preview', { method: 'POST', body: fd })
-        const data = await res.json() as {
-          photos?: Record<string, string>
-          done?: boolean
-          requestIds?: string[]
-          styles?: string[]
-          error?: string
-        }
 
-        // Success: real photos returned
-        if (data.photos && Object.keys(data.photos).length > 0) {
-          setGeneratedPhotos(data.photos)
-          targetProgressRef.current = 100
-          return
-        }
+        setGenStatus('uploading')
 
-        // API returned an error
-        if (!res.ok || data.error) {
-          setGenError(data.error || 'Generation failed — please try a different photo')
-          return
-        }
+        const response = await fetch('/api/generate/preview', {
+          method: 'POST',
+          body: fd,
+          signal: abortCtrl.signal,
+        })
 
-        // Legacy polling path (requestIds present)
-        if (data.requestIds?.length) {
-          const { requestIds, styles } = data as { requestIds: string[]; styles: string[] }
-          pollingRef.current = setInterval(async () => {
+        if (!response.body) throw new Error('No response body from server')
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+
+          for (const line of lines) {
+            if (!line.trim()) continue
             try {
-              const pollRes = await fetch(
-                `/api/generate/preview/poll?ids=${requestIds.join(',')}&styles=${styles.join(',')}`
-              )
-              const poll = await pollRes.json() as {
-                photos: Record<string, string>
-                done: boolean
-                completedCount: number
-                total: number
+              const msg = JSON.parse(line) as { status: string; urls?: string[]; error?: string }
+              const s = msg.status as GenStatus
+              if (s in GEN_STATUS_LABEL) setGenStatus(s)
+              if (s === 'done' && msg.urls?.length) setPreviewUrls(msg.urls)
+              if (s === 'error') {
+                setGenStatus('error')
+                setGenError(msg.error ?? 'Generation failed — please try again')
               }
-              if (Object.keys(poll.photos).length > 0) {
-                setGeneratedPhotos(prev => ({ ...prev, ...poll.photos }))
-              }
-              if (poll.done) {
-                if (Object.keys(poll.photos).length === 0) {
-                  setGenError('Generation failed — please try a different photo')
-                } else {
-                  targetProgressRef.current = 100
-                }
-                clearInterval(pollingRef.current!)
-              }
-            } catch (err) {
-              console.error('[preview] Poll error:', err)
-            }
-          }, 3000)
-          return
+            } catch {}
+          }
         }
-
-        // No photos and no requestIds — unexpected empty success
-        setGenError('No photos were generated — please try again')
       } catch (err) {
-        console.error('[preview] Submit error:', err)
-        setGenError('Something went wrong — please try again')
+        if ((err as Error).name === 'AbortError') return
+        setGenStatus('error')
+        setGenError(err instanceof Error ? err.message : 'Something went wrong — please try again')
       }
     }
 
-    startGeneration()
-    return () => {
-      if (progressRef.current) clearInterval(progressRef.current!)
-      if (pollingRef.current) clearInterval(pollingRef.current!)
-    }
+    run()
+    return () => abortCtrl.abort()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
+  // ─── Step 6: AI traces ───────────────────────────────────────────────────
+
   useEffect(() => {
-    if (step === 6) {
-      setTracesState('bad')
-      setCleanedCount(0)
-    }
+    if (step === 6) { setTracesState('bad'); setCleanedCount(0) }
   }, [step])
 
   function handleCleanTraces() {
@@ -302,11 +393,16 @@ export default function OnboardingPage() {
     const interval = setInterval(() => {
       count++
       setCleanedCount(count)
-      if (count >= AI_TRACES_BAD.length) {
-        clearInterval(interval)
-        setTracesState('clean')
-      }
+      if (count >= AI_TRACES_BAD.length) { clearInterval(interval); setTracesState('clean') }
     }, 120)
+  }
+
+  // ─── Checkout ────────────────────────────────────────────────────────────
+
+  function getSlotFiles(): File[] {
+    return [slots.front, slots.left, slots.right]
+      .filter((s): s is SlotState => s !== null && s.status === 'accepted')
+      .map(s => s.file)
   }
 
   async function handleEmailSubmit() {
@@ -314,16 +410,18 @@ export default function OnboardingPage() {
     setLoading(true)
     setCheckoutError(null)
     try {
-      // 1. Create order + get Stripe URL
       const currentPkgs = PACKAGES[billing]
       const pkg = currentPkgs.find(p => p.id === selectedPackage) || currentPkgs.find(p => p.popular) || currentPkgs[0]
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: pkg.priceId, email, style: selectedStyle, hasTattoos: hasTattoos === true, selectedPreviewUrl: pickedPreviewUrl }),
+        body: JSON.stringify({
+          packageId: pkg.id, priceId: pkg.priceId, email,
+          style: selectedStyle, hasTattoos: hasTattoos === true,
+          selectedPreviewUrl: previewUrls[pickedIdx] ?? null,
+        }),
       })
       const data = await res.json()
-      console.log('[checkout response]', data)
 
       if (!res.ok || data.error) {
         setCheckoutError(data.error || `Something went wrong (${res.status}). Please try again.`)
@@ -331,27 +429,26 @@ export default function OnboardingPage() {
         return
       }
 
-      // 2. Upload photos (compressed to stay under Vercel's 4.5MB body limit)
-      if (data.orderId && photos.length > 0) {
-        const compressed = await Promise.all(photos.map(p => compressImage(p)))
-        const fd = new FormData()
-        fd.append('orderId', data.orderId)
-        for (const photo of compressed) fd.append('files', photo)
-        await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+      if (data.orderId) {
+        const slotFiles = getSlotFiles()
+        if (slotFiles.length > 0) {
+          const compressed = await Promise.all(slotFiles.map(f => compressImage(f)))
+          const fd = new FormData()
+          fd.append('orderId', data.orderId)
+          for (const photo of compressed) fd.append('files', photo)
+          await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+        }
       }
 
-      // 3. Redirect to Stripe
-      if (data.url) {
-        window.location.href = data.url
-        return
-      }
-
+      if (data.url) { window.location.href = data.url; return }
       setCheckoutError('No payment URL received. Please try again.')
     } catch (err) {
       setCheckoutError(`Something went wrong. Please try again. (${err})`)
     }
     setLoading(false)
   }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -414,7 +511,6 @@ export default function OnboardingPage() {
                   </div>
                 ))}
               </div>
-              {/* Blur teaser – more templates */}
               <div className="relative px-4 mt-1 mb-2 overflow-hidden" style={{ height: 80 }}>
                 <div className="grid grid-cols-4 gap-1.5 opacity-50">
                   {[
@@ -445,20 +541,16 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload your best photos</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload 3 photos</h2>
+                <p className="text-zinc-500 text-sm">One from each angle — for the best identity match.</p>
               </div>
 
               <div className="px-4 pb-2">
-                {/* Requirements */}
+                {/* Photo requirements */}
                 <div className="mb-4 bg-blue-500/8 border border-blue-500/20 rounded-2xl p-3.5">
-                  <p className="text-blue-400 text-xs font-semibold mb-2">Tips for the best results</p>
+                  <p className="text-blue-400 text-xs font-semibold mb-2">Photo requirements</p>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    {[
-                      'Face clearly visible',
-                      'Natural lighting',
-                      'No sunglasses or hats',
-                      'Not a group photo',
-                    ].map(r => (
+                    {['Face clearly visible', 'Natural lighting', 'No sunglasses', 'One person only', 'No filters', 'No hats'].map(r => (
                       <div key={r} className="flex items-start gap-1.5">
                         <svg className="w-3 h-3 text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         <span className="text-zinc-400 text-[11px] leading-tight">{r}</span>
@@ -467,90 +559,59 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Good */}
+                {/* Good examples */}
                 <div className="mb-4">
                   <div className="flex items-center gap-1.5 mb-2">
                     <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-green-400 text-xs font-semibold">Good</span>
+                    <span className="text-green-400 text-xs font-semibold">Good examples</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
-                      '/photos/before-after/julius/before/good-1.webp',
-                      '/photos/before-after/julius/before/good-2.webp',
-                    ].map((src) => (
-                      <div key={src} className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-green-500/60">
-                        <img src={src} alt="good" className="w-full h-full object-cover object-top" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bad scroll */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    <span className="text-red-400 text-xs font-semibold">Bad</span>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-                    {[
-                      { src: '/photos/before-after/julius/before/bad-mirror-selfie.webp', label: 'Mirror selfie' },
-                      { src: '/photos/before-after/julius/before/bad-sunglasses.webp', label: 'Sunglasses' },
-                      { src: '/photos/before-after/julius/before/bad-group-photo.webp', label: 'Group photo' },
-                      { src: '/photos/before-after/julius/before/bad-dark.webp', label: 'Too dark' },
-                      { src: '/photos/before-after/julius/before/bad-jacket.webp', label: 'Jacket' },
-                      { src: '/photos/before-after/julius/before/bad-bright.webp', label: 'Too bright' },
-                      { src: '/photos/before-after/julius/before/bad-selfie.webp', label: 'Selfie angle' },
-                      { src: '/photos/before-after/julius/before/bad-posture.webp', label: 'Bad posture' },
-                      { src: '/photos/before-after/julius/before/bad-holding.webp', label: 'Holding object' },
-                      { src: '/photos/before-after/julius/before/bad-too-far.webp', label: 'Too far away' },
+                      { src: '/photos/before-after/julius/before/1.jpeg', label: 'Front' },
+                      { src: '/photos/before-after/julius/before/2.jpeg', label: 'Left' },
+                      { src: '/photos/before-after/julius/before/3.jpeg', label: 'Right' },
                     ].map(({ src, label }) => (
-                      <div key={label} className="flex-shrink-0" style={{ width: 90 }}>
-                        <div className="rounded-xl overflow-hidden border-2 border-red-500/50" style={{ width: 90, height: 120 }}>
-                          <img src={src} alt={label} className="w-full h-full object-cover object-top" />
-                        </div>
-                        <div className="flex items-center gap-0.5 mt-1">
-                          <svg className="w-2.5 h-2.5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                          <span className="text-red-400 text-[10px] truncate">{label}</span>
+                      <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
+                        <img
+                          src={src}
+                          alt={label}
+                          className="w-full h-full object-cover"
+                          style={{ objectPosition: '50% 8%', transform: 'scale(1.35)', transformOrigin: 'top center' }}
+                        />
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">
+                          {label}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Upload */}
+                {/* Three upload slots */}
                 <div className="mb-4">
-                  <div
-                    onDrop={handleFileDrop}
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                    onDragLeave={() => setDragOver(false)}
-                    onClick={() => document.getElementById('file-input-s3')?.click()}
-                    className={cn(
-                      'border-2 border-dashed rounded-2xl py-8 text-center cursor-pointer transition-all',
-                      dragOver ? 'border-blue-500 bg-blue-500/5' : 'border-white/15 hover:border-white/30 bg-white/[0.02]'
-                    )}
-                  >
-                    <input id="file-input-s3" type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileInput} />
-                    <svg className="w-7 h-7 text-zinc-600 mx-auto mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
-                    <p className="text-zinc-400 text-sm font-medium">Add photos</p>
-                    <p className="text-zinc-600 text-xs mt-0.5">1 photo minimum · More photos = better results</p>
-                  </div>
-                  {photos.length > 0 && (
-                    <div className="grid grid-cols-5 gap-1.5 mt-2">
-                      {photos.map((file, i) => (
-                        <div key={i} className="aspect-square rounded-lg overflow-hidden relative">
-                          <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
-                          <button onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))} className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/70 rounded-full flex items-center justify-center text-white text-[10px]">×</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {(
+                    [
+                      { angle: 'front' as const, label: 'Front photo', guide: 'Face the camera directly' },
+                      { angle: 'left'  as const, label: 'Left-angle photo', guide: 'Turn your head slightly left' },
+                      { angle: 'right' as const, label: 'Right-angle photo', guide: 'Turn your head slightly right' },
+                    ] as const
+                  ).map(({ angle, label, guide }) => (
+                    <UploadSlot
+                      key={angle}
+                      angle={angle}
+                      label={label}
+                      guide={guide}
+                      slot={slots[angle]}
+                      onFile={file => handleSlotFile(angle, file)}
+                      onRemove={() => clearSlot(angle)}
+                    />
+                  ))}
                 </div>
 
                 {/* Identity note */}
                 <div className="mb-4 bg-zinc-900/60 border border-white/8 rounded-2xl px-3.5 py-3">
                   <p className="text-zinc-400 text-xs leading-relaxed">
                     <span className="text-white font-semibold">We preserve your real identity.</span>{' '}
-                    Your hair, skin tone, and facial features are kept as close to your actual appearance as possible — the more photos you upload, the better the result.
+                    Your hair, skin tone, and facial features are kept as close to your actual appearance as possible.
                   </p>
                 </div>
 
@@ -566,18 +627,23 @@ export default function OnboardingPage() {
               </div>
 
               <div className="px-4 pb-4">
-                {photos.length > 0 && photos.length < 3 && (
-                  <p className="text-blue-400 text-xs text-center mb-2">✓ {photos.length} photo — add a few more for the best result</p>
+                {allSlotsAccepted && (
+                  <p className="text-green-400 text-xs text-center mb-2">✓ All 3 photos accepted</p>
                 )}
-                {photos.length >= 3 && (
-                  <p className="text-green-400 text-xs text-center mb-2">✓ {photos.length} photos — great!</p>
+                {!allSlotsAccepted && slots.front?.status === 'accepted' && (
+                  <p className="text-zinc-500 text-xs text-center mb-2">Add left and right angle photos for better results</p>
                 )}
                 <button
                   onClick={next}
-                  disabled={photos.length < 1}
-                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', photos.length >= 1 ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}
+                  disabled={!allSlotsAccepted}
+                  className={cn(
+                    'w-full py-4 rounded-2xl font-semibold text-base transition-all',
+                    allSlotsAccepted
+                      ? 'bg-blue-600 hover:brightness-110 text-white'
+                      : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+                  )}
                 >
-                  Continue →
+                  {allSlotsAccepted ? 'Generate my previews →' : 'Upload all 3 photos to continue'}
                 </button>
               </div>
             </div>
@@ -589,49 +655,91 @@ export default function OnboardingPage() {
               <div className="p-6 pb-0">
                 <ProgressBar step={4} total={TOTAL_STEPS} />
               </div>
-              {/* Matrix background */}
               <div className="relative px-6 py-12 min-h-[380px] flex flex-col items-center justify-center overflow-hidden">
+                {/* Matrix background */}
                 <div className="absolute inset-0 overflow-hidden opacity-20 select-none pointer-events-none">
                   {Array.from({ length: 12 }).map((_, col) => (
-                    <div key={col} className="absolute top-0 bottom-0 flex flex-col gap-1 text-red-500 text-[10px] font-mono" style={{ left: `${col * 8.33}%`, animationDelay: `${col * 0.3}s` }}>
+                    <div key={col} className="absolute top-0 bottom-0 flex flex-col gap-1 text-red-500 text-[10px] font-mono" style={{ left: `${col * 8.33}%` }}>
                       {Array.from({ length: 30 }).map((_, row) => (
                         <span key={row} style={{ opacity: Math.random() > 0.5 ? 1 : 0.3 }}>{Math.random() > 0.5 ? '1' : '0'}</span>
                       ))}
                     </div>
                   ))}
                 </div>
+
                 <h2 className="text-2xl font-bold text-white mb-6 relative z-10">Generating your photos</h2>
-                <div className="w-full max-w-xs relative z-10 mb-6">
-                  <div className="h-10 bg-zinc-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300 flex items-center justify-end pr-3"
-                      style={{ width: `${Math.max(progress, 5)}%`, background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)', transition: 'width 0.3s ease-out' }}
-                    >
-                      {progress > 15 && <span className="text-white text-sm font-bold">{Math.floor(progress)}%</span>}
-                    </div>
-                    {progress <= 15 && <span className="absolute inset-0 flex items-center justify-center text-zinc-400 text-sm font-bold">{Math.floor(progress)}%</span>}
+
+                {/* Status indicator */}
+                <div className="relative z-10 flex flex-col items-center gap-3 mb-8">
+                  {genStatus !== 'error' && genStatus !== 'done' && (
+                    <div className="w-10 h-10 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+                  )}
+                  <p className="text-zinc-300 text-sm font-medium text-center">
+                    {GEN_STATUS_LABEL[genStatus] || GEN_STATUS_LABEL.uploading}
+                  </p>
+
+                  {/* Status steps */}
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    {(
+                      [
+                        { s: 'uploading', label: 'Validating photos' },
+                        { s: 'preparing', label: 'Preparing your setting' },
+                        { s: 'gen_1',     label: 'Generating preview 1 of 2' },
+                        { s: 'gen_2',     label: 'Generating preview 2 of 2' },
+                        { s: 'checking',  label: 'Checking quality' },
+                        { s: 'saving',    label: 'Saving previews' },
+                      ] as const
+                    ).map(({ s, label }) => {
+                      const statuses: GenStatus[] = ['uploading', 'preparing', 'gen_1', 'gen_2', 'checking', 'saving', 'done']
+                      const currentIdx = statuses.indexOf(genStatus)
+                      const thisIdx   = statuses.indexOf(s)
+                      const isDone    = currentIdx > thisIdx || genStatus === 'done'
+                      const isCurrent = genStatus === s
+
+                      return (
+                        <div key={s} className="flex items-center gap-2">
+                          <div className={cn(
+                            'w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all',
+                            isDone   ? 'bg-green-500'         :
+                            isCurrent ? 'bg-blue-500 animate-pulse' :
+                            'bg-white/10'
+                          )}>
+                            {isDone && (
+                              <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className={cn(
+                            'text-xs transition-all',
+                            isDone    ? 'text-green-400' :
+                            isCurrent ? 'text-white font-medium' :
+                            'text-zinc-700'
+                          )}>
+                            {label}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-                <div className="text-center relative z-10">
-                  <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">DID YOU KNOW?</p>
-                  <p className="text-zinc-300 text-sm">{DID_YOU_KNOW[didYouKnowIdx]}</p>
-                </div>
               </div>
+
               <div className="px-4 pb-4">
-                {genError ? (
+                {genStatus === 'error' ? (
                   <div className="space-y-2">
                     <p className="text-red-400 text-sm text-center px-2">{genError}</p>
                     <button onClick={() => setStep(3)} className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-800 hover:bg-zinc-700 text-white transition-all">
-                      ← Try a different photo
+                      ← Try different photos
                     </button>
                   </div>
-                ) : progress >= 100 && hasGenerated ? (
+                ) : genStatus === 'done' && previewUrls.length > 0 ? (
                   <button onClick={next} className="w-full py-4 rounded-2xl font-semibold text-base transition-all bg-blue-600 hover:brightness-110 text-white">
-                    See your AI photos →
+                    See your previews →
                   </button>
                 ) : (
                   <button disabled className="w-full py-4 rounded-2xl font-semibold text-base bg-white/5 text-zinc-600 cursor-not-allowed">
-                    Generating... {progress > 0 ? `${Math.floor(progress)}%` : ''}
+                    Generating…
                   </button>
                 )}
               </div>
@@ -643,94 +751,64 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-3">
                 <ProgressBar step={5} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-0">
-                  {hasGenerated ? 'Pick your favourite!' : 'This is what you\'ll get'}
-                </h2>
-                {hasGenerated
-                  ? <p className="text-zinc-400 text-sm mt-1">Swipe through your {generatedArray.length} previews and choose the one you like best.</p>
-                  : <p className="text-zinc-400 text-sm mt-1 leading-relaxed">Professional AI photos in 40+ styles, delivered to your email.</p>
-                }
+                <h2 className="text-2xl font-bold text-white mb-0">Pick your favourite!</h2>
+                <p className="text-zinc-400 text-sm mt-1">Tap the photo you like best — we&apos;ll match that style for all your shots.</p>
               </div>
 
-              {/* Main carousel photo */}
-              <div className="px-4 pb-3">
-                <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                  {/* Main image */}
-                  <img
-                    key={carouselIdx}
-                    src={hasGenerated ? (generatedArray[carouselIdx] ?? generatedArray[0]) : stylePlaceholders[0]}
-                    alt={`Preview ${carouselIdx + 1}`}
-                    className={`w-full h-full object-cover object-top select-none ${!hasGenerated ? 'opacity-40' : ''}`}
-                    style={{ animation: 'fadeIn 0.3s ease-out' }}
-                    onContextMenu={e => e.preventDefault()}
-                    draggable={false}
-                  />
-                  {/* Overlay when no generated photos yet */}
-                  {!hasGenerated && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-                      <div className="w-10 h-10 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin mb-3" />
-                      <p className="text-white text-sm font-medium">Generating your preview…</p>
-                    </div>
-                  )}
-
-                  {/* Subtle corner attribution — no full-screen watermark */}
-                  <div className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-none select-none" style={{ zIndex: 16 }}>
-                    <span className="text-white/25 font-medium text-[10px] tracking-wide px-2.5 py-0.5 rounded-full" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.25)' }}>
-                      SwipePhotos.net
-                    </span>
-                  </div>
-
-                  {/* Left/Right tap zones — only active when real photos exist */}
-                  {hasGenerated && (
-                    <>
-                      <button onClick={() => setCarouselIdx(i => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label="Previous" />
-                      <button onClick={() => setCarouselIdx(i => Math.min(generatedArray.length - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label="Next" />
-                    </>
-                  )}
-
-                  {/* Dot indicators */}
-                  {hasGenerated && (
-                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
-                      {generatedArray.map((_, i) => (
-                        <button key={i} onClick={() => setCarouselIdx(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === carouselIdx ? 'bg-white w-4' : 'bg-white/40'}`} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Style label */}
-                  <div className="absolute top-3 left-3 z-20">
-                    <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-                      {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? 'Preview'}
-                    </span>
-                  </div>
-
-                  {/* Photo counter — only when real photos exist */}
-                  {hasGenerated && (
-                    <div className="absolute top-3 right-3 z-20">
-                      <span className="text-white text-xs font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
-                        {carouselIdx + 1} / {generatedArray.length}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Thumbnail strip — only shown when real AI photos exist */}
-              {hasGenerated && (
+              {previewUrls.length >= 2 ? (
                 <div className="px-4 pb-3">
-                  <div className="flex gap-2">
-                    {generatedArray.map((src, i) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {previewUrls.map((url, i) => (
                       <button
                         key={i}
-                        onClick={() => setCarouselIdx(i)}
-                        className={`flex-1 rounded-xl overflow-hidden transition-all ${i === carouselIdx ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                        onClick={() => setPickedIdx(i)}
+                        className={cn(
+                          'relative rounded-2xl overflow-hidden transition-all',
+                          i === pickedIdx ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#111]' : 'ring-1 ring-white/10 opacity-70 hover:opacity-90'
+                        )}
                         style={{ aspectRatio: '3/4' }}
                         onContextMenu={e => e.preventDefault()}
                       >
-                        <img src={src} alt="" className="w-full h-full object-cover object-top" draggable={false} />
+                        <img
+                          src={url}
+                          alt={`Preview ${i + 1}`}
+                          className="w-full h-full object-cover object-top select-none"
+                          draggable={false}
+                        />
+                        {i === pickedIdx && (
+                          <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 pt-6 pb-2 flex justify-center pointer-events-none">
+                          <span className="text-white/30 text-[9px] font-medium tracking-wide">SwipePhotos.net</span>
+                        </div>
+                        <div className="absolute top-2 left-2">
+                          <span className="text-white text-[10px] font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
+                            Preview {i + 1}
+                          </span>
+                        </div>
                       </button>
                     ))}
                   </div>
+                </div>
+              ) : previewUrls.length === 1 ? (
+                /* Fallback if only 1 preview came back */
+                <div className="px-4 pb-3">
+                  <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                    <img src={previewUrls[0]} alt="Preview" className="w-full h-full object-cover object-top" onContextMenu={e => e.preventDefault()} draggable={false} />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 pt-6 pb-2 flex justify-center">
+                      <span className="text-white/30 text-[9px]">SwipePhotos.net</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Should not happen — step 4 auto-advances only when done */
+                <div className="px-4 pb-3 flex flex-col items-center gap-3 py-12">
+                  <div className="w-10 h-10 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+                  <p className="text-zinc-400 text-sm">Loading your previews…</p>
                 </div>
               )}
 
@@ -756,23 +834,19 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* CTA */}
               <div className="px-4 pb-4">
-                {hasGenerated ? (
-                  <button
-                    onClick={() => {
-                      setPickedPreviewUrl(selectedAiPhoto)
-                      next()
-                    }}
-                    className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base"
-                  >
-                    Choose this photo →
-                  </button>
-                ) : (
-                  <button onClick={() => setStep(4)} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-2xl transition-all text-base">
-                    ← Back to generating
-                  </button>
-                )}
+                <button
+                  onClick={next}
+                  disabled={previewUrls.length === 0}
+                  className={cn(
+                    'w-full py-4 rounded-2xl font-semibold text-base transition-all',
+                    previewUrls.length > 0
+                      ? 'bg-blue-600 hover:brightness-110 text-white'
+                      : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+                  )}
+                >
+                  {previewUrls.length > 0 ? 'Choose this photo →' : 'Loading…'}
+                </button>
               </div>
             </div>
           )}
@@ -840,13 +914,9 @@ export default function OnboardingPage() {
                   return (
                     <div key={i} className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${cleaned ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
                       {cleaned ? (
-                        <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
+                        <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       ) : (
-                        <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                       )}
                       <span className={`text-sm transition-all ${cleaned ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>{trace}</span>
                     </div>
@@ -927,7 +997,6 @@ export default function OnboardingPage() {
               <div className="p-4 pb-0">
                 <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
               </div>
-              {/* Hero photo with app icons */}
               <div className="relative flex justify-center pt-2 pb-4">
                 <div className="relative">
                   <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-blue-500/30">
@@ -939,8 +1008,7 @@ export default function OnboardingPage() {
                     { pos: '-bottom-3 -left-6',  delay: '0.8s', logo: 'instagram' },
                     { pos: '-bottom-3 -right-6', delay: '1.2s', logo: 'bumble' },
                   ].map(({ pos, delay, logo }) => (
-                    <div key={pos} className={`absolute ${pos}`}
-                      style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
+                    <div key={pos} className={`absolute ${pos}`} style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
                       <div className="relative w-10 h-10">
                         <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xl">
                           <img src={`/logos/dating-app-logos/${logo}.png`} alt={logo} className="w-full h-full object-cover" />
@@ -961,8 +1029,6 @@ export default function OnboardingPage() {
                     </div>
                   ))}
                 </div>
-
-                {/* Billing toggle */}
                 <div className="flex bg-white/5 rounded-2xl p-1 mb-3">
                   <button
                     onClick={() => { setBilling('monthly'); setSelectedPackage('popular') }}
@@ -977,8 +1043,6 @@ export default function OnboardingPage() {
                     Yearly <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', billing === 'yearly' ? 'bg-green-500 text-white' : 'bg-green-500/20 text-green-400')}>50% OFF</span>
                   </button>
                 </div>
-
-                {/* Packages */}
                 <div className="space-y-2 mb-4">
                   {PACKAGES[billing].map(pkg => (
                     <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)} className={cn('flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all', selectedPackage === pkg.id ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20')}>
@@ -1027,7 +1091,11 @@ export default function OnboardingPage() {
                       const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ packageId: pkgG.id, priceId: pkgG.priceId, email: '', style: selectedStyle, hasTattoos: hasTattoos === true, selectedPreviewUrl: pickedPreviewUrl }),
+                        body: JSON.stringify({
+                          packageId: pkgG.id, priceId: pkgG.priceId, email: '',
+                          style: selectedStyle, hasTattoos: hasTattoos === true,
+                          selectedPreviewUrl: previewUrls[pickedIdx] ?? null,
+                        }),
                       })
                       const data = await res.json()
                       if (!res.ok || data.error) {
@@ -1035,18 +1103,20 @@ export default function OnboardingPage() {
                         setLoading(false)
                         return
                       }
-                      if (data.orderId && photos.length > 0) {
-                        const compressed = await Promise.all(photos.map(p => compressImage(p)))
-                        const fd = new FormData()
-                        fd.append('orderId', data.orderId)
-                        for (const photo of compressed) fd.append('files', photo)
-                        await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+                      if (data.orderId) {
+                        const slotFiles = getSlotFiles()
+                        if (slotFiles.length > 0) {
+                          const compressed = await Promise.all(slotFiles.map(f => compressImage(f)))
+                          const fd = new FormData()
+                          fd.append('orderId', data.orderId)
+                          for (const photo of compressed) fd.append('files', photo)
+                          await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+                        }
                       }
                       if (data.url) {
                         const supabase = createClient()
                         const { data: { user } } = await supabase.auth.getUser()
                         if (user) {
-                          // Already logged in — patch email on order then go to Stripe
                           if (data.orderId && user.email) {
                             await fetch(`/api/orders/${data.orderId}/set-email`, {
                               method: 'POST',
@@ -1056,10 +1126,10 @@ export default function OnboardingPage() {
                           }
                           window.location.href = data.url
                         } else {
-                          // Not logged in — OAuth then redirect to Stripe
                           localStorage.setItem('sw_pending_checkout', data.url)
                           if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
-                          if (pickedPreviewUrl) localStorage.setItem('sw_pending_preview_url', pickedPreviewUrl)
+                          const pickedUrl = previewUrls[pickedIdx]
+                          if (pickedUrl) localStorage.setItem('sw_pending_preview_url', pickedUrl)
                           const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
                           await supabase.auth.signInWithOAuth({
                             provider: 'google',
@@ -1093,14 +1163,12 @@ export default function OnboardingPage() {
                   )}
                 </button>
 
-                {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-white/8" />
                   <span className="text-zinc-600 text-xs">or use email</span>
                   <div className="flex-1 h-px bg-white/8" />
                 </div>
 
-                {/* Email */}
                 <input
                   type="email"
                   value={email}
@@ -1109,7 +1177,6 @@ export default function OnboardingPage() {
                   className="w-full bg-white/[0.05] border border-white/10 rounded-2xl px-4 py-3.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 transition-all"
                 />
 
-                {/* Terms */}
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <div
                     onPointerDown={() => setAgreedToTerms(v => !v)}
@@ -1125,14 +1192,12 @@ export default function OnboardingPage() {
                   </span>
                 </label>
 
-                {/* Error */}
                 {checkoutError && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
                     {checkoutError}
                   </div>
                 )}
 
-                {/* Continue */}
                 <button
                   onPointerDown={handleEmailSubmit}
                   disabled={!email.includes('@') || !agreedToTerms || loading}
