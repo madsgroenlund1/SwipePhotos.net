@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 7
+const TOTAL_STEPS = 10
 
 const STYLE_OPTIONS = [
   { id: 'restaurant', label: 'Italian Restaurant', src: '/photos/presets/scene-restaurant.jpg', free: true },
@@ -50,6 +50,23 @@ const PACKAGES = {
     { id: 'popular_yearly', name: 'Popular', priceId: process.env.NEXT_PUBLIC_STRIPE_POPULAR_YEARLY_PRICE_ID, price: '$234', perMonth: '$19.50', photos: '40 AI photos / month', popular: true },
   ],
 }
+
+const AI_TRACES_BAD = [
+  'SynthID watermark detected',
+  'AI generation metadata',
+  'GAN fingerprint artifacts',
+  'Neural network grid patterns',
+  'Texture repetition anomaly',
+  'Frequency domain inconsistencies',
+  'Facial geometry irregularities',
+  'Skin micro-texture patterns',
+  'Background coherence loss',
+  'Shadow direction mismatch',
+  'Lens distortion artifacts',
+  'Color channel imbalances',
+  'Edge detection residuals',
+  'Compression artifact patterns',
+]
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -96,6 +113,8 @@ export default function OnboardingPage() {
   const [generatedPhotos, setGeneratedPhotos] = useState<Record<string, string>>({})
   const [genError, setGenError] = useState<string | null>(null)
   const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null)
+  const [tracesState, setTracesState] = useState<'bad' | 'cleaning' | 'clean'>('bad')
+  const [cleanedCount, setCleanedCount] = useState(0)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const targetProgressRef = useRef(0)
@@ -264,6 +283,27 @@ export default function OnboardingPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
+
+  useEffect(() => {
+    if (step === 6) {
+      setTracesState('bad')
+      setCleanedCount(0)
+    }
+  }, [step])
+
+  function handleCleanTraces() {
+    if (tracesState !== 'bad') return
+    setTracesState('cleaning')
+    let count = 0
+    const interval = setInterval(() => {
+      count++
+      setCleanedCount(count)
+      if (count >= AI_TRACES_BAD.length) {
+        clearInterval(interval)
+        setTracesState('clean')
+      }
+    }, 120)
+  }
 
   async function handleEmailSubmit() {
     if (!email.includes('@') || !agreedToTerms) return
@@ -733,11 +773,155 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 6: Pricing ──────────────────────────────────── */}
+          {/* ── STEP 6: AI Detected ──────────────────────────────── */}
           {step === 6 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-4">
+                <ProgressBar step={6} total={TOTAL_STEPS} />
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-red-400">DON&apos;T USE THIS PHOTO YET!</h2>
+                </div>
+                <p className="text-zinc-400 text-sm">AI detectors will flag this as generated. Apps like Hinge and Tinder ban accounts using AI photos. You need to clean it first.</p>
+              </div>
+              <div className="px-4 pb-3 space-y-2">
+                <div className="relative rounded-2xl overflow-hidden mx-auto mb-3" style={{ width: 120, height: 160 }}>
+                  <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                  <div className="absolute inset-0 bg-red-500/40 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold bg-red-500 px-2 py-1 rounded-full">AI DETECTED</span>
+                  </div>
+                </div>
+                {[
+                  { name: 'TruthScan', pct: '99%', label: 'AI Generated' },
+                  { name: 'sightengine', pct: '98%', label: 'Synthetic' },
+                  { name: 'IsThisAI', pct: '99.7%', label: 'Likely AI' },
+                ].map(({ name, pct, label }) => (
+                  <div key={name} className="flex items-center gap-3 p-3 bg-red-500/8 border border-red-500/30 rounded-2xl">
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-semibold">{name}</p>
+                      <div className="h-1.5 bg-red-500/20 rounded-full mt-1.5 overflow-hidden">
+                        <div className="h-full bg-red-500 rounded-full" style={{ width: pct }} />
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-red-400 font-bold text-sm">{pct}</p>
+                      <p className="text-red-400 text-[10px]">{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} className="w-full bg-red-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                  Remove AI traces →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 7: Remove AI Traces ──────────────────────────── */}
+          {step === 7 && (
+            <div className="bg-[#111] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-4">
+                <ProgressBar step={7} total={TOTAL_STEPS} />
+                <h2 className="text-2xl font-bold text-white mb-1">AI traces found</h2>
+                <p className="text-zinc-400 text-sm">These artifacts must be removed before your photo is safe to use.</p>
+              </div>
+              <div className="px-4 pb-3 space-y-1.5 max-h-72 overflow-y-auto">
+                {AI_TRACES_BAD.map((trace, i) => {
+                  const cleaned = i < cleanedCount
+                  return (
+                    <div key={i} className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${cleaned ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                      {cleaned ? (
+                        <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                      <span className={`text-sm transition-all ${cleaned ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>{trace}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="px-4 pb-4 pt-2">
+                {tracesState === 'clean' ? (
+                  <button onClick={next} className="w-full bg-green-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                    All traces removed ✓ Continue →
+                  </button>
+                ) : tracesState === 'cleaning' ? (
+                  <button disabled className="w-full bg-blue-600/50 text-white font-semibold py-4 rounded-2xl text-base cursor-not-allowed flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+                    Removing traces... ({cleanedCount}/{AI_TRACES_BAD.length})
+                  </button>
+                ) : (
+                  <button onClick={handleCleanTraces} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                    Remove all AI traces →
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 8: Undetectable ─────────────────────────────── */}
+          {step === 8 && (
+            <div className="bg-[#111] rounded-3xl overflow-hidden">
+              <div className="p-6 pb-4">
+                <ProgressBar step={8} total={TOTAL_STEPS} />
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-green-400">Undetectable ✓</h2>
+                </div>
+                <p className="text-zinc-400 text-sm">All AI traces have been removed. Your photo passes every detector and is safe to use.</p>
+              </div>
+              <div className="px-4 pb-3 space-y-2">
+                <div className="relative rounded-2xl overflow-hidden mx-auto mb-3" style={{ width: 120, height: 160 }}>
+                  <img src={selectedAiPhoto} alt="" className="w-full h-full object-cover object-top" />
+                  <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold bg-green-500 px-2 py-1 rounded-full">CLEAN ✓</span>
+                  </div>
+                </div>
+                {[
+                  { name: 'TruthScan', pct: '3%', label: 'Likely Real' },
+                  { name: 'sightengine', pct: '2%', label: 'Natural' },
+                  { name: 'IsThisAI', pct: '1.2%', label: 'Human Photo' },
+                ].map(({ name, pct, label }) => (
+                  <div key={name} className="flex items-center gap-3 p-3 bg-green-500/8 border border-green-500/30 rounded-2xl">
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-semibold">{name}</p>
+                      <div className="h-1.5 bg-green-500/20 rounded-full mt-1.5 overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: pct }} />
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-green-400 font-bold text-sm">{pct}</p>
+                      <p className="text-green-400 text-[10px]">{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">
+                  Get my photos →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 9: Pricing ──────────────────────────────────── */}
+          {step === 9 && (
+            <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-4 pb-0">
-                <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
               </div>
               {/* Hero photo with app icons */}
               <div className="relative flex justify-center pt-2 pb-4">
@@ -818,11 +1002,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 7: Email / Account ─────────────────────────── */}
-          {step === 7 && (
+          {/* ── STEP 10: Email / Account ─────────────────────────── */}
+          {step === 10 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-5">
-                <ProgressBar step={7} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
                 <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
               </div>
