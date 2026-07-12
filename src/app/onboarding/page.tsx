@@ -637,9 +637,6 @@ export default function OnboardingPage() {
                             <CheckIcon className="text-white w-3.5 h-3.5" />
                           </div>
                         )}
-                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 pt-6 pb-2 flex justify-center pointer-events-none">
-                          <span className="text-white/30 text-[9px] font-medium tracking-wide">SwipePhotos.net</span>
-                        </div>
                         <div className="absolute top-2 left-2">
                           <span className="text-white text-[10px] font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">Preview {i+1}</span>
                         </div>
@@ -656,9 +653,9 @@ export default function OnboardingPage() {
               <div className="px-4 pb-3">
                 <div className="relative overflow-hidden rounded-2xl" style={{ height: 64 }}>
                   <div className="flex gap-1.5 h-full">
-                    {STYLE_OPTIONS.concat(STYLE_OPTIONS).slice(0, 5).map((opt, i) => (
-                      <div key={i} className="flex-shrink-0 w-12 rounded-xl overflow-hidden opacity-50">
-                        <img src={opt.src} alt="" className="w-full h-full object-cover object-top" />
+                    {['1', '2', '3', '4'].map(n => (
+                      <div key={n} className="flex-shrink-0 w-12 rounded-xl overflow-hidden opacity-50">
+                        <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
                       </div>
                     ))}
                   </div>

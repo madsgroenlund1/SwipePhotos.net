@@ -13,14 +13,17 @@ const FROM = _configuredFrom && !_configuredFrom.includes('@gmail.com')
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BG        = '#080808'
-const CARD      = '#111111'
-const BORDER    = 'rgba(255,255,255,0.08)'
+// Deliberately LIGHT: Gmail mobile force-inverts dark emails (dark bg → white,
+// blue → lavender), destroying any dark design. A controlled light theme with
+// the brand's black text + blue accents renders identically in every client.
+const BG        = '#f4f5f7'
+const CARD      = '#ffffff'
+const BORDER    = 'rgba(10,10,10,0.08)'
 const BLUE      = '#2563eb'
-const BLUE_SOFT = '#3b82f6'
-const TEXT_PRI  = '#ffffff'
-const TEXT_SEC  = '#a1a1aa'
-const TEXT_MUT  = '#52525b'
+const BLUE_SOFT = '#2563eb'
+const TEXT_PRI  = '#0a0a0a'
+const TEXT_SEC  = '#52525b'
+const TEXT_MUT  = '#a1a1aa'
 const FONT      = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
 // ─── S logo icon — blue circle matching the brand icon ────────────────────────
@@ -93,7 +96,7 @@ const hr = `
   style="margin:24px 0;border-collapse:collapse;">
   <tr>
     <td style="
-      border-top:1px solid rgba(255,255,255,0.06);
+      border-top:1px solid rgba(10,10,10,0.06);
       font-size:0;line-height:0;
     ">&nbsp;</td>
   </tr>
@@ -130,7 +133,7 @@ function fallback(href: string, label: string): string {
 
 // ─── Base layout ──────────────────────────────────────────────────────────────
 //
-// bgcolor attributes are set on EVERY element so the dark background is
+// bgcolor attributes are set on EVERY element so the background is
 // preserved in Gmail (which strips CSS), Apple Mail on iPhone, and all
 // other mobile clients that override stylesheets.
 //
@@ -140,12 +143,12 @@ function base(content: string, footer = "You're receiving this because you have 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <meta name="color-scheme" content="dark" />
-  <meta name="supported-color-schemes" content="dark" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
   <title>SwipePhotos.net</title>
   <style>
-    /* Force dark in Apple Mail dark mode */
-    :root { color-scheme: dark; }
+    /* Lock light rendering (Gmail force-inverts dark emails) */
+    :root { color-scheme: light; }
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     img { border: 0; outline: none; }
     /* Prevent Gmail from resizing tiny text */
@@ -275,8 +278,8 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
       <tr>
         <td style="
           padding:14px 16px;
-          background-color:#0d0d0d;
-          border:1px solid rgba(255,255,255,0.07);
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.07);
           border-bottom:none;
           border-radius:14px 14px 0 0;
         ">
@@ -324,9 +327,9 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
       <tr>
         <td style="
           padding:14px 16px;
-          background-color:#0d0d0d;
-          border-left:1px solid rgba(255,255,255,0.07);
-          border-right:1px solid rgba(255,255,255,0.07);
+          background-color:#f7f8fa;
+          border-left:1px solid rgba(10,10,10,0.07);
+          border-right:1px solid rgba(10,10,10,0.07);
           border-bottom:none;
         ">
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">
@@ -336,7 +339,7 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
                   <tr>
                     <td width="28" height="28" style="
                       background-color:#1c1c1e;
-                      border:1px solid rgba(255,255,255,0.08);
+                      border:1px solid rgba(10,10,10,0.08);
                       border-radius:50%;
                       text-align:center;
                       vertical-align:middle;
@@ -362,8 +365,8 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
       <tr>
         <td style="
           padding:14px 16px;
-          background-color:#0d0d0d;
-          border:1px solid rgba(255,255,255,0.07);
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.07);
           border-top:none;
           border-radius:0 0 14px 14px;
         ">
@@ -374,7 +377,7 @@ export async function sendWelcomeEmail(email: string, orderId: string) {
                   <tr>
                     <td width="28" height="28" style="
                       background-color:#1c1c1e;
-                      border:1px solid rgba(255,255,255,0.08);
+                      border:1px solid rgba(10,10,10,0.08);
                       border-radius:50%;
                       text-align:center;
                       vertical-align:middle;
@@ -450,7 +453,7 @@ export async function sendReadyEmail(email: string, orderId: string, photoCount?
       style="border-collapse:collapse;margin-bottom:32px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
+          background-color:#f7f8fa;
           border:1px solid rgba(59,130,246,0.18);
           border-radius:16px;
           padding:28px 24px;
@@ -493,8 +496,8 @@ export async function sendReadyEmail(email: string, orderId: string, photoCount?
       style="border-collapse:collapse;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
-          border:1px solid rgba(255,255,255,0.06);
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.06);
           border-radius:12px;
           padding:16px 18px;
         ">
@@ -556,7 +559,7 @@ export async function sendFailedEmail(email: string, orderId: string) {
       style="border-collapse:collapse;margin-bottom:32px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
+          background-color:#f7f8fa;
           border:1px solid rgba(239,68,68,0.18);
           border-radius:16px;
           padding:24px;
@@ -639,8 +642,8 @@ export async function sendCancellationEmail(
       style="border-collapse:collapse;margin-bottom:32px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
-          border:1px solid rgba(255,255,255,0.06);
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.06);
           border-radius:16px;
           padding:20px 22px;
           text-align:center;
@@ -722,7 +725,7 @@ export async function sendOfferAcceptedEmail(
       style="border-collapse:collapse;margin-bottom:32px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
+          background-color:#f7f8fa;
           border:1px solid rgba(37,99,235,0.18);
           border-radius:16px;
           padding:20px 24px;
@@ -789,8 +792,8 @@ export async function sendAffiliateApplicationEmail(email: string, name: string)
       style="border-collapse:collapse;margin-bottom:32px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
-          border:1px solid rgba(255,255,255,0.06);
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.06);
           border-radius:16px;
           padding:24px 22px;
         ">
@@ -883,7 +886,7 @@ export async function sendAffiliateApprovedEmail(email: string, refLink: string)
       style="border-collapse:collapse;margin-bottom:28px;">
       <tr>
         <td style="
-          background-color:#0d0d0d;
+          background-color:#f7f8fa;
           border:1px solid rgba(37,99,235,0.25);
           border-radius:16px;
           padding:20px 22px;
@@ -917,8 +920,8 @@ export async function sendAffiliateApprovedEmail(email: string, refLink: string)
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
             <tr>
               <td style="
-                background-color:#0d0d0d;
-                border:1px solid rgba(255,255,255,0.06);
+                background-color:#f7f8fa;
+                border:1px solid rgba(10,10,10,0.06);
                 border-radius:12px;
                 padding:16px 12px;
                 text-align:center;
