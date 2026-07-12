@@ -29,17 +29,20 @@ function EyeIcon({ open }: { open: boolean }) {
   )
 }
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
   const [showPw, setShowPw]             = useState(false)
+  const [agreed, setAgreed]             = useState(false)
   const [loading, setLoading]           = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError]               = useState('')
+  const [sent, setSent]                 = useState(false)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://swipephotos.net')
 
   async function handleGoogle() {
+    if (!agreed) { setError('Please accept the Terms of Service and Privacy Policy to continue.'); return }
     setGoogleLoading(true); setError('')
     const { error: e } = await createClient().auth.signInWithOAuth({
       provider: 'google',
@@ -50,17 +53,53 @@ export default function SignInPage() {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault()
+    if (!agreed) { setError('Please accept the Terms of Service and Privacy Policy to continue.'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true); setError('')
-    const { error: err } = await createClient().auth.signInWithPassword({ email, password })
+    const { error: err } = await createClient().auth.signUp({
+      email, password,
+      options: { emailRedirectTo: `${origin}/auth/callback` },
+    })
     if (err) {
-      const msg = err.message === 'Invalid login credentials'
-        ? 'Wrong email or password. Try again or use Google sign‑in.'
-        : err.message
-      setError(msg)
+      setError(err.message)
       setLoading(false)
+    } else {
+      setSent(true)
     }
-    // On success the session is set — AuthProvider handles redirect
   }
+
+  if (sent) return (
+    <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-600/5 rounded-full blur-3xl" />
+      <div className="relative w-full max-w-[400px]">
+        <div className="flex justify-center mb-8">
+          <Link href="/" className="flex items-center">
+            <span className="text-white font-bold text-2xl tracking-tight">SwipePhotos</span>
+            <span className="text-blue-500 font-bold text-2xl tracking-tight">.net</span>
+          </Link>
+        </div>
+        <div className="bg-[#111] border border-white/8 rounded-2xl shadow-2xl shadow-black/60 p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
+            <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Check your inbox</h2>
+          <p className="text-zinc-500 text-sm mb-1">We sent a confirmation link to</p>
+          <p className="text-white font-medium text-sm mb-6">{email}</p>
+          <div className="space-y-2 text-left mb-6">
+            {['Open your email app', 'Find the email from SwipePhotos', 'Click the confirmation link'].map((s, i) => (
+              <div key={i} className="flex items-center gap-3 bg-white/[0.03] border border-white/6 rounded-xl px-4 py-3">
+                <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</div>
+                <span className="text-zinc-300 text-sm">{s}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-zinc-700 text-xs">Check spam if missing · Link expires in 1 hour</p>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -75,12 +114,11 @@ export default function SignInPage() {
           </Link>
         </div>
 
-        {/* Card */}
         <div className="bg-[#111] border border-white/8 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
           {/* Header */}
           <div className="px-8 pt-8 pb-6 border-b border-white/6">
-            <h1 className="text-xl font-semibold text-white mb-1">Sign in</h1>
-            <p className="text-zinc-500 text-sm">to continue to SwipePhotos.net</p>
+            <h1 className="text-xl font-semibold text-white mb-1">Create your account</h1>
+            <p className="text-zinc-500 text-sm">Save and receive your AI dating photos.</p>
           </div>
 
           <div className="px-8 py-6 space-y-3">
@@ -101,7 +139,7 @@ export default function SignInPage() {
               <div className="flex-1 h-px bg-white/8" />
             </div>
 
-            {/* Email + password */}
+            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label className="block text-zinc-400 text-xs font-medium mb-1.5">Email address</label>
@@ -113,17 +151,12 @@ export default function SignInPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-zinc-400 text-xs font-medium">Password</label>
-                  <Link href="/auth/forgot" className="text-blue-400 hover:text-blue-300 text-xs transition-colors">
-                    Forgot password?
-                  </Link>
-                </div>
+                <label className="block text-zinc-400 text-xs font-medium mb-1.5">Password</label>
                 <div className="relative">
                   <input
                     type={showPw ? 'text' : 'password'} value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••" required autoComplete="current-password"
+                    placeholder="Min. 8 characters" required autoComplete="new-password"
                     className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3.5 py-2.5 pr-10 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.06] transition-all"
                   />
                   <button type="button" onClick={() => setShowPw(v => !v)}
@@ -133,6 +166,26 @@ export default function SignInPage() {
                 </div>
               </div>
 
+              {/* Terms checkbox */}
+              <label className="flex items-start gap-3 cursor-pointer group pt-1">
+                <div className="relative flex-shrink-0 mt-0.5">
+                  <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="sr-only" />
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${agreed ? 'bg-blue-600 border-blue-600' : 'border-white/20 bg-white/[0.04] group-hover:border-white/30'}`}>
+                    {agreed && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-zinc-500 text-xs leading-relaxed">
+                  I agree to SwipePhotos&apos;{' '}
+                  <Link href="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 transition-colors">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 transition-colors">Privacy Policy</Link>
+                </span>
+              </label>
+
               {error && (
                 <p className="text-red-400 text-xs bg-red-500/8 border border-red-500/15 rounded-lg px-3 py-2.5 leading-relaxed">
                   {error}
@@ -141,16 +194,16 @@ export default function SignInPage() {
 
               <button type="submit" disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg text-sm transition-all disabled:opacity-60">
-                {loading ? 'Signing in…' : 'Continue →'}
+                {loading ? 'Creating account…' : 'Create account →'}
               </button>
             </form>
           </div>
 
           {/* Footer */}
           <div className="px-8 py-4 bg-white/[0.015] border-t border-white/6 flex items-center justify-center gap-1.5">
-            <span className="text-zinc-600 text-xs">No account?</span>
-            <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 text-xs font-medium transition-colors">
-              Create one
+            <span className="text-zinc-600 text-xs">Already have an account?</span>
+            <Link href="/auth/signin" className="text-blue-400 hover:text-blue-300 text-xs font-medium transition-colors">
+              Sign in
             </Link>
           </div>
         </div>
