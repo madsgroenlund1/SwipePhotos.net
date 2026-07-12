@@ -35,10 +35,12 @@ export function AuthProvider({
   children: React.ReactNode
   initialUser: User | null
 }) {
-  // Seed from server — no loading flash for users who are already authenticated.
+  // Seed from server. If server confirmed the user, show immediately (no flash).
+  // If server returned null, hide the auth button until the client confirms
+  // (avoids flashing "Sign in" for users whose access token just expired but
+  // whose refresh token is still valid — the client will recover the session).
   const [user, setUser]       = useState<User | null>(initialUser)
-  const [loading, setLoading] = useState(false)
-  // Track whether server confirmed a session so we can be smart about INITIAL_SESSION.
+  const [loading, setLoading] = useState(initialUser === null)
   const serverConfirmed = useRef(initialUser !== null)
 
   useEffect(() => {
