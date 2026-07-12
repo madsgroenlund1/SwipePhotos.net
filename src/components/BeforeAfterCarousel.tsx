@@ -131,12 +131,17 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
   // translateX(-50%) scrolls through the first half; the second is the seamless copy.
   const half  = Array.from({ length: reps }, () => baseCards).flat()
 
+  // Exact pixel translation = N cards × CARD_STEP.
+  // Using an absolute value avoids sub-pixel rounding errors from translateX(-50%).
+  const halfTrack = half.length * CARD_STEP
+
   return (
     <div
       className={reducedMotion ? 'flex gap-4 overflow-x-auto' : `flex gap-4 ${direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right'}`}
       style={reducedMotion ? { width: '100%' } : {
         width: 'max-content',
         animationDuration: `${dur}s`,
+        ['--marquee-x' as string]: `-${halfTrack}px`,
       }}
       aria-hidden={direction === 'right' ? 'true' : undefined}
     >
@@ -144,16 +149,12 @@ function MarqueeRow({ baseCards, direction }: { baseCards: CardData[]; direction
       {half.map((card, i) => (
         <BeforeAfterCard key={`${direction}-a-${i}`} {...card} />
       ))}
-      {/* Duplicate second half for seamless loop — hidden from assistive tech.
-          The zero-width trailing spacer makes the flex row's total width equal to
-          2 × (reps × baseCards.length × CARD_STEP), so translateX(-50%) lands
-          exactly at the start of the second half with no sub-pixel gap. */}
+      {/* Duplicate second half for seamless loop — hidden from assistive tech */}
       {!reducedMotion && (
         <span aria-hidden="true" style={{ display: 'contents' }}>
           {half.map((card, i) => (
             <BeforeAfterCard key={`${direction}-b-${i}`} {...card} />
           ))}
-          <div style={{ width: 0, flexShrink: 0 }} />
         </span>
       )}
     </div>
