@@ -2,6 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/Navbar'
+import { PricingSection } from '@/components/PricingSection'
 import { BeforeAfterCarousel } from '@/components/BeforeAfterCarousel'
 import { AnimatedAIDetection } from '@/components/AnimatedAIDetection'
 import { TestimonialsScroll } from '@/components/TestimonialsScroll'
@@ -478,38 +479,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── PRICING TRANSPARENCY ─────────────────────────────────────────── */}
-      <section id="pricing" className="py-16 px-6 max-w-3xl mx-auto text-center scroll-mt-24">
-        <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Transparent pricing</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Simple monthly plans
-        </h2>
-        <p className="text-zinc-400 text-base mb-10 max-w-xl mx-auto">
-          No hidden fees. Cancel anytime from your dashboard. Your photos stay in your account as long as your subscription is active.
-        </p>
-        <div className="grid md:grid-cols-3 gap-4 text-left">
-          {[
-            { name: 'Starter',  price: '€29', photos: '5 photos / month',  presets: '2 style presets', delivery: '~60 min delivery',      highlight: false },
-            { name: 'Premium',  price: '€49', photos: '15 photos / month', presets: 'All 40 templates',  delivery: '~30 min priority',       highlight: true  },
-            { name: 'Pro',      price: '€74', photos: '45 photos / month', presets: 'All 40 templates',  delivery: '~30 min priority',       highlight: false },
-          ].map(({ name, price, photos, presets, delivery, highlight }) => (
-            <div key={name} className={`rounded-2xl border p-5 flex flex-col gap-3 ${highlight ? 'border-blue-500/40 bg-blue-600/5' : 'border-white/8 bg-white/[0.02]'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-white font-semibold">{name}</span>
-                {highlight && <span className="text-blue-400 text-xs font-medium bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Most popular</span>}
-              </div>
-              <div className="text-2xl font-bold text-white">{price}<span className="text-zinc-500 text-sm font-normal">/mo</span></div>
-              <ul className="space-y-1.5 text-zinc-400 text-sm">
-                <li>• {photos}</li>
-                <li>• {presets}</li>
-                <li>• {delivery}</li>
-              </ul>
-            </div>
-          ))}
-        </div>
-        <p className="text-zinc-600 text-xs mt-6 italic">
-          Free preview before payment · No credit card to start · Cancel anytime
-        </p>
-      </section>
+      <PricingSection />
 
       {/* ── STICKY CTA ───────────────────────────────────────────────────── */}
       <div
