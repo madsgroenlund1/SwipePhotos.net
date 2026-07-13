@@ -48,6 +48,7 @@ export function Navbar({ initialLoggedIn: _ignored }: { initialLoggedIn?: boolea
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/#how-it-works" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">How it works</Link>
           <Link href="/#results" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Results</Link>
+          <Link href="/#pricing" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Prices</Link>
           <Link href="/blog" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Blog</Link>
         </nav>
 

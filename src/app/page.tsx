@@ -493,7 +493,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── PRICING TRANSPARENCY ─────────────────────────────────────────── */}
-      <section className="py-16 px-6 max-w-3xl mx-auto text-center">
+      <section id="pricing" className="py-16 px-6 max-w-3xl mx-auto text-center scroll-mt-24">
         <p className="text-zinc-500 text-sm font-semibold uppercase tracking-widest mb-4">Transparent pricing</p>
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Simple monthly plans

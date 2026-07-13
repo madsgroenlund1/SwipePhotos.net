@@ -680,7 +680,6 @@ export default function OnboardingPage() {
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1">Upload {requiredPhotoCount} photos</h2>
                 <p className="text-zinc-500 text-sm">One from each angle — for the best identity match.</p>
-                <p className="text-zinc-500 text-sm mt-1.5">Keep your mouth closed with a slight, natural smile — relaxed and positive gives the best results.</p>
               </div>
               <div className="px-4 pb-2">
                 {/* Requirements */}
@@ -693,6 +692,12 @@ export default function OnboardingPage() {
                         <span className="text-zinc-400 text-[11px] leading-tight">{r}</span>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-2.5 pt-2.5 border-t border-blue-500/20 flex items-start gap-1.5">
+                    <span className="text-sm leading-none mt-0.5">😊</span>
+                    <p className="text-white text-xs leading-snug">
+                      <span className="font-semibold">Expression matters:</span> mouth closed, slight natural smile — relaxed and positive gives the best results.
+                    </p>
                   </div>
                 </div>
                 {/* Good examples */}
