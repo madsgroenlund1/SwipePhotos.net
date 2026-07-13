@@ -45,7 +45,13 @@ export const TEMPLATE_PROMPTS: Record<string, StylePrompts> = {
   ),
   rooftop: build(
     'Preserve the exact rooftop poolside dinner setting, blue-hour lighting, city lights background, pool, table layout, flowers, wine glasses, menu, striped shirt, watch area, seated pose, hand-to-face pose, and framing.',
-    'Important corrections for this template: keep the full visible lower scene intact — do not crop away the foreground below the table. In the open collar / chest area, replace all mannequin-gray material with realistic human skin or believable clothing depth. Ensure realistic arm, wrist and hand anatomy, and keep all glasses, tableware, reflections, pool water, and distant lights intact.'
+    `Important corrections for this specific template — read carefully, these are the two most common failures and both must be fixed:
+
+1. LEG / LOWER BODY: image #1 shows the customer's leg and trouser fully extending down to the bottom edge of the frame, resting naturally in the seat. Do NOT crop, shorten, or truncate the leg. Do NOT let the leg end early or fade out above the bottom of the frame. Reproduce the leg, trouser fabric, and its full length exactly as far down as image #1 shows it, all the way to the frame edge, with correct proportions matching the rest of the body.
+
+2. OPEN SHIRT / CHEST GAP: the shirt is worn open at the collar, exposing a triangle of chest/skin between the lapels. This area must show fully opaque, realistic human chest skin matching the customer's real skin tone and texture — with natural shading, a hint of chest hair if appropriate, and correct anatomy. This gap must NEVER show gray, flat, mannequin-colored, plastic, or semi-transparent material of any kind. Treat this exposed skin exactly like the face: it must look like real, photographed human skin, fully solid and opaque, not a placeholder.
+
+Also keep all glasses, tableware, reflections, pool water, and distant lights intact, and ensure realistic arm, wrist and hand anatomy.`
   ),
   formal: build(
     'Preserve the exact indoor lounge environment, warm evening lighting, sofa position, camera angle, relaxed seated pose with one arm extended and the other hand holding the drink, dark suit, white shirt, belt, wristwatch area, and overall upscale composition.',
