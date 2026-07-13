@@ -131,8 +131,8 @@ export default async function HomePage() {
             {
               step: '4',
               title: 'Download your photos',
-              desc: 'Your full set of professional photos is delivered to your email within ~30–60 minutes.',
-              badge: '~30–60 min delivery',
+              desc: 'Your full set of professional photos is delivered to your email within ~ 30 – 60 minutes.',
+              badge: '~ 30 – 60 min delivery',
               badgeColor: 'text-green-400 bg-green-500/10 border-green-500/20',
             },
           ].map(({ step, title, desc, badge, badgeColor }) => (
