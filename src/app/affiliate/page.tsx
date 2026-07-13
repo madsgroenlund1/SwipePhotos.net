@@ -21,9 +21,9 @@ function EarningsCalc() {
         <div className="text-center mb-6">
           <p className={`text-xs font-semibold mb-2 ${labelColor}`}>{label}</p>
           <div className="text-6xl font-black text-white tracking-tight leading-none mb-2">
-            ${earning.toLocaleString('en-US')}
+            €{earning.toLocaleString('en-US')}
           </div>
-          <p className="text-zinc-500 text-sm">per month · <span className="text-zinc-300 font-medium">${yearly.toLocaleString('en-US')}/yr</span></p>
+          <p className="text-zinc-500 text-sm">per month · <span className="text-zinc-300 font-medium">€{yearly.toLocaleString('en-US')}/yr</span></p>
         </div>
 
         {/* Slider */}
@@ -134,8 +134,8 @@ export default function AffiliatePage() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { value: '30%', label: 'Commission' },
-            { value: '$39', label: 'Avg sale' },
-            { value: '$50', label: 'Min payout' },
+            { value: '€39', label: 'Avg sale' },
+            { value: '€50', label: 'Min payout' },
           ].map(({ value, label }) => (
             <div key={label} className="bg-[#111] border border-white/8 rounded-2xl p-4 text-center">
               <div className="text-xl font-bold text-white mb-0.5">{value}</div>

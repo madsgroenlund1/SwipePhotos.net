@@ -368,7 +368,10 @@ export default function OnboardingPage() {
     setSlots(prev => { const old = prev[angle]; if (old?.previewUrl) URL.revokeObjectURL(old.previewUrl); return { ...prev, [angle]: null } })
   }
 
-  const allSlotsAccepted = slots.front?.status === 'accepted' && slots.left?.status === 'accepted' && slots.right?.status === 'accepted' && slots.body?.status === 'accepted'
+  const baseSlotsAccepted = slots.front?.status === 'accepted' && slots.left?.status === 'accepted' && slots.right?.status === 'accepted' && slots.body?.status === 'accepted'
+  // With tattoos the tattoo photo becomes the 5th required upload
+  const allSlotsAccepted = baseSlotsAccepted && (hasTattoos !== true || !!tattooFile)
+  const requiredPhotoCount = hasTattoos === true ? 5 : 4
 
   // ─── Image compress ────────────────────────────────────────────────────────
 
@@ -395,6 +398,8 @@ export default function OnboardingPage() {
   }
 
   // ─── Step 4: streaming generation ─────────────────────────────────────────
+
+  const [genRetryNonce, setGenRetryNonce] = useState(0)
 
   useEffect(() => {
     if (step !== 4) return
@@ -453,7 +458,7 @@ export default function OnboardingPage() {
     run()
     return () => abortCtrl.abort()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }, [step, genRetryNonce])
 
   // ─── Step 7: streaming refinement (triggered by "Remove all AI traces") ───
 
@@ -673,7 +678,7 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload 4 photos</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload {requiredPhotoCount} photos</h2>
                 <p className="text-zinc-500 text-sm">One from each angle — for the best identity match.</p>
                 <p className="text-zinc-500 text-sm mt-1.5">Keep your mouth closed with a slight, natural smile — relaxed and positive gives the best results.</p>
               </div>
@@ -708,12 +713,25 @@ export default function OnboardingPage() {
                       </div>
                     ))}
                   </div>
+                  {/* Two extra examples, centered: full body + full body with tattoo */}
+                  <div className="mt-2 flex justify-center gap-2">
+                    {[
+                      { src: '/photos/upload-examples/body.jpg',        label: 'Full body' },
+                      { src: '/photos/upload-examples/body-tattoo.jpg', label: 'Full body + tattoos' },
+                    ].map(({ src, label }) => (
+                      <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60 w-[calc(33.33%-0.33rem)]" style={{ aspectRatio: '3/4' }}>
+                        <img src={src} alt={label} className="w-full h-full object-cover object-top" />
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {/* Full-body slot */}
                 <div className="mb-1 flex items-start gap-3">
                   <div className="flex-1 min-w-0">
-                    <UploadSlot angle="body" label="Full-body photo" guide="Show your whole body — head to shoes"
+                    <UploadSlot angle="body" label="Full-body photo" guide="Show your whole body — head to fingertips"
                       slot={slots.body} onFile={f => handleSlotFile('body', f)} onRemove={() => clearSlot('body')} />
+                    <p className="text-zinc-500 text-[11px] italic leading-relaxed mt-1 px-1">&ldquo;Tip: lean your phone against something, set a timer and use the selfie camera.&rdquo;</p>
                   </div>
                   <div className="flex-shrink-0 w-14">
                     <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
@@ -794,9 +812,9 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="px-4 pb-4">
-                {allSlotsAccepted && <p className="text-green-400 text-xs text-center mb-2">✓ All 4 photos accepted</p>}
+                {allSlotsAccepted && <p className="text-green-400 text-xs text-center mb-2">✓ All {requiredPhotoCount} photos accepted</p>}
                 <button onClick={next} disabled={!allSlotsAccepted} className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', allSlotsAccepted ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
-                  {allSlotsAccepted ? 'Generate my previews →' : 'Upload all 4 photos to continue'}
+                  {allSlotsAccepted ? 'Generate my previews →' : `Upload all ${requiredPhotoCount} photos to continue`}
                 </button>
               </div>
             </div>
@@ -852,6 +870,7 @@ export default function OnboardingPage() {
                 {genStatus === 'error' ? (
                   <div className="space-y-2">
                     <p className="text-red-400 text-sm text-center px-2">{genError}</p>
+                    <button onClick={() => setGenRetryNonce(n => n + 1)} className="w-full py-4 rounded-2xl font-semibold text-base bg-blue-600 hover:brightness-110 text-white transition-all">↻ Retry generation</button>
                     <button onClick={() => setStep(3)} className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-800 hover:bg-zinc-700 text-white transition-all">← Try different photos</button>
                   </div>
                 ) : genStatus === 'done' && previewUrls.length > 0 ? (

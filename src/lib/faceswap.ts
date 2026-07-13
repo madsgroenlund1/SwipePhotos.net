@@ -1,5 +1,6 @@
 import { fal } from '@fal-ai/client'
 import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate, Template, TEMPLATES } from './templates'
+import { TEMPLATE_PROMPTS, tattooNote } from './template-prompts'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -146,74 +147,116 @@ const STYLE_TO_TEMPLATE_ID: Record<string, string> = {
 
 export type TattooRef = { url: string; description?: string }
 
+export type CustomerPhotos = {
+  front: string
+  left?: string
+  right?: string
+  body?: string
+}
+
+export type PreviewJobLog = {
+  variant: 'neutral' | 'smile'
+  requestId: string | null
+  status: 'completed' | 'failed'
+  imageUrls: string[]
+  outputUrl: string | null
+  error: string | null
+  startedAt: string
+  finishedAt: string | null
+}
+
+export type PreviewRunResult = {
+  urls: (string | null)[]      // index 0 = neutral, index 1 = smile
+  jobs: PreviewJobLog[]
+  templateId: string
+}
+
 export async function runTwoPreviewFaceSwaps(
-  customerPhotoUrls: string[],
+  photos: CustomerPhotos,
   style: string,
   hasTattoos: boolean,
   onStatus: (status: string) => void,
-  tattooRef?: TattooRef,
-  bodyUrl?: string
-): Promise<string[]> {
+  tattooRef?: TattooRef
+): Promise<PreviewRunResult> {
   // Both previews use the customer's CHOSEN setting (its mannequin scene),
-  // differentiated by expression: one "bad boy" serious, one slight smile.
+  // differentiated by expression: one neutral/confident, one slight smile.
+  // Prompts come from the setting's md file (see src/lib/template-prompts.ts).
   const templateId = STYLE_TO_TEMPLATE_ID[style]
   const template =
     (templateId && TEMPLATES.find(t => t.id === templateId)) ||
     getPreviewTemplatesForCategory(style)[0]
-  if (!template) return []
-  const variants = PREVIEW_EXPRESSIONS.slice(0, 2)
+  if (!template) return { urls: [null, null], jobs: [], templateId: 'none' }
 
-  if (hasTattoos) {
-    console.log('[preview] hasTattoos=true — face/neck tattoos may transfer')
-  }
+  const prompts = TEMPLATE_PROMPTS[style] ?? TEMPLATE_PROMPTS.restaurant
+
+  // Image order per the template md files:
+  // 1 template, 2 full body, 3 left angle, 4 front, 5 right angle, 6 tattoo (optional)
+  const imageUrls: string[] = [template.url]
+  if (photos.body)  imageUrls.push(photos.body)
+  if (photos.left)  imageUrls.push(photos.left)
+  imageUrls.push(photos.front)
+  if (photos.right) imageUrls.push(photos.right)
+  if (hasTattoos && tattooRef) imageUrls.push(tattooRef.url)
+
+  const variants: Array<{ variant: 'neutral' | 'smile'; prompt: string }> = [
+    { variant: 'neutral', prompt: prompts.neutral },
+    { variant: 'smile',   prompt: prompts.smile },
+  ]
 
   onStatus('gen_1')
 
-  const results: (string | null)[] = new Array(variants.length).fill(null)
+  const urls: (string | null)[] = [null, null]
+  const jobLogs: PreviewJobLog[] = []
   let firstDone = false
 
-  const jobs = variants.map((expressionNote, idx) => {
-    const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
-    let prompt = buildPrompt(template, customerPhotoUrls.length, expressionNote)
-
-    // Full-body reference: helps match build and proportions
-    if (bodyUrl) {
-      imageUrls.push(bodyUrl)
-      const refNum = imageUrls.length
-      prompt += `\n\n#${refNum} shows the person's full body. Match his real build and proportions.`
+  const jobs = variants.map(({ variant, prompt }, idx) => {
+    let fullPrompt = prompt
+    if (hasTattoos && tattooRef) {
+      fullPrompt += `\n\n${tattooNote(imageUrls.length)}`
     }
 
-    // Tattoo reference: appended as the LAST image so numbering is stable
-    if (tattooRef) {
-      imageUrls.push(tattooRef.url)
-      const refNum = imageUrls.length
-      prompt += `\n\n#${refNum} shows the person's real tattoos${tattooRef.description ? ` (${tattooRef.description})` : ''}. Reproduce these tattoos accurately on the same body parts wherever they are visible in the scene. Do not invent tattoos that are not in #${refNum}.`
+    const log: PreviewJobLog = {
+      variant, requestId: null, status: 'failed', imageUrls,
+      outputUrl: null, error: null,
+      startedAt: new Date().toISOString(), finishedAt: null,
     }
+    jobLogs.push(log)
 
     return withTimeout(
-      fal.subscribe(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput, logs: false }),
-      120_000
+      fal.subscribe(MODEL, {
+        input: { image_urls: imageUrls, prompt: fullPrompt } as SeedreamInput,
+        logs: false,
+        onEnqueue: (requestId: string) => { log.requestId = requestId },
+      }),
+      180_000
     )
-      .then(raw => {
+      .then(async raw => {
+        const maybeId = (raw as { requestId?: string })?.requestId
+        if (maybeId) log.requestId = maybeId
         const url = extractOutputUrl(raw)
-        if (url) {
-          results[idx] = url
-          console.log(`[preview] ✓ Job ${idx} (${template.id})`)
-        }
+        if (!url) throw new Error('No output URL in fal result')
+        const score = await scoreOutput(url)
+        if (!score.passed) throw new Error(`Quality check failed: ${score.failReason}`)
+        urls[idx] = url
+        log.outputUrl = url
+        log.status = 'completed'
+        console.log(`[preview] ✓ ${variant} (${template.id}) req=${log.requestId}`)
       })
       .catch(err => {
-        console.error(`[preview] ✗ Job ${idx} (${template.id}):`, err instanceof Error ? err.message : err)
+        log.error = err instanceof Error ? err.message : String(err)
+        console.error(`[preview] ✗ ${variant} (${template.id}) req=${log.requestId}:`, log.error)
       })
       .finally(() => {
+        log.finishedAt = new Date().toISOString()
         if (!firstDone) {
           firstDone = true
-          if (variants.length > 1) onStatus('gen_2')
+          onStatus('gen_2')
         }
       })
   })
 
   await Promise.allSettled(jobs)
-  return results.filter((u): u is string => u !== null)
+  return { urls, jobs: jobLogs, templateId: template.id }
 }
 
 // ─── Preview (synchronous, called before payment) ────────────────────────────
