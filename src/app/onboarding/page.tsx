@@ -937,8 +937,8 @@ export default function OnboardingPage() {
                   {/* App icons with realistic (non-guaranteed) counters */}
                   {[
                     { pos: '-top-3 -left-6',     delay: '0s',   logo: 'tinder',    count: '99+' },
-                    { pos: 'top-1/3 -right-8',   delay: '0.4s', logo: 'bumble',    count: '99+' },
-                    { pos: '-bottom-3 -left-8',  delay: '0.8s', logo: 'hinge',     count: '99+' },
+                    { pos: '-top-3 -right-6',    delay: '0.4s', logo: 'hinge',     count: '99+' },
+                    { pos: '-bottom-3 -left-8',  delay: '0.8s', logo: 'bumble',    count: '99+' },
                     { pos: '-bottom-5 -right-6', delay: '1.2s', logo: 'instagram', count: '99+' },
                   ].map(({ pos, delay, logo, count }) => (
                     <div key={logo} className={`absolute ${pos}`} style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
