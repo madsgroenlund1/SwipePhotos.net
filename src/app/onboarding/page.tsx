@@ -8,7 +8,7 @@ import { PLANS } from '@/lib/pricing'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 11
+const TOTAL_STEPS = 10
 
 // ─── AI-trace items (UnrealPhotos-style detection flow) ──────────────────────
 const AI_TRACES = [
@@ -23,6 +23,9 @@ const AI_TRACES = [
   'Uniform sharpness profile',
   'Missing GPS coordinates',
   'Incorrect JPEG quantization',
+  'No chromatic aberration',
+  'Missing device fingerprint',
+  'Synthetic depth of field',
 ]
 
 const STYLE_OPTIONS = [
@@ -145,28 +148,136 @@ function UploadSlot({ angle, label, guide, slot, onFile, onRemove }: {
   )
 }
 
-// Mock AI-detector result card (visual only — the actual work is the real
-// AuraSR refinement pass that runs behind the "Remove all AI traces" button)
-function DetectorCard({ img, brand, detected }: { img: string; brand: 'TruthScan' | 'sightengine' | 'IsThisAI'; detected: boolean }) {
-  const verdict = {
-    TruthScan:   detected ? 'AI Probability: 99%' : 'AI Probability: 10%',
-    sightengine: detected ? 'Likely AI · 92%'     : 'Not likely AI · 3%',
-    IsThisAI:    detected ? 'AI-Generated · 99%'  : 'Likely Real · 90%',
-  }[brand]
+// ─── Mock AI-detector cards (visual only — the actual work is the real
+//     AuraSR refinement pass behind the "Remove all AI traces" button) ────────
+
+type DetectorBrand = 'TruthScan' | 'sightengine' | 'IsThisAI'
+
+function BrandChip({ brand }: { brand: DetectorBrand }) {
   return (
-    <div className={cn('rounded-2xl border-2 overflow-hidden bg-white', detected ? 'border-red-500/70' : 'border-green-500/70')}>
-      <div className="px-2 py-1.5 text-center">
-        <span className="text-gray-900 text-[10px] font-bold">{brand}</span>
+    <div className="inline-flex items-center gap-1 bg-white rounded-md px-2 py-1 shadow-sm">
+      {brand === 'TruthScan' && (
+        <><span className="text-blue-600 text-[10px]">✦</span><span className="text-[10px] font-extrabold text-blue-900">TruthScan</span></>
+      )}
+      {brand === 'sightengine' && (
+        <span className="text-[10px] font-bold text-gray-900">sight<span className="font-extrabold text-blue-600">engine</span></span>
+      )}
+      {brand === 'IsThisAI' && (
+        <><span className="text-[10px] font-extrabold text-gray-900">IsThis</span><span className="text-[9px] font-extrabold text-white bg-blue-500 rounded-full px-1">AI</span></>
+      )}
+    </div>
+  )
+}
+
+function MiniBar({ pct, color }: { pct: number; color: string }) {
+  return (
+    <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+      <div className={cn('h-full rounded-full', color)} style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
+
+function DetectorCard({ img, brand, detected }: { img: string; brand: DetectorBrand; detected: boolean }) {
+  const accent = detected ? 'text-red-500' : 'text-green-600'
+  const pillBg = detected ? 'bg-red-500' : 'bg-green-600'
+  return (
+    <div className="flex-shrink-0 w-[190px] snap-center">
+      <div className="flex justify-center mb-1.5"><BrandChip brand={brand} /></div>
+      <div className={cn('rounded-xl border-2 overflow-hidden bg-white text-left',
+        detected ? 'border-red-500/80 shadow-lg shadow-red-500/10' : 'border-green-500/80 shadow-lg shadow-green-500/10')}>
+
+        {brand === 'TruthScan' && (
+          <div className="p-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-gray-900 text-[9px] font-bold">Basic AI Image Analysis</span>
+              <span className="text-gray-400 text-[9px]">✕</span>
+            </div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <MiniBar pct={detected ? 92 : 12} color={detected ? 'bg-red-500' : 'bg-green-600'} />
+              <span className={cn('text-[7px] font-bold border rounded px-1', detected ? 'text-red-500 border-red-200' : 'text-green-600 border-green-200')}>{detected ? 'Synthetic' : 'Real'}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 text-center mb-2">
+              {[
+                [detected ? '99% AI' : '10% AI', 'AI Probability'],
+                ['High', 'Confidence'],
+                [detected ? 'AI Generated' : 'Real', 'Classification'],
+              ].map(([v, l]) => (
+                <div key={l}><div className="text-gray-900 text-[8px] font-extrabold leading-tight">{v}</div><div className="text-gray-400 text-[6px]">{l}</div></div>
+              ))}
+            </div>
+            <div className="border border-dashed border-blue-300 rounded-lg p-1.5 flex flex-col items-center mb-1.5">
+              <img src={img} alt="" className="w-12 h-14 object-cover object-top rounded" onContextMenu={e => e.preventDefault()} />
+              <span className="text-gray-400 text-[6px] mt-1">{detected ? 'Generated Image.jpg (2.74 MB)' : 'IMG_9452.JPG (2.83 MB)'}</span>
+              <span className={cn('text-white text-[7px] font-bold rounded-full px-2 py-0.5 mt-1', pillBg)}>AI Probability: {detected ? '99%' : '10%'} AI</span>
+            </div>
+            <div className="text-gray-900 text-[8px] font-bold">Detailed AI Analysis</div>
+            <div className="text-gray-400 text-[6px]">In-depth analysis of visual patterns and AI indicators</div>
+          </div>
+        )}
+
+        {brand === 'sightengine' && (
+          <div className="p-2.5">
+            <div className="text-gray-900 text-[10px] font-extrabold text-center leading-tight mb-2">Detect AI-generated images</div>
+            <div className="flex justify-center mb-1">
+              <img src={img} alt="" className="w-20 h-24 object-cover object-top rounded" onContextMenu={e => e.preventDefault()} />
+            </div>
+            <div className="text-gray-400 text-[6px] text-center mb-2">Tap to try an image or video</div>
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <span className="text-gray-900 text-[8px] font-extrabold leading-tight">{detected ? 'Likely AI-generated' : 'Not likely to be AI-generated'}</span>
+              <span className={cn('text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded', pillBg)}>{detected ? '92%' : '3%'}</span>
+            </div>
+            {[
+              ['GenAI', detected ? 92 : 1],
+              ['Face manipulation', detected ? 1 : 3],
+            ].map(([label, pct]) => (
+              <div key={String(label)} className="flex items-center gap-1.5 mb-1">
+                <span className="text-gray-500 text-[6px] w-14 flex-shrink-0">{label}</span>
+                <MiniBar pct={Number(pct)} color={detected ? 'bg-red-500' : 'bg-gray-400'} />
+                <span className="text-gray-500 text-[6px]">{pct}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {brand === 'IsThisAI' && (
+          <div className="p-2.5">
+            <div className="flex justify-center mb-2">
+              <img src={img} alt="" className="w-20 h-24 object-cover object-top rounded" onContextMenu={e => e.preventDefault()} />
+            </div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-gray-400 text-[6px] font-bold tracking-wide">ANALYSIS RESULT</span>
+              <span className="text-gray-500 text-[6px] border border-gray-200 rounded-full px-1.5">↗ Share</span>
+            </div>
+            <div className={cn('border rounded-lg p-1.5 mb-1.5', detected ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50')}>
+              <div className={cn('text-[9px] font-extrabold', accent)}>{detected ? '⚠ AI-Generated' : '✓ Likely Real'}</div>
+              <div className="text-gray-500 text-[6px] mb-1">{detected ? '99% Confidence' : '90% Confidence'}</div>
+              <MiniBar pct={detected ? 99 : 90} color={detected ? 'bg-red-500' : 'bg-green-600'} />
+            </div>
+            <div className="border border-gray-200 rounded-lg p-1.5">
+              <div className="text-gray-900 text-[7px] font-bold mb-1">Detailed Reasoning 🔒</div>
+              <div className="space-y-0.5 mb-1">
+                <div className="h-1 bg-gray-200 rounded blur-[1px]" />
+                <div className="h-1 bg-gray-200 rounded blur-[1px] w-4/5" />
+                <div className="h-1 bg-gray-200 rounded blur-[1px] w-3/5" />
+              </div>
+              <div className="text-blue-500 text-[6px] font-bold border border-blue-200 rounded-full px-1.5 py-0.5 inline-block">🔒 Upgrade to unlock</div>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="px-2">
-        <img src={img} alt="" className="w-full aspect-[3/4] object-cover object-top rounded-lg" onContextMenu={e => e.preventDefault()} />
-      </div>
-      <div className="px-2 py-1.5 text-center">
-        <span className={cn('text-[9px] font-bold rounded-full px-1.5 py-0.5 inline-block text-white', detected ? 'bg-red-500' : 'bg-green-600')}>{verdict}</span>
-      </div>
-      <div className={cn('py-1 text-center text-[10px] font-bold', detected ? 'text-red-500' : 'text-green-600')}>
+      <div className={cn('pt-1.5 text-center text-[11px] font-bold', accent)}>
         {detected ? '✕ AI Detected' : '✓ Human'}
       </div>
+    </div>
+  )
+}
+
+// Horizontal snap-scroll row of the three detector cards
+function DetectorRow({ img, detected }: { img: string; detected: boolean }) {
+  const brands: DetectorBrand[] = detected ? ['TruthScan', 'sightengine', 'IsThisAI'] : ['sightengine', 'TruthScan', 'IsThisAI']
+  return (
+    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 px-4 -mx-4 scrollbar-hide">
+      {brands.map(brand => <DetectorCard key={brand} img={img} brand={brand} detected={detected} />)}
     </div>
   )
 }
@@ -192,6 +303,9 @@ export default function OnboardingPage() {
   const [refinedUrl, setRefinedUrl]     = useState<string|null>(null)
   const [removingTraces, setRemovingTraces] = useState(false)
   const [tracesCleared, setTracesCleared]   = useState(0)
+  // Short "scanning" reveal phases before the detection verdicts
+  const [scanDone, setScanDone]     = useState(false)
+  const [verifyDone, setVerifyDone] = useState(false)
 
   // Other
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
@@ -358,6 +472,23 @@ export default function OnboardingPage() {
     return () => abortCtrl.abort()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, removingTraces])
+
+  // Scanning phase on the scare screen (step 6) and verify phase on the
+  // Undetectable screen (step 8) — brief suspense before the verdict.
+  useEffect(() => {
+    if (step === 6) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setScanDone(false)
+      const t = setTimeout(() => setScanDone(true), 2600)
+      return () => clearTimeout(t)
+    }
+    if (step === 8) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVerifyDone(false)
+      const t = setTimeout(() => setVerifyDone(true), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [step])
 
   // Trace-clearing animation: tick one item green every ~1.6s while the real
   // refinement runs; hold the last item until refinement completes.
@@ -680,20 +811,37 @@ export default function OnboardingPage() {
               <div className="p-6 pb-0">
                 <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
               </div>
-              <div className="px-5 pt-2 pb-3 text-center">
-                <h2 className="text-2xl font-extrabold text-red-500 mb-1.5 uppercase tracking-tight">Don&apos;t use this photo yet!</h2>
-                <p className="text-zinc-400 text-sm leading-relaxed">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
-              </div>
-              <div className="px-4 pb-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {(['TruthScan', 'sightengine', 'IsThisAI'] as const).map(brand => (
-                    <DetectorCard key={brand} img={previewUrls[pickedIdx] ?? stylePlaceholder} brand={brand} detected />
-                  ))}
+              {!scanDone ? (
+                <div className="px-5 pt-6 pb-10 flex flex-col items-center min-h-[420px] justify-center">
+                  <div className="relative mb-6">
+                    <img src={previewUrls[pickedIdx] ?? stylePlaceholder} alt="" className="w-32 h-40 object-cover object-top rounded-2xl border border-white/10" onContextMenu={e => e.preventDefault()} />
+                    <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                      <div className="absolute inset-x-0 h-10 bg-gradient-to-b from-transparent via-blue-400/40 to-transparent animate-[scanline_1.4s_ease-in-out_infinite]" />
+                    </div>
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-2">Scanning your photo…</h2>
+                  <p className="text-zinc-500 text-sm mb-6">Running it through the major AI detectors.</p>
+                  <div className="flex gap-2">
+                    {(['TruthScan', 'sightengine', 'IsThisAI'] as const).map((b, i) => (
+                      <div key={b} className="animate-pulse" style={{ animationDelay: `${i * 0.3}s` }}><BrandChip brand={b} /></div>
+                    ))}
+                  </div>
+                  <style>{`@keyframes scanline { 0%,100% { top: -12% } 50% { top: 100% } }`}</style>
                 </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-              </div>
+              ) : (
+                <>
+                  <div className="px-5 pt-2 pb-3 text-center">
+                    <h2 className="text-2xl font-extrabold text-red-500 mb-1.5 uppercase tracking-tight">Don&apos;t use this photo yet!</h2>
+                    <p className="text-zinc-400 text-sm leading-relaxed">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
+                  </div>
+                  <div className="px-4 pb-3">
+                    <DetectorRow img={previewUrls[pickedIdx] ?? stylePlaceholder} detected />
+                  </div>
+                  <div className="px-4 pb-4">
+                    <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -746,80 +894,74 @@ export default function OnboardingPage() {
               <div className="p-6 pb-0">
                 <ProgressBar step={8} total={TOTAL_STEPS} />
               </div>
-              <div className="px-5 pt-2 pb-3 text-center">
-                <h2 className="text-3xl font-extrabold text-green-400 mb-1.5">Undetectable</h2>
-                <p className="text-zinc-400 text-sm leading-relaxed">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
-              </div>
-              <div className="px-4 pb-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {(['sightengine', 'TruthScan', 'IsThisAI'] as const).map(brand => (
-                    <DetectorCard key={brand} img={displayPhoto} brand={brand} detected={false} />
-                  ))}
+              {!verifyDone ? (
+                <div className="px-5 pt-6 pb-10 flex flex-col items-center min-h-[420px] justify-center">
+                  <div className="w-10 h-10 rounded-full border-2 border-green-400/30 border-t-green-400 animate-spin mb-6" />
+                  <h2 className="text-xl font-bold text-white mb-2">Verifying your new photo…</h2>
+                  <p className="text-zinc-500 text-sm mb-6">Re-running all AI detection tools.</p>
+                  <div className="flex gap-2">
+                    {(['sightengine', 'TruthScan', 'IsThisAI'] as const).map((b, i) => (
+                      <div key={b} className="animate-pulse" style={{ animationDelay: `${i * 0.3}s` }}><BrandChip brand={b} /></div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-              </div>
+              ) : (
+                <>
+                  <div className="px-5 pt-2 pb-3 text-center">
+                    <h2 className="text-3xl font-extrabold text-green-400 mb-1.5">Undetectable</h2>
+                    <p className="text-zinc-400 text-sm leading-relaxed">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
+                  </div>
+                  <div className="px-4 pb-3">
+                    <DetectorRow img={displayPhoto} detected={false} />
+                  </div>
+                  <div className="px-4 pb-4">
+                    <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {/* ── STEP 9: Result reveal ────────────────────────────── */}
+          {/* ── STEP 9: Your matches are waiting + pricing ───────── */}
           {step === 9 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-4 pb-0">
-                <ProgressBar step={9} total={TOTAL_STEPS} />
-              </div>
-              <div className="px-4 pt-2 pb-2 text-center">
-                <h2 className="text-xl font-bold text-white mb-0.5">Your AI photo is ready</h2>
-                <p className="text-zinc-500 text-sm">Here&apos;s a preview of what your profile could look like.</p>
+                <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
               </div>
               {/* Central photo with floating app icons */}
-              <div className="relative flex justify-center py-6">
+              <div className="relative flex justify-center pt-4 pb-6">
                 <div className="relative">
-                  <div className="w-36 h-36 rounded-3xl overflow-hidden border-2 border-blue-500/30 shadow-xl">
+                  <div className="w-40 h-48 rounded-3xl overflow-hidden border border-white/15 shadow-xl">
                     <img src={displayPhoto} alt="Your AI photo" className="w-full h-full object-cover object-top" onContextMenu={e => e.preventDefault()} />
                   </div>
                   {/* App icons with realistic (non-guaranteed) counters */}
                   {[
-                    { pos: '-top-3 -left-5',     delay: '0s',   logo: 'tinder',    count: '8'  },
-                    { pos: '-top-3 -right-5',    delay: '0.4s', logo: 'hinge',     count: '13' },
-                    { pos: '-bottom-3 -left-7',  delay: '0.8s', logo: 'instagram', count: '24' },
-                    { pos: '-bottom-3 -right-7', delay: '1.2s', logo: 'bumble',    count: '6'  },
+                    { pos: '-top-3 -left-6',     delay: '0s',   logo: 'tinder',    count: '99+' },
+                    { pos: 'top-1/3 -right-8',   delay: '0.4s', logo: 'bumble',    count: '99+' },
+                    { pos: '-bottom-3 -left-8',  delay: '0.8s', logo: 'hinge',     count: '99+' },
+                    { pos: '-bottom-5 -right-6', delay: '1.2s', logo: 'instagram', count: '99+' },
                   ].map(({ pos, delay, logo, count }) => (
                     <div key={logo} className={`absolute ${pos}`} style={{ animation: `floatIcon 2.4s ease-in-out infinite`, animationDelay: delay }}>
-                      <div className="relative w-10 h-10">
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xl">
+                      <div className="relative w-11 h-11">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden shadow-xl">
                           <img src={`/logos/dating-app-logos/${logo}.png`} alt={logo} className="w-full h-full object-cover" />
                         </div>
-                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-md border border-[#111]">{count}</span>
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[20px] h-[18px] flex items-center justify-center px-1 shadow-md border border-[#111]">{count}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="px-4 pb-2">
-                <div className="flex flex-col items-center gap-1 mb-2">
-                  {['40 AI photo templates', 'Looks like the real you', 'No photographer needed'].map(f => (
+              <div className="px-4 pb-2 text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">Your matches are waiting</h2>
+                <div className="flex flex-col items-center gap-1 mb-3">
+                  {['40+ proven templates', 'Photos that look like the real you', "Don't get banned"].map(f => (
                     <div key={f} className="flex items-center gap-2">
                       <CheckIcon className="text-green-400 w-3.5 h-3.5" />
                       <span className="text-zinc-300 text-sm">{f}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="px-4 pb-4">
-                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">See my plan →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 10: Pricing ─────────────────────────────────── */}
-          {step === 10 && (
-            <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-4 pb-2">
-                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-xl font-bold text-white text-center mb-1">Choose your plan</h2>
-                <p className="text-zinc-500 text-sm text-center">Cancel any time. Your photos stay yours.</p>
               </div>
               <div className="px-4 pb-2">
                 {/* Monthly / Yearly toggle */}
@@ -862,16 +1004,16 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="px-4 pb-4">
-                <button onClick={next} className="w-full bg-gradient-to-r from-[#fd267a] to-[#ff6036] hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all text-base shadow-lg shadow-pink-500/20">Get started →</button>
+                <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all text-base shadow-lg shadow-blue-500/20">Get started →</button>
               </div>
             </div>
           )}
 
-          {/* ── STEP 11: Email / Checkout ────────────────────────── */}
-          {step === 11 && (
+          {/* ── STEP 10: Email / Checkout ────────────────────────── */}
+          {step === 10 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-5">
-                <ProgressBar step={11} total={TOTAL_STEPS} onBack={back} />
+                <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
                 <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
               </div>
