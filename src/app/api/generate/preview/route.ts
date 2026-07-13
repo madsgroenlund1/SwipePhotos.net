@@ -23,10 +23,11 @@ export async function POST(req: NextRequest) {
           return
         }
 
-        // Accept front/left/right (new) or photo/photo2 (legacy)
+        // Accept front/left/right/body (new) or photo/photo2 (legacy)
         const frontFile  = formData.get('front')  as File | null
         const leftFile   = formData.get('left')   as File | null
         const rightFile  = formData.get('right')  as File | null
+        const bodyFile   = formData.get('body')   as File | null
         const legacyFile  = formData.get('photo')  as File | null
         const legacyFile2 = formData.get('photo2') as File | null
         const style       = (formData.get('style') as string) || 'restaurant'
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
 
         send({ status: 'uploading' })
         const uploadedUrls = await Promise.all(files.map(f => fal.storage.upload(f)))
+        const bodyUrl = bodyFile?.size ? await fal.storage.upload(bodyFile).catch(() => null) : null
         const tattooUrl = hasTattoos && tattooFile?.size ? await fal.storage.upload(tattooFile).catch(() => null) : null
         console.log('[preview] Uploaded', uploadedUrls.length, 'photo(s), style:', style, 'hasTattoos:', hasTattoos, 'tattooRef:', !!tattooUrl)
 
@@ -60,7 +62,8 @@ export async function POST(req: NextRequest) {
           style,
           hasTattoos,
           (status) => send({ status }),
-          tattooUrl ? { url: tattooUrl, description: tattooDesc } : undefined
+          tattooUrl ? { url: tattooUrl, description: tattooDesc } : undefined,
+          bodyUrl ?? undefined
         )
 
         send({ status: 'checking' })

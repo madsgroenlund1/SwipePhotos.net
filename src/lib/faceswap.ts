@@ -151,7 +151,8 @@ export async function runTwoPreviewFaceSwaps(
   style: string,
   hasTattoos: boolean,
   onStatus: (status: string) => void,
-  tattooRef?: TattooRef
+  tattooRef?: TattooRef,
+  bodyUrl?: string
 ): Promise<string[]> {
   // Both previews use the customer's CHOSEN setting (its mannequin scene),
   // differentiated by expression: one "bad boy" serious, one slight smile.
@@ -174,6 +175,13 @@ export async function runTwoPreviewFaceSwaps(
   const jobs = variants.map((expressionNote, idx) => {
     const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
     let prompt = buildPrompt(template, customerPhotoUrls.length, expressionNote)
+
+    // Full-body reference: helps match build and proportions
+    if (bodyUrl) {
+      imageUrls.push(bodyUrl)
+      const refNum = imageUrls.length
+      prompt += `\n\n#${refNum} shows the person's full body. Match his real build and proportions.`
+    }
 
     // Tattoo reference: appended as the LAST image so numbering is stable
     if (tattooRef) {

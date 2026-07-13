@@ -77,7 +77,7 @@ const GEN_ORDER: GenStatus[] = ['idle','uploading','preparing','gen_1','gen_2','
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type SlotState = { file: File; previewUrl: string; status: 'accepted'|'rejected'; error?: string }
-type AngleSlots = { front: SlotState|null; left: SlotState|null; right: SlotState|null }
+type AngleSlots = { front: SlotState|null; left: SlotState|null; right: SlotState|null; body: SlotState|null }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -289,7 +289,7 @@ export default function OnboardingPage() {
   const { user: clerkUser } = useUser()
 
   // Upload slots
-  const [slots, setSlots] = useState<AngleSlots>({ front: null, left: null, right: null })
+  const [slots, setSlots] = useState<AngleSlots>({ front: null, left: null, right: null, body: null })
 
   // Generation
   const [genStatus, setGenStatus]     = useState<GenStatus>('idle')
@@ -347,7 +347,7 @@ export default function OnboardingPage() {
     setSlots(prev => { const old = prev[angle]; if (old?.previewUrl) URL.revokeObjectURL(old.previewUrl); return { ...prev, [angle]: null } })
   }
 
-  const allSlotsAccepted = slots.front?.status === 'accepted' && slots.left?.status === 'accepted' && slots.right?.status === 'accepted'
+  const allSlotsAccepted = slots.front?.status === 'accepted' && slots.left?.status === 'accepted' && slots.right?.status === 'accepted' && slots.body?.status === 'accepted'
 
   // ─── Image compress ────────────────────────────────────────────────────────
 
@@ -370,7 +370,7 @@ export default function OnboardingPage() {
   }
 
   function getSlotFiles(): File[] {
-    return [slots.front, slots.left, slots.right].filter((s): s is SlotState => s !== null && s.status === 'accepted').map(s => s.file)
+    return [slots.front, slots.left, slots.right, slots.body].filter((s): s is SlotState => s !== null && s.status === 'accepted').map(s => s.file)
   }
 
   // ─── Step 4: streaming generation ─────────────────────────────────────────
@@ -385,15 +385,17 @@ export default function OnboardingPage() {
       const frontFile = slots.front?.file
       if (!frontFile) { setGenStatus('error'); setGenError('Front photo missing'); return }
       try {
-        const [front, left, right] = await Promise.all([
+        const [front, left, right, body] = await Promise.all([
           compressImage(frontFile),
           slots.left?.file  ? compressImage(slots.left.file)  : Promise.resolve(null),
           slots.right?.file ? compressImage(slots.right.file) : Promise.resolve(null),
+          slots.body?.file  ? compressImage(slots.body.file)  : Promise.resolve(null),
         ])
         const fd = new FormData()
         fd.append('front', front)
         if (left)  fd.append('left', left)
         if (right) fd.append('right', right)
+        if (body)  fd.append('body', body)
         fd.append('style', selectedStyle)
         fd.append('hasTattoos', String(hasTattoos === true))
         if (hasTattoos === true && tattooFile) {
@@ -622,7 +624,7 @@ export default function OnboardingPage() {
             <div className="bg-[#111] rounded-3xl overflow-hidden">
               <div className="p-6 pb-4">
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1">Upload 3 photos</h2>
+                <h2 className="text-2xl font-bold text-white mb-1">Upload 4 photos</h2>
                 <p className="text-zinc-500 text-sm">One from each angle — for the best identity match.</p>
                 <p className="text-zinc-500 text-sm mt-1.5">Keep your mouth closed with a slight, natural smile — relaxed and positive gives the best results.</p>
               </div>
@@ -658,6 +660,23 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                 </div>
+                {/* Full-body slot */}
+                <div className="mb-1 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <UploadSlot angle="body" label="Full-body photo" guide="Show your whole body — head to shoes"
+                      slot={slots.body} onFile={f => handleSlotFile('body', f)} onRemove={() => clearSlot('body')} />
+                  </div>
+                  <div className="flex-shrink-0 w-14">
+                    <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
+                      <img src="/photos/upload-examples/body.jpg" alt="Full-body example" className="w-full h-full object-cover object-top" />
+                    </div>
+                    <p className="text-green-400 text-[8px] text-center mt-0.5 font-medium">✓ Example</p>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-white/10 mb-4" />
+
                 {/* Upload slots */}
                 <div className="mb-4">
                   {([
@@ -725,9 +744,9 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="px-4 pb-4">
-                {allSlotsAccepted && <p className="text-green-400 text-xs text-center mb-2">✓ All 3 photos accepted</p>}
+                {allSlotsAccepted && <p className="text-green-400 text-xs text-center mb-2">✓ All 4 photos accepted</p>}
                 <button onClick={next} disabled={!allSlotsAccepted} className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all', allSlotsAccepted ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
-                  {allSlotsAccepted ? 'Generate my previews →' : 'Upload all 3 photos to continue'}
+                  {allSlotsAccepted ? 'Generate my previews →' : 'Upload all 4 photos to continue'}
                 </button>
               </div>
             </div>
@@ -829,17 +848,13 @@ export default function OnboardingPage() {
                 </div>
               )}
               <div className="px-4 pb-3">
-                <div className="relative overflow-hidden rounded-2xl" style={{ height: 64 }}>
-                  <div className="flex gap-1.5 h-full">
-                    {['1', '2', '3', '4'].map(n => (
-                      <div key={n} className="flex-shrink-0 w-12 rounded-xl overflow-hidden opacity-50">
-                        <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111] flex items-center justify-end pr-3">
-                    <span className="text-white text-xs font-semibold bg-black/60 rounded-full px-2.5 py-1">+40 styles</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  {['1', '2', '3', '4'].map(n => (
+                    <div key={n} className="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
+                      <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
+                    </div>
+                  ))}
+                  <span className="ml-auto text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40 styles</span>
                 </div>
               </div>
               <div className="px-4 pb-4">

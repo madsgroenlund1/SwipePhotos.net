@@ -39,7 +39,7 @@ export default async function HomePage() {
         </h1>
 
         <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-          The best AI photo generator for men on dating apps. Upload 3 photos of yourself —
+          The best AI photo generator for men on dating apps. Upload 4 photos of yourself —
           get photos that fully look like you. Proven to work. Undetectable.
         </p>
 
@@ -109,9 +109,9 @@ export default async function HomePage() {
           {[
             {
               step: '1',
-              title: 'Upload 3 photos',
-              desc: 'One from each angle — left, front, right. No photographer needed.',
-              badge: 'Free · No account required',
+              title: 'Upload 4 photos',
+              desc: 'Left, front and right angle + one full-body shot. No photographer needed.',
+              badge: 'Free · No sign-up',
               badgeColor: 'text-green-400 bg-green-500/10 border-green-500/20',
             },
             {
@@ -142,7 +142,7 @@ export default async function HomePage() {
               </div>
               <h3 className="text-white font-semibold text-base">{title}</h3>
               <p className="text-zinc-500 text-sm leading-relaxed flex-1">{desc}</p>
-              <span className={`text-xs font-medium border px-2.5 py-1 rounded-full self-start ${badgeColor}`}>
+              <span className={`text-xs font-medium border px-2.5 py-1 rounded-full self-start whitespace-nowrap ${badgeColor}`}>
                 {badge}
               </span>
             </div>
