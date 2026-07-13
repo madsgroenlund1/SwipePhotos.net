@@ -220,11 +220,11 @@ export default async function HomePage() {
             </div>
             <div className="p-4 grid grid-cols-3 gap-2">
               {[
-                { src: '/photos/guide/1-selfie.webp', label: 'Extreme close-up' },
                 { src: '/photos/guide/1-mirror-selfie.webp', label: 'Mirror angle' },
                 { src: '/photos/guide/2-group-photo.webp', label: 'Group photo' },
                 { src: '/photos/guide/2-jacket.webp', label: 'Covered up' },
                 { src: '/photos/guide/3-sunglasses.webp', label: 'Sunglasses' },
+                { src: '/photos/guide/2-bright.webp', label: 'Too bright' },
                 { src: '/photos/guide/3-dark.webp', label: 'Too dark' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
