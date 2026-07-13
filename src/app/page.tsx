@@ -57,7 +57,7 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col items-center">
             <div className="flex gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <svg key={i} className="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
