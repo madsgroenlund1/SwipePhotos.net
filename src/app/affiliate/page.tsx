@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Footer } from '@/components/Footer'
 
 function EarningsCalc() {
   const [sales, setSales] = useState(100)
@@ -282,6 +283,22 @@ export default function AffiliatePage() {
           </code>
         </div>
       </main>
+
+      <Footer />
+
+      {/* ── STICKY CTA ───────────────────────────────────────────────────── */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center gap-1.5 pb-5 pt-4 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(10,10,10,0.95) 60%, transparent)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+      >
+        <Link
+          href="/onboarding"
+          className="pointer-events-auto flex items-center gap-3 bg-blue-600 hover:brightness-110 text-white font-bold text-base px-10 py-4 rounded-full transition-all shadow-[0_8px_40px_rgba(59,130,246,0.5)]"
+        >
+          Generate Your Photos →
+        </Link>
+        <p className="text-zinc-300 text-xs">Preview free · No credit card to start</p>
+      </div>
     </div>
   )
 }
