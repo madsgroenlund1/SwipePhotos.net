@@ -720,6 +720,10 @@ export function DashboardClient({
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [offerApplied, setOfferApplied]   = useState(false)
   const [loggingOut, setLoggingOut]       = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting]           = useState(false)
+  const [deleteError, setDeleteError]     = useState<string|null>(null)
   const [affiliateData, setAffiliateData] = useState<AffiliateData>(initialAffiliateData)
 
   const activeOrder     = orders.find(o => ['pending', 'processing', 'training', 'generating'].includes(o.status))
@@ -749,6 +753,26 @@ export function DashboardClient({
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setDeleteError(data.error || 'Deletion failed. Please contact support@swipephotos.net')
+        setDeleting(false)
+        return
+      }
+      // Account is gone — clear the local session and leave
+      await createClient().auth.signOut().catch(() => {})
+      window.location.href = '/'
+    } catch {
+      setDeleteError('Something went wrong. Please try again or contact support@swipephotos.net')
+      setDeleting(false)
+    }
   }
 
   async function handleReactivate() {
@@ -938,11 +962,77 @@ export function DashboardClient({
             </button>
           </div>
 
+          {/* Danger zone */}
+          <div className="bg-red-950/20 border border-red-500/20 rounded-2xl p-5">
+            <p className="text-red-400 text-xs font-semibold uppercase tracking-wide mb-2">Danger zone</p>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <p className="text-white font-semibold text-sm mb-0.5">Delete account</p>
+                <p className="text-zinc-500 text-xs">Permanently delete your account and all your photos.</p>
+              </div>
+              <button
+                onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(null) }}
+                className="text-red-400 hover:text-red-300 text-xs font-medium border border-red-500/30 hover:border-red-400/50 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-all"
+              >
+                Delete account
+              </button>
+            </div>
+          </div>
+
           <div className="flex gap-4 px-1">
             <a href="/privacy" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Privacy Policy</a>
             <a href="/terms"   className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Terms of Service</a>
             <a href="mailto:support@swipephotos.net" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Support</a>
           </div>
+
+          {/* Delete confirmation modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+              onClick={() => !deleting && setShowDeleteModal(false)}>
+              <div className="w-full max-w-md bg-[#141414] border border-red-500/25 rounded-3xl p-6"
+                onClick={e => e.stopPropagation()}>
+                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <h3 className="text-white text-lg font-bold mb-1.5">Delete your account forever?</h3>
+                <p className="text-zinc-400 text-sm mb-4">This action is <span className="text-red-400 font-semibold">permanent and cannot be undone</span>. When you delete your account:</p>
+                <ul className="space-y-2 mb-5">
+                  {[
+                    'All your generated AI photos are permanently deleted — they cannot be recovered',
+                    'Your order history and uploaded photos are erased',
+                    'Any active subscription is cancelled immediately',
+                    'Your affiliate account and unpaid commissions are removed',
+                  ].map(item => (
+                    <li key={item} className="flex items-start gap-2.5">
+                      <svg className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <span className="text-zinc-400 text-xs leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-zinc-500 text-xs mb-2">Type <span className="text-white font-mono font-semibold">DELETE</span> to confirm:</p>
+                <input
+                  type="text" value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE" autoFocus
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-red-500/50 mb-3 font-mono"
+                />
+                {deleteError && <p className="text-red-400 text-xs mb-3">{deleteError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={() => setShowDeleteModal(false)} disabled={deleting}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-zinc-300 transition-all disabled:opacity-50">
+                    Keep my account
+                  </button>
+                  <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE' || deleting}
+                    className={cn('flex-1 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2',
+                      deleteConfirmText === 'DELETE' && !deleting ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
+                    {deleting ? <><div className="w-4 h-4 rounded-full border-2 border-red-300/30 border-t-red-200 animate-spin" /> Deleting…</> : 'Delete forever'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
