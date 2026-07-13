@@ -655,16 +655,14 @@ export default function OnboardingPage() {
                   </div>
                 ))}
               </div>
-              <div className="relative px-4 mt-1 mb-2 overflow-hidden" style={{ height: 80 }}>
-                <div className="grid grid-cols-4 gap-1.5 opacity-50">
+              <div className="px-4 mt-1 mb-2">
+                <div className="flex items-center gap-2">
                   {['1', '2', '3', '4'].map(n => (
-                    <div key={n} className="aspect-[3/4] rounded-xl overflow-hidden">
+                    <div key={n} className="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
                       <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   ))}
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/80 to-transparent flex items-end justify-center pb-2">
-                  <p className="text-zinc-500 text-xs font-medium">Browse 40 templates after purchase</p>
+                  <span className="ml-auto text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40 styles</span>
                 </div>
               </div>
               <div className="px-4 pb-4 pt-1">
