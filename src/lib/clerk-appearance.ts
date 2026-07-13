@@ -23,6 +23,10 @@ export const clerkAppearance = {
     card: 'border border-white/10 shadow-2xl shadow-black/60',
     formButtonPrimary: 'font-semibold',
     footerActionLink: 'text-blue-400 hover:text-blue-300',
+    // White Google button so it stands out on the dark card
+    socialButtonsBlockButton:
+      '!bg-white hover:!bg-zinc-100 !border-transparent !shadow-sm',
+    socialButtonsBlockButtonText: '!text-gray-900 !font-semibold',
   },
 } as const
 
