@@ -5,7 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { getDbUser } from '@/lib/auth'
 import JSZip from 'jszip'
 
 export const runtime     = 'nodejs'
@@ -15,8 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id: orderId } = await params
 
   // Auth check: must be signed in
-  const supabase     = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getDbUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

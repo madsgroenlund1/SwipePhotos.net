@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — SwipePhotos.net',
@@ -10,11 +9,9 @@ export const metadata: Metadata = {
 }
 
 export default async function PrivacyPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar initialLoggedIn={!!user} />
+      <Navbar />
       <main className="max-w-2xl mx-auto px-6 pt-28 pb-20">
         <h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
         <p className="text-zinc-500 text-sm mb-10">Last updated: July 11, 2026</p>

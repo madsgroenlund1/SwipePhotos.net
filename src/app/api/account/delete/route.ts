@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { getDbUser } from '@/lib/auth'
+import { clerkClient } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 
 // Permanently delete the signed-in user's account and ALL associated data:
 // generated photos (storage + rows), uploads, orders, affiliate records,
 // active Stripe subscriptions, the users row, and the auth user itself.
 export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getDbUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClientDirect()
@@ -66,10 +67,11 @@ export async function POST() {
       await admin.from('affiliates').delete().eq('id', affRow.id)
     }
 
-    // 5. Users row + the auth user itself
+    // 5. Users row + the auth users (Clerk is primary; legacy Supabase best-effort)
     await admin.from('users').delete().eq('id', user.id)
-    const { error: authErr } = await admin.auth.admin.deleteUser(user.id)
-    if (authErr) throw authErr
+    const clerk = await clerkClient()
+    await clerk.users.deleteUser(user.clerkId)
+    await admin.auth.admin.deleteUser(user.id).catch(() => {})
 
     console.log(`[account/delete] Deleted account ${user.id} (${user.email}) — ${orderIds.length} orders`)
     return NextResponse.json({ ok: true })

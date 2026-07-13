@@ -1,16 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { DashboardClient } from './DashboardClient'
 import { stripe } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { ensureUsernameRefCode } from '@/lib/referral'
+import { getDbUser } from '@/lib/auth'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getDbUser()
 
   if (!user) redirect('/auth/signin')
+
+  const supabase = createAdminClientDirect()
 
   const [{ data: ordersByUserId }, { data: userRow }] = await Promise.all([
     supabase

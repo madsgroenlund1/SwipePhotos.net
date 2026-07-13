@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@clerk/nextjs'
 import { PLANS } from '@/lib/pricing'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -175,6 +175,7 @@ function DetectorCard({ img, brand, detected }: { img: string; brand: 'TruthScan
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
+  const { user: clerkUser } = useUser()
 
   // Upload slots
   const [slots, setSlots] = useState<AngleSlots>({ front: null, left: null, right: null })
@@ -896,19 +897,18 @@ export default function OnboardingPage() {
                       }
                     }
                     if (data.url) {
-                      const supabase = createClient()
-                      const { data: { user } } = await supabase.auth.getUser()
-                      if (user) {
-                        if (data.orderId && user.email) {
-                          await fetch(`/api/orders/${data.orderId}/set-email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email }) }).catch(() => {})
+                      const email = clerkUser?.primaryEmailAddress?.emailAddress
+                      if (clerkUser && email) {
+                        if (data.orderId) {
+                          await fetch(`/api/orders/${data.orderId}/set-email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }).catch(() => {})
                         }
                         window.location.href = data.url
                       } else {
+                        // Not signed in — stash the checkout and send them through Clerk sign-in
                         localStorage.setItem('sw_pending_checkout', data.url)
                         if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
                         if (displayPhoto) localStorage.setItem('sw_pending_preview_url', displayPhoto)
-                        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
-                        await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${siteUrl}/auth/callback?next=/go-checkout` } })
+                        window.location.href = '/auth/signin?redirect_url=' + encodeURIComponent('/go-checkout')
                       }
                     } else { setCheckoutError('No payment URL received.'); setLoading(false) }
                   } catch (err) { console.error('[checkout/google]', err); setCheckoutError('Could not connect to payment. Please use the email option instead.'); setLoading(false) }

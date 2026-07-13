@@ -2,12 +2,14 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@clerk/nextjs'
 
 export default function GoCheckout() {
   const router = useRouter()
+  const { user, isLoaded } = useUser()
 
   useEffect(() => {
+    if (!isLoaded) return
     async function run() {
       const url = localStorage.getItem('sw_pending_checkout')
       const orderId = localStorage.getItem('sw_pending_order_id')
@@ -18,24 +20,20 @@ export default function GoCheckout() {
       localStorage.removeItem('sw_pending_order_id')
 
       // Patch the order with the Google user's email so the ready-email can be sent
-      if (orderId) {
-        try {
-          const supabase = createClient()
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user?.email) {
-            await fetch(`/api/orders/${orderId}/set-email`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: user.email }),
-            }).catch(() => {})
-          }
-        } catch {}
+      const email = user?.primaryEmailAddress?.emailAddress
+      if (orderId && email) {
+        await fetch(`/api/orders/${orderId}/set-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }).catch(() => {})
       }
 
       window.location.href = url
     }
     run()
-  }, [router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, isLoaded])
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">

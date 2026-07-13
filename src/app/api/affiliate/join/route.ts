@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { getDbUser } from '@/lib/auth'
 import { uniqueRefCode, ensureUsernameRefCode } from '@/lib/referral'
 
 export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getDbUser()
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

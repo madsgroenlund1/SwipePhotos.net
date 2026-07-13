@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, ImageIcon, Users, TrendingUp,
   DollarSign, Link2, BarChart3,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { useClerk } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -713,6 +713,7 @@ export function DashboardClient({
 }) {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const { signOut }  = useClerk()
 
   const [tab, setTab]                     = useState<Tab>((searchParams.get('tab') as Tab) || 'overview')
   const [cancelled, setCancelled]         = useState(initialCancelled)
@@ -750,8 +751,7 @@ export function DashboardClient({
 
   async function handleLogout() {
     setLoggingOut(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await signOut()
     router.push('/')
   }
 
@@ -767,7 +767,7 @@ export function DashboardClient({
         return
       }
       // Account is gone — clear the local session and leave
-      await createClient().auth.signOut().catch(() => {})
+      await signOut().catch(() => {})
       window.location.href = '/'
     } catch {
       setDeleteError('Something went wrong. Please try again or contact support@swipephotos.net')

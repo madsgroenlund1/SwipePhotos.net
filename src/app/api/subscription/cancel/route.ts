@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createClient, createAdminClientDirect } from '@/lib/supabase/server'
+import { createAdminClientDirect } from '@/lib/supabase/server'
+import { getDbUser } from '@/lib/auth'
 import { sendCancellationEmail } from '@/lib/resend'
 
 function periodEnd(sub: import('stripe').Stripe.Subscription): number {
@@ -9,8 +10,7 @@ function periodEnd(sub: import('stripe').Stripe.Subscription): number {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getDbUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { reason } = await req.json().catch(() => ({}))
