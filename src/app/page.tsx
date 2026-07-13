@@ -200,9 +200,9 @@ export default async function HomePage() {
             <div className="p-4 grid grid-cols-2 gap-2">
               {[
                 { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
-                { src: '/photos/upload-examples/left.jpg',  label: 'Left angle'  },
+                { src: '/photos/upload-examples/left-v2.jpg',  label: 'Left angle'  },
                 { src: '/photos/upload-examples/front.jpg', label: 'Front' },
-                { src: '/photos/upload-examples/right.jpg', label: 'Right angle' },
+                { src: '/photos/upload-examples/right-v2.jpg', label: 'Right angle' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
                   <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 280px" />
@@ -228,6 +228,9 @@ export default async function HomePage() {
                 { src: '/photos/guide/3-sunglasses.webp', label: 'Sunglasses' },
                 { src: '/photos/guide/2-bright.webp', label: 'Too bright' },
                 { src: '/photos/guide/3-dark.webp', label: 'Too dark' },
+                { src: '/photos/guide/1-bad-face-or-hair.webp', label: 'Bad framing' },
+                { src: '/photos/guide/2-low-camera-angle.webp', label: 'Bad angle' },
+                { src: '/photos/guide/4-holding-something.webp', label: 'Holding object' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
                   <Image src={src} alt={label} fill className="object-cover object-top" sizes="130px" />
