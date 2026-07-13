@@ -726,27 +726,10 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                 </div>
-                {/* Full-body slot */}
-                <div className="mb-1 flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <UploadSlot angle="body" label="Full-body photo" guide="Show your whole body — head to fingertips"
-                      slot={slots.body} onFile={f => handleSlotFile('body', f)} onRemove={() => clearSlot('body')} />
-                    <p className="text-zinc-500 text-[11px] italic leading-relaxed mt-1 px-1">&ldquo;Tip: lean your phone against something, set a timer and use the selfie camera.&rdquo;</p>
-                  </div>
-                  <div className="flex-shrink-0 w-14">
-                    <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
-                      <img src="/photos/upload-examples/body.jpg" alt="Full-body example" className="w-full h-full object-cover object-top" />
-                    </div>
-                    <p className="text-green-400 text-[8px] text-center mt-0.5 font-medium">✓ Example</p>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="border-t border-white/10 mb-4" />
-
-                {/* Upload slots */}
-                <div className="mb-4">
+                {/* Upload slots — 2 per row: Full-body + Left / Front + Right */}
+                <div className="mb-2 grid grid-cols-2 gap-x-3">
                   {([
+                    { angle: 'body'  as const, label: 'Full-body photo',   guide: 'Head to fingertips'              },
                     { angle: 'left'  as const, label: 'Left-angle photo',  guide: 'Turn your head slightly left'    },
                     { angle: 'front' as const, label: 'Front photo',       guide: 'Face the camera directly'        },
                     { angle: 'right' as const, label: 'Right-angle photo', guide: 'Turn your head slightly right'   },
@@ -755,6 +738,7 @@ export default function OnboardingPage() {
                       slot={slots[angle]} onFile={f => handleSlotFile(angle, f)} onRemove={() => clearSlot(angle)} />
                   ))}
                 </div>
+                <p className="text-zinc-500 text-[11px] italic leading-relaxed mb-4 px-1">&ldquo;Tip: lean your phone against something, set a timer and use the selfie camera for the full-body photo.&rdquo;</p>
                 {/* Identity note */}
                 <div className="mb-4 bg-zinc-900/60 border border-white/8 rounded-2xl px-3.5 py-3">
                   <p className="text-zinc-400 text-xs leading-relaxed">
