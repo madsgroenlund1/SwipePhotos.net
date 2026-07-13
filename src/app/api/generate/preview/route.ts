@@ -29,8 +29,10 @@ export async function POST(req: NextRequest) {
         const rightFile  = formData.get('right')  as File | null
         const legacyFile  = formData.get('photo')  as File | null
         const legacyFile2 = formData.get('photo2') as File | null
-        const style      = (formData.get('style') as string) || 'restaurant'
-        const hasTattoos = formData.get('hasTattoos') === 'true'
+        const style       = (formData.get('style') as string) || 'restaurant'
+        const hasTattoos  = formData.get('hasTattoos') === 'true'
+        const tattooFile  = formData.get('tattooPhoto') as File | null
+        const tattooDesc  = ((formData.get('tattooDesc') as string) || '').slice(0, 200)
 
         const files: File[] = []
         if (frontFile?.size)  files.push(frontFile)
@@ -48,7 +50,8 @@ export async function POST(req: NextRequest) {
 
         send({ status: 'uploading' })
         const uploadedUrls = await Promise.all(files.map(f => fal.storage.upload(f)))
-        console.log('[preview] Uploaded', uploadedUrls.length, 'photo(s), style:', style, 'hasTattoos:', hasTattoos)
+        const tattooUrl = hasTattoos && tattooFile?.size ? await fal.storage.upload(tattooFile).catch(() => null) : null
+        console.log('[preview] Uploaded', uploadedUrls.length, 'photo(s), style:', style, 'hasTattoos:', hasTattoos, 'tattooRef:', !!tattooUrl)
 
         send({ status: 'preparing' })
 
@@ -56,7 +59,8 @@ export async function POST(req: NextRequest) {
           uploadedUrls,
           style,
           hasTattoos,
-          (status) => send({ status })
+          (status) => send({ status }),
+          tattooUrl ? { url: tattooUrl, description: tattooDesc } : undefined
         )
 
         send({ status: 'checking' })

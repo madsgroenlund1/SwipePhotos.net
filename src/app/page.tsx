@@ -198,12 +198,12 @@ export default async function HomePage() {
             </div>
             <div className="p-4 grid grid-cols-3 gap-2">
               {[
-                { src: '/photos/upload-examples/left.jpg',   label: 'Left angle'  },
-                { src: '/photos/upload-examples/front.webp', label: 'Front' },
-                { src: '/photos/upload-examples/right.jpg',  label: 'Right angle' },
+                { src: '/photos/upload-examples/left.jpg',  label: 'Left angle'  },
+                { src: '/photos/upload-examples/front.jpg', label: 'Front' },
+                { src: '/photos/upload-examples/right.jpg', label: 'Right angle' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
-                  <Image src={src} alt={label} fill className="object-cover" style={{ objectPosition: '50% 10%', transform: 'scale(1.35)', transformOrigin: '50% 18%' }} sizes="(max-width: 768px) 33vw, 200px" />
+                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 33vw, 200px" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
                     <span className="text-green-400 text-[11px] font-semibold">✓ {label}</span>
                   </div>

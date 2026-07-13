@@ -309,6 +309,9 @@ export default function OnboardingPage() {
 
   // Other
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
+  const [tattooFile, setTattooFile]         = useState<File|null>(null)
+  const [tattooPreview, setTattooPreview]   = useState<string|null>(null)
+  const [tattooDesc, setTattooDesc]         = useState('')
   const [selectedStyle, setSelectedStyle]   = useState('restaurant')
   const [selectedPackage, setSelectedPackage] = useState('popular')
   const [billing, setBilling] = useState<'monthly'|'yearly'>('monthly')
@@ -393,6 +396,10 @@ export default function OnboardingPage() {
         if (right) fd.append('right', right)
         fd.append('style', selectedStyle)
         fd.append('hasTattoos', String(hasTattoos === true))
+        if (hasTattoos === true && tattooFile) {
+          fd.append('tattooPhoto', await compressImage(tattooFile))
+          if (tattooDesc.trim()) fd.append('tattooDesc', tattooDesc.trim().slice(0, 200))
+        }
         setGenStatus('uploading')
 
         const response = await fetch('/api/generate/preview', { method: 'POST', body: fd, signal: abortCtrl.signal })
@@ -617,6 +624,7 @@ export default function OnboardingPage() {
                 <ProgressBar step={3} total={TOTAL_STEPS} onBack={back} />
                 <h2 className="text-2xl font-bold text-white mb-1">Upload 3 photos</h2>
                 <p className="text-zinc-500 text-sm">One from each angle — for the best identity match.</p>
+                <p className="text-zinc-500 text-sm mt-1.5">Keep your mouth closed with a slight, natural smile — relaxed and positive gives the best results.</p>
               </div>
               <div className="px-4 pb-2">
                 {/* Requirements */}
@@ -639,12 +647,12 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { src: '/photos/upload-examples/left.jpg',   label: 'Left'  },
-                      { src: '/photos/upload-examples/front.webp', label: 'Front' },
-                      { src: '/photos/upload-examples/right.jpg',  label: 'Right' },
+                      { src: '/photos/upload-examples/left.jpg',  label: 'Left'  },
+                      { src: '/photos/upload-examples/front.jpg', label: 'Front' },
+                      { src: '/photos/upload-examples/right.jpg', label: 'Right' },
                     ].map(({ src, label }) => (
                       <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
-                        <img src={src} alt={label} className="w-full h-full object-cover" style={{ objectPosition: '50% 10%', transform: 'scale(1.45)', transformOrigin: '50% 18%' }} />
+                        <img src={src} alt={label} className="w-full h-full object-cover object-top" />
                         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
                       </div>
                     ))}
@@ -671,11 +679,49 @@ export default function OnboardingPage() {
                 {/* Tattoos */}
                 <div className="mb-4">
                   <p className="text-white text-sm font-semibold mb-1">Do you have visible tattoos?</p>
-                  <p className="text-zinc-500 text-xs mb-2">Face and neck tattoos will be preserved. Body tattoos may not appear on template clothing.</p>
+                  <p className="text-zinc-500 text-xs mb-2">Upload a clear photo of your tattoos so we can reproduce them accurately.</p>
                   <div className="flex gap-2">
                     <button onClick={() => setHasTattoos(false)} className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all', hasTattoos===false ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>No</button>
                     <button onClick={() => setHasTattoos(true)}  className={cn('flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all', hasTattoos===true  ? 'bg-white/15 border-white/40 text-white' : 'bg-white/5 border-white/10 text-zinc-400')}>Yes — I have tattoos</button>
                   </div>
+
+                  {hasTattoos === true && (
+                    <div className="mt-3 bg-white/[0.03] border border-white/8 rounded-2xl p-3.5">
+                      <div className="flex gap-3">
+                        {/* Example */}
+                        <div className="flex-shrink-0 w-20">
+                          <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
+                            <img src="/photos/upload-examples/tattoo-example.jpg" alt="Tattoo example" className="w-full h-full object-cover object-top" />
+                          </div>
+                          <p className="text-green-400 text-[9px] text-center mt-1 font-medium">✓ Good example</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {/* Upload slot */}
+                          <input id="tattoo-file" type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                            onChange={e => {
+                              const f = e.target.files?.[0]
+                              if (f) {
+                                if (tattooPreview) URL.revokeObjectURL(tattooPreview)
+                                setTattooFile(f); setTattooPreview(URL.createObjectURL(f))
+                              }
+                              e.target.value = ''
+                            }} />
+                          <button type="button" onClick={() => document.getElementById('tattoo-file')?.click()}
+                            className="w-full border border-dashed border-white/15 hover:border-blue-500/40 rounded-xl px-3 py-2.5 text-zinc-400 hover:text-zinc-200 text-xs transition-all flex items-center justify-center gap-2 mb-2">
+                            {tattooPreview ? (
+                              <><img src={tattooPreview} alt="" className="w-6 h-6 rounded object-cover" /> Change photo</>
+                            ) : (
+                              <>＋ Upload a photo of your tattoos</>
+                            )}
+                          </button>
+                          <textarea value={tattooDesc} onChange={e => setTattooDesc(e.target.value)}
+                            placeholder="Describe them briefly — e.g. 'portrait tattoo on my left forearm'"
+                            rows={2} maxLength={200}
+                            className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="px-4 pb-4">

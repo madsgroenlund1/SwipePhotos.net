@@ -144,11 +144,14 @@ const STYLE_TO_TEMPLATE_ID: Record<string, string> = {
   beach:      'mannequin-beach-club',
 }
 
+export type TattooRef = { url: string; description?: string }
+
 export async function runTwoPreviewFaceSwaps(
   customerPhotoUrls: string[],
   style: string,
   hasTattoos: boolean,
-  onStatus: (status: string) => void
+  onStatus: (status: string) => void,
+  tattooRef?: TattooRef
 ): Promise<string[]> {
   // Both previews use the customer's CHOSEN setting (its mannequin scene),
   // differentiated by expression: one "bad boy" serious, one slight smile.
@@ -170,7 +173,14 @@ export async function runTwoPreviewFaceSwaps(
 
   const jobs = variants.map((expressionNote, idx) => {
     const imageUrls = [template.url, ...customerPhotoUrls.slice(0, 2)]
-    const prompt = buildPrompt(template, customerPhotoUrls.length, expressionNote)
+    let prompt = buildPrompt(template, customerPhotoUrls.length, expressionNote)
+
+    // Tattoo reference: appended as the LAST image so numbering is stable
+    if (tattooRef) {
+      imageUrls.push(tattooRef.url)
+      const refNum = imageUrls.length
+      prompt += `\n\n#${refNum} shows the person's real tattoos${tattooRef.description ? ` (${tattooRef.description})` : ''}. Reproduce these tattoos accurately on the same body parts wherever they are visible in the scene. Do not invent tattoos that are not in #${refNum}.`
+    }
 
     return withTimeout(
       fal.subscribe(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput, logs: false }),
