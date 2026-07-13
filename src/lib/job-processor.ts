@@ -7,7 +7,8 @@
  * the same order when jobs are still running is always safe.
  */
 
-import { pollFaceSwapJobs, parseJobEntries } from './faceswap'
+import { pollFaceSwapJobs, parseJobEntries, resubmitTemplateJob, JobEntry } from './faceswap'
+import { assessPhotoQuality, QC_MAX_RETRIES } from './quality-control'
 import { sendReadyEmail, sendFailedEmail } from './resend'
 
 const STORAGE_BUCKET = 'generated-photos'
@@ -77,9 +78,51 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
   const { passed, failedCount, pending } = await pollFaceSwapJobs(entries)
   if (failedCount) console.warn(`[job-processor] ${failedCount} rejected by quality gate for order ${orderId}`)
 
-  // Persist newly completed photos
+  // ── Critical quality control ────────────────────────────────────────────
+  // Every completed photo is checked against the customer's own reference
+  // photo before it's ever saved — wrong identity, AI-artifact skin,
+  // malformed hands, or a mismatched pose gets discarded and that ONE
+  // template is resubmitted for a fresh attempt (up to QC_MAX_RETRIES times).
+  // Entries from before this system shipped won't carry customerPhotoUrls —
+  // those fail open (saved as-is) rather than blocking older in-flight orders.
+  const resubmitted: JobEntry[] = []
+  const qcApproved: { url: string; templateId: string }[] = []
+
+  await Promise.allSettled(
+    passed.map(async ({ url, templateId, entry }) => {
+      const customerRef = entry.customerPhotoUrls?.[0]
+      if (!customerRef) {
+        qcApproved.push({ url, templateId })
+        return
+      }
+
+      const qc = await assessPhotoQuality(customerRef, url)
+      if (qc.pass) {
+        qcApproved.push({ url, templateId })
+        return
+      }
+
+      const retries = entry.qcRetries ?? 0
+      console.warn(`[job-processor] QC REJECTED ${templateId} (attempt ${retries + 1}): ${qc.reason}`)
+
+      if (retries < QC_MAX_RETRIES) {
+        const resubmittedEntry = await resubmitTemplateJob(entry)
+        if (resubmittedEntry) {
+          resubmitted.push(resubmittedEntry)
+          return
+        }
+        // Resubmit itself failed (fal.ai error) — fall through and accept
+        // the original rather than losing the photo entirely.
+      } else {
+        console.warn(`[job-processor] QC exhausted ${QC_MAX_RETRIES} retries for ${templateId} — accepting best effort`)
+      }
+      qcApproved.push({ url, templateId })
+    })
+  )
+
+  // Persist newly completed, QC-approved photos
   let savedThisRound = 0
-  for (const { url: falUrl, templateId } of passed) {
+  for (const { url: falUrl, templateId } of qcApproved) {
     if (alreadySavedUrls.has(falUrl)) continue
 
     const savedIdx    = alreadySavedCount + savedThisRound
@@ -95,8 +138,9 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
   }
 
   const totalSaved = alreadySavedCount + savedThisRound
+  const allPending = [...pending, ...resubmitted]
 
-  if (pending.length === 0) {
+  if (allPending.length === 0) {
     if (totalSaved > 0) {
       await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
       if (order.email) {
@@ -118,13 +162,11 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
     }
   }
 
-  // Still running — update the remaining pending entries if changed
-  if (pending.length !== entries.length) {
-    await supabase
-      .from('orders')
-      .update({ replicate_training_id: JSON.stringify(pending) })
-      .eq('id', orderId)
-  }
+  // Still running (or awaiting a QC-triggered retry) — persist the updated list
+  await supabase
+    .from('orders')
+    .update({ replicate_training_id: JSON.stringify(allPending) })
+    .eq('id', orderId)
 
-  return { status: 'generating', saved: totalSaved, pending: pending.length }
+  return { status: 'generating', saved: totalSaved, pending: allPending.length }
 }

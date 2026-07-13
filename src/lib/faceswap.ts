@@ -45,6 +45,13 @@ export type QualityResult = {
 export type JobEntry = {
   requestId: string
   templateId: string
+  // Present for paid-generation entries — lets a failed QC check resubmit
+  // the exact same template without re-deriving it from the (possibly
+  // rolled-over) current month.
+  templateUrl?: string
+  customerPhotoUrls?: string[]
+  tattooUrl?: string
+  qcRetries?: number
 }
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
@@ -349,14 +356,21 @@ export async function submitFaceSwapJobs(
 
       return fal.queue
         .submit(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput })
-        .then(result => ({ result, templateId: template.id }))
+        .then(result => ({ result, templateId: template.id, templateUrl: template.url }))
     })
   )
 
   const entries: JobEntry[] = []
   for (const job of jobs) {
     if (job.status === 'fulfilled' && job.value.result.request_id) {
-      entries.push({ requestId: job.value.result.request_id, templateId: job.value.templateId })
+      entries.push({
+        requestId: job.value.result.request_id,
+        templateId: job.value.templateId,
+        templateUrl: job.value.templateUrl,
+        customerPhotoUrls,
+        tattooUrl: hasTattoos ? tattooUrl : undefined,
+        qcRetries: 0,
+      })
     } else if (job.status === 'rejected') {
       console.error('[faceswap] Submit failed:', job.reason)
     }
@@ -366,19 +380,46 @@ export async function submitFaceSwapJobs(
   return entries
 }
 
+/**
+ * Resubmit generation for ONE template — used when the quality-control gate
+ * (src/lib/quality-control.ts) rejects a photo. Reuses the exact same
+ * template, prompt and customer photos as the original job so the retry is
+ * a fair second attempt, not a different scene.
+ */
+export async function resubmitTemplateJob(entry: JobEntry): Promise<JobEntry | null> {
+  if (!entry.templateUrl || !entry.customerPhotoUrls?.length) {
+    console.error('[faceswap] Cannot resubmit — missing templateUrl/customerPhotoUrls on entry', entry.templateId)
+    return null
+  }
+
+  const prompt = buildPaidGenerationPrompt(!!entry.tattooUrl)
+  const imageUrls = [entry.templateUrl, ...entry.customerPhotoUrls]
+  if (entry.tattooUrl) imageUrls.push(entry.tattooUrl)
+
+  try {
+    const result = await fal.queue.submit(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput })
+    if (!result.request_id) return null
+    return { ...entry, requestId: result.request_id, qcRetries: (entry.qcRetries ?? 0) + 1 }
+  } catch (err) {
+    console.error('[faceswap] Resubmit failed for', entry.templateId, err)
+    return null
+  }
+}
+
 // ─── Polling ──────────────────────────────────────────────────────────────────
 
 export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
-  passed: { url: string; templateId: string }[]
+  passed: { url: string; templateId: string; entry: JobEntry }[]
   failedCount: number
   pending: JobEntry[]
 }> {
-  const passed: { url: string; templateId: string }[] = []
+  const passed: { url: string; templateId: string; entry: JobEntry }[] = []
   let failedCount = 0
   const pending: JobEntry[] = []
 
   await Promise.allSettled(
-    entries.map(async ({ requestId, templateId }) => {
+    entries.map(async (entry) => {
+      const { requestId, templateId } = entry
       try {
         const status = await fal.queue.status(MODEL, { requestId, logs: false })
         const s = status.status as string
@@ -395,7 +436,7 @@ export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
 
           const score = await scoreOutput(url)
           if (score.passed) {
-            passed.push({ url, templateId })
+            passed.push({ url, templateId, entry })
             console.log(`[faceswap] ✓ ${requestId} (${templateId}) — ${score.fileSizeBytes}B`)
           } else {
             failedCount++
@@ -405,11 +446,11 @@ export async function pollFaceSwapJobs(entries: JobEntry[]): Promise<{
           failedCount++
           console.warn(`[faceswap] ${s}: ${requestId} (${templateId})`)
         } else {
-          pending.push({ requestId, templateId })
+          pending.push(entry)
         }
       } catch (err) {
         console.error(`[faceswap] Poll error for ${requestId}:`, err)
-        pending.push({ requestId, templateId })
+        pending.push(entry)
       }
     })
   )
