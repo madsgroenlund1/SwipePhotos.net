@@ -569,6 +569,7 @@ export default async function HomePage() {
               <ul className="space-y-2">
                 <li><Link href="/privacy" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Terms of Service</Link></li>
+                <li><Link href="/contact" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Contact us</Link></li>
                 <li>
                   <a href="mailto:support@swipephotos.net" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
                     support@swipephotos.net
