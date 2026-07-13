@@ -761,7 +761,7 @@ export default function OnboardingPage() {
                           <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
                             <img src="/photos/upload-examples/tattoo-example.jpg" alt="Tattoo example" className="w-full h-full object-cover object-top" />
                             {/* Red arrow, left → right, pointing at the tattoo */}
-                            <svg className="absolute text-red-500 drop-shadow-md" style={{ left: '1%', top: '56%', width: '34%' }} viewBox="0 0 40 16" fill="none" aria-hidden>
+                            <svg className="absolute text-red-500 drop-shadow-md" style={{ left: '1%', top: '64%', width: '34%' }} viewBox="0 0 40 16" fill="none" aria-hidden>
                               <path d="M2 8h28m0 0l-7-6m7 6l-7 6" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           </div>
