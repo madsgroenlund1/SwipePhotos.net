@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { CookieBanner } from '@/components/CookieBanner'
+import { clerkLocalization } from '@/lib/clerk-appearance'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={clerkLocalization}>
       <html lang="en" className={`${inter.variable} h-full`}>
         <body className="min-h-full flex flex-col bg-[#0A0A0A] text-white">
           {children}
