@@ -706,35 +706,34 @@ export default function OnboardingPage() {
                     <CheckIcon className="text-green-400" />
                     <span className="text-green-400 text-xs font-semibold">Good examples</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* 2 × 2: Left + Front / Right + Full body */}
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { src: '/photos/upload-examples/left.jpg',  label: 'Left'  },
-                      { src: '/photos/upload-examples/front.jpg', label: 'Front' },
-                      { src: '/photos/upload-examples/right.jpg', label: 'Right' },
+                      { src: '/photos/upload-examples/left.jpg',  label: 'Left'      },
+                      { src: '/photos/upload-examples/front.jpg', label: 'Front'     },
+                      { src: '/photos/upload-examples/right.jpg', label: 'Right'     },
+                      { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
                     ].map(({ src, label }) => (
                       <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
                         <img src={src} alt={label} className="w-full h-full object-cover object-top" />
-                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Two extra examples, centered: full body + full body with tattoo */}
-                  <div className="mt-2 flex justify-center gap-2">
-                    {[
-                      { src: '/photos/upload-examples/body.jpg',        label: 'Full body' },
-                      { src: '/photos/upload-examples/body-tattoo.jpg', label: 'Full body + tattoos' },
-                    ].map(({ src, label }) => (
-                      <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60 w-[calc(33.33%-0.33rem)]" style={{ aspectRatio: '3/4' }}>
-                        <img src={src} alt={label} className="w-full h-full object-cover object-top" />
-                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[9px] text-zinc-200 font-medium">{label}</div>
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 py-1 text-center text-[10px] text-zinc-200 font-medium">{label}</div>
                       </div>
                     ))}
                   </div>
                 </div>
-                {/* Upload slots — 2 per row: Full-body + Left / Front + Right */}
-                <div className="mb-2 grid grid-cols-2 gap-x-3">
+                {/* Full-body slot */}
+                <div className="mb-1">
+                  <UploadSlot angle="body" label="Full-body photo" guide="Head to fingertips"
+                    slot={slots.body} onFile={f => handleSlotFile('body', f)} onRemove={() => clearSlot('body')} />
+                  <p className="text-zinc-500 text-[11px] italic leading-relaxed mb-3 px-1">&ldquo;Tip: lean your phone against something, set a timer and use the selfie camera.&rdquo;</p>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-white/10 mb-4" />
+
+                {/* Angle slots */}
+                <div className="mb-4">
                   {([
-                    { angle: 'body'  as const, label: 'Full-body photo',   guide: 'Head to fingertips'              },
                     { angle: 'left'  as const, label: 'Left-angle photo',  guide: 'Turn your head slightly left'    },
                     { angle: 'front' as const, label: 'Front photo',       guide: 'Face the camera directly'        },
                     { angle: 'right' as const, label: 'Right-angle photo', guide: 'Turn your head slightly right'   },
@@ -743,7 +742,6 @@ export default function OnboardingPage() {
                       slot={slots[angle]} onFile={f => handleSlotFile(angle, f)} onRemove={() => clearSlot(angle)} />
                   ))}
                 </div>
-                <p className="text-zinc-500 text-[11px] italic leading-relaxed mb-4 px-1">&ldquo;Tip: lean your phone against something, set a timer and use the selfie camera for the full-body photo.&rdquo;</p>
                 {/* Identity note */}
                 <div className="mb-4 bg-zinc-900/60 border border-white/8 rounded-2xl px-3.5 py-3">
                   <p className="text-zinc-400 text-xs leading-relaxed">

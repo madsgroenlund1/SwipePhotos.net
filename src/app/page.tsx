@@ -196,35 +196,20 @@ export default async function HomePage() {
               <span className="text-green-400 font-bold text-lg" aria-hidden="true">✓</span>
               <span className="text-green-400 font-bold text-lg">Good</span>
             </div>
-            <div className="p-4">
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { src: '/photos/upload-examples/left.jpg',  label: 'Left angle'  },
-                  { src: '/photos/upload-examples/front.jpg', label: 'Front' },
-                  { src: '/photos/upload-examples/right.jpg', label: 'Right angle' },
-                ].map(({ src, label }) => (
-                  <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
-                    <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 33vw, 200px" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
-                      <span className="text-green-400 text-[11px] font-semibold">✓ {label}</span>
-                    </div>
+            <div className="p-4 grid grid-cols-2 gap-2">
+              {[
+                { src: '/photos/upload-examples/left.jpg',  label: 'Left angle'  },
+                { src: '/photos/upload-examples/front.jpg', label: 'Front' },
+                { src: '/photos/upload-examples/right.jpg', label: 'Right angle' },
+                { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
+              ].map(({ src, label }) => (
+                <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
+                  <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 280px" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
+                    <span className="text-green-400 text-[11px] font-semibold">✓ {label}</span>
                   </div>
-                ))}
-              </div>
-              {/* Two full-body examples, centered below */}
-              <div className="mt-2 flex justify-center gap-2">
-                {[
-                  { src: '/photos/upload-examples/body.jpg',        label: 'Full body' },
-                  { src: '/photos/upload-examples/body-tattoo.jpg', label: 'Full body + tattoos' },
-                ].map(({ src, label }) => (
-                  <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4] w-[calc(33.33%-0.33rem)]">
-                    <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 33vw, 200px" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5">
-                      <span className="text-green-400 text-[11px] font-semibold">✓ {label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
 

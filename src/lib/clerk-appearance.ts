@@ -27,6 +27,9 @@ export const clerkAppearance = {
     socialButtonsBlockButton:
       '!bg-white hover:!bg-zinc-100 !border-transparent !shadow-sm',
     socialButtonsBlockButtonText: '!text-gray-900 !font-semibold',
+    // "Last used" badge — blue pill so it's visible on the white Google button
+    badge: '!bg-blue-600 !text-white !border !border-blue-400/50 !rounded-full !px-2 !py-0.5 !font-semibold',
+    lastAuthenticationStrategyBadge: '!bg-blue-600 !text-white !border !border-blue-400/50 !rounded-full !px-2 !py-0.5 !font-semibold !shadow-md',
   },
 } as const
 
