@@ -17,16 +17,16 @@ export default async function HomePage() {
         {/* Platform badges */}
         <div className="flex items-center justify-center gap-3 mb-10 flex-wrap">
           {[
-            { logo: 'tinder', label: 'Tinder' },
-            { logo: 'hinge', label: 'Hinge' },
-            { logo: 'bumble', label: 'Bumble' },
-            { logo: 'instagram', label: 'Instagram' },
-          ].map(({ logo, label }) => (
+            { src: '/logos/dating-app-logos/tinder.png', label: 'Tinder' },
+            { src: '/logos/dating-app-logos/hinge.png', label: 'Hinge' },
+            { src: '/logos/dating-app-logos/bumble.png', label: 'Bumble' },
+            { src: '/icons/instagram.svg', label: 'Instagram' },
+          ].map(({ src, label }) => (
             <div
               key={label}
               className="flex items-center gap-2 bg-white/5 border border-white/8 rounded-full px-4 py-2"
             >
-              <Image src={`/logos/dating-app-logos/${logo}.png`} alt={label} width={20} height={20} className="w-5 h-5 object-contain" />
+              <Image src={src} alt={label} width={20} height={20} className="w-5 h-5 object-contain rounded-[5px]" />
               <span className="text-sm text-zinc-400 font-medium">{label}</span>
             </div>
           ))}

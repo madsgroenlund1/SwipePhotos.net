@@ -4,12 +4,23 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'The 3 Photos Every Man Needs on His Dating Profile — SwipePhotos.net',
-  description: 'Data from 100,000+ profiles reveals the exact photo formula that drives the most matches on Tinder, Hinge, and Bumble.',
+  description: 'Face, social proof and a spark of intrigue — the three-photo formula that consistently drives the most matches on Tinder, Hinge and Bumble.',
   openGraph: {
     title: 'The 3 Photos Every Man Needs on His Dating Profile',
-    description: 'The data-backed formula for dating profile photos that actually convert.',
+    description: 'The proven three-photo formula: a clear face shot, a social shot, and a spark shot.',
     type: 'article',
   },
+}
+
+function PhotoExample({ src, alt, caption }: { src: string; alt: string; caption: string }) {
+  return (
+    <figure className="my-8">
+      <div className="rounded-2xl overflow-hidden border border-white/10 max-w-sm mx-auto">
+        <img src={src} alt={alt} className="w-full h-auto" />
+      </div>
+      <figcaption className="text-zinc-500 text-xs text-center mt-2 italic">{caption}</figcaption>
+    </figure>
+  )
 }
 
 export default async function BlogPost3() {
@@ -30,77 +41,79 @@ export default async function BlogPost3() {
           The 3 Photos Every Man Needs on His Dating Profile
         </h1>
 
+        <p className="text-zinc-400 text-lg mb-8 leading-relaxed">
+          Most profiles fail for the same reason: six photos that all say the same thing. The profiles
+          that convert follow a simple three-photo formula — a clear face, social proof, and a spark
+          of intrigue. Here&apos;s each one, with an example.
+        </p>
+
         <div className="prose prose-invert max-w-none space-y-6 text-zinc-300 leading-relaxed">
+          <h2 className="text-2xl font-bold text-white mt-10 mb-4">1. The Face Shot — she has to see you clearly</h2>
           <p>
-            After analyzing over 100,000 male dating profiles across Tinder, Hinge, and Bumble,
-            the data reveals a clear pattern: men with these three specific photo types get dramatically
-            more matches than everyone else.
+            Your first photo decides everything, and it has one job: show your face, clearly, in good
+            light. Chest-up framing, no sunglasses, no group, no clutter. A genuine, relaxed
+            expression — a closed-mouth smile or calm confidence — outperforms both the forced grin
+            and the dead-serious stare.
+          </p>
+          <PhotoExample
+            src="/photos/blog/photo-face.jpg"
+            alt="Clear, well-lit photo where the face is fully visible"
+            caption="Clear face, natural light, an interesting setting that doesn't steal the attention."
+          />
+          <p>
+            Bonus points for a setting with a little texture — a nice interior, a city backdrop,
+            an event — as long as <em>you</em> stay the subject.
           </p>
 
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">Photo 1: The Clear Face Shot</h2>
+          <h2 className="text-2xl font-bold text-white mt-10 mb-4">2. The Social Shot — proof you have a life</h2>
           <p>
-            Your first photo needs to show your face clearly. Not a group shot. Not sunglasses.
-            Not a gym selfie in bad lighting. A clear, well-lit, smiling photo where your face
-            fills most of the frame.
+            One photo with friends signals the single most attractive trait you can show without
+            saying a word: other people enjoy your company. Keep it to two or three people so
+            there&apos;s no &ldquo;which one is he?&rdquo; moment, and make sure you&apos;re easy to identify.
           </p>
+          <PhotoExample
+            src="/photos/blog/photo-social.jpg"
+            alt="Photo with a friend on a boat"
+            caption="A friend, a setting, a story — social proof without a crowded group shot."
+          />
           <p>
-            Data shows: profiles with a clear face shot as the first photo get <strong className="text-white">67% more right swipes</strong> than
-            profiles where the face isn&apos;t immediately visible. Women decide in 1-2 seconds. Make it easy.
-          </p>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-zinc-400 text-sm"><strong className="text-white">Best settings for this photo:</strong> Outdoor, natural light, slight smile, facing the camera. SwipePhotos&apos;s &ldquo;City Life&rdquo; and &ldquo;Coffee Shop&rdquo; presets nail this.</p>
-          </div>
-
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">Photo 2: The Activity Shot</h2>
-          <p>
-            Women want to know what dating you would be like. An activity photo shows your life:
-            hiking, at a rooftop bar, at the beach. It implies you have things going on, places you go,
-            a lifestyle worth joining.
-          </p>
-          <p>
-            The best activity photos are candid-feeling — not posed. You&apos;re looking slightly off-camera,
-            doing something, existing in a real place. This signals social intelligence: you&apos;re not the
-            kind of guy who stands awkwardly against a wall for photos.
-          </p>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <p className="text-zinc-400 text-sm"><strong className="text-white">Best presets for this:</strong> Outdoor Adventure, Rooftop Bar, Beach Vibes, Marina Walk.</p>
-          </div>
-
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">Photo 3: The Social Proof Shot</h2>
-          <p>
-            A photo where you look like you&apos;re having a good time — laughing, social, enjoying yourself.
-            This doesn&apos;t have to include other people, but it should convey energy and positivity.
-          </p>
-          <p>
-            The psychology: women are attracted to men who other people enjoy being around. A photo
-            of you smiling genuinely (not for the camera) signals that you&apos;re the kind of person
-            worth being around.
+            One social shot is enough. Two or more and your profile starts reading as
+            &ldquo;always with the boys&rdquo;.
           </p>
 
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">What to avoid</h2>
+          <h2 className="text-2xl font-bold text-white mt-10 mb-4">3. The Spark Shot — give her a reason to open</h2>
+          <p>
+            The third photo creates intrigue: a hobby, a physique shot if you&apos;ve earned it, travel,
+            sport — something that starts a conversation or raises an eyebrow. This is the photo
+            that turns &ldquo;he&apos;s cute&rdquo; into a like with a comment.
+          </p>
+          <PhotoExample
+            src="/photos/blog/photo-spark.jpg"
+            alt="Confident physique photo"
+            caption="Confidence, style, or physique — one photo that sparks curiosity. Never more than one."
+          />
+          <p>
+            The rule: it must feel effortless. A gym-mirror flex with bad lighting tries too hard;
+            a well-shot moment where the physique or hobby is simply <em>part of the scene</em> lands.
+          </p>
+
+          <h2 className="text-2xl font-bold text-white mt-10 mb-4">Putting the profile together</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>Mirror selfies (35% lower match rate than other photos)</li>
-            <li>Group photos as your first photo (women pick the least attractive person)</li>
-            <li>Sunglasses in every photo (signals hiding something)</li>
-            <li>No smiling (literally adds 10-15% to match rate)</li>
-            <li>Car selfies</li>
+            <li><strong className="text-white">Photo 1:</strong> Face shot — always first, non-negotiable</li>
+            <li><strong className="text-white">Photo 2–3:</strong> Lifestyle variations: different outfits, different locations</li>
+            <li><strong className="text-white">Photo 4:</strong> Social shot</li>
+            <li><strong className="text-white">Photo 5:</strong> Spark shot</li>
+            <li><strong className="text-white">Photo 6:</strong> Optional — a full-body shot in good style</li>
           </ul>
-
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">The SwipePhotos advantage</h2>
           <p>
-            The problem most men face: they don&apos;t have good photos of themselves. They don&apos;t have
-            a friend who&apos;s a photographer. They don&apos;t look good in their bathroom selfies.
-          </p>
-          <p>
-            SwipePhotos generates all three photo types — face shot, activity shot, social proof shot —
-            using your face but in better settings, better lighting, and more interesting locations
-            than you&apos;ve probably ever been photographed in.
+            Every photo should look like it was taken on a different day. Six photos from the same
+            afternoon in the same shirt reads as &ldquo;this is all he has&rdquo;.
           </p>
         </div>
 
         <div className="mt-12 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 text-center">
-          <h3 className="text-white font-bold text-xl mb-2">Get all 3 photo types in one order</h3>
-          <p className="text-zinc-400 text-sm mb-4">AI photos across 40 style templates. Starting at €29.</p>
+          <h3 className="text-white font-bold text-xl mb-2">Missing one of the three?</h3>
+          <p className="text-zinc-400 text-sm mb-4">SwipePhotos generates all of them — face, lifestyle and spark — from 4 selfies.</p>
           <Link
             href="/onboarding"
             className="inline-block bg-blue-600 hover:brightness-110 text-white font-semibold px-8 py-3 rounded-full transition-all"
