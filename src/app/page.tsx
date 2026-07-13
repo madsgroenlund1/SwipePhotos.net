@@ -198,10 +198,10 @@ export default async function HomePage() {
             </div>
             <div className="p-4 grid grid-cols-2 gap-2">
               {[
+                { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
                 { src: '/photos/upload-examples/left.jpg',  label: 'Left angle'  },
                 { src: '/photos/upload-examples/front.jpg', label: 'Front' },
                 { src: '/photos/upload-examples/right.jpg', label: 'Right angle' },
-                { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
               ].map(({ src, label }) => (
                 <div key={src} className="relative rounded-xl overflow-hidden aspect-[3/4]">
                   <Image src={src} alt={label} fill className="object-cover object-top" sizes="(max-width: 768px) 50vw, 280px" />

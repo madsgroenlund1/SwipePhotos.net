@@ -14,9 +14,38 @@ import { useAuth } from './AuthProvider'
  * `initialLoggedIn` is kept as an optional prop for backward compatibility but
  * is no longer needed — AuthProvider handles the initial state.
  */
+// Animated scroll to an anchor over ~1.2s. Recomputes the target position every
+// frame so lazy-loaded images shifting the layout can't cut the animation short
+// (which is why CSS scroll-behavior:smooth was removed).
+function smoothScrollTo(id: string) {
+  const el = document.getElementById(id)
+  if (!el) return false
+  const duration = 1200
+  const start = window.scrollY
+  const startTime = performance.now()
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+  // setInterval instead of requestAnimationFrame: rAF stalls in background/
+  // headless tabs, while a timer keeps the animation deterministic everywhere.
+  const timer = window.setInterval(() => {
+    const t = Math.min(1, (performance.now() - startTime) / duration)
+    const target = el.getBoundingClientRect().top + window.scrollY - 80
+    window.scrollTo(0, start + (target - start) * ease(t))
+    if (t >= 1) window.clearInterval(timer)
+  }, 16)
+  return true
+}
+
 export function Navbar({ initialLoggedIn: _ignored }: { initialLoggedIn?: boolean }) {
   const { user, loading } = useAuth()
   const [scrolled, setScrolled] = useState(false)
+
+  // Intercept same-page anchor links: animate instead of jumping
+  function onAnchorClick(e: React.MouseEvent, id: string) {
+    if (window.location.pathname === '/' && smoothScrollTo(id)) {
+      e.preventDefault()
+      history.replaceState(null, '', `/#${id}`)
+    }
+  }
 
   useEffect(() => {
     function onScroll() {
@@ -46,9 +75,9 @@ export function Navbar({ initialLoggedIn: _ignored }: { initialLoggedIn?: boolea
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/#how-it-works" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">How it works</Link>
-          <Link href="/#results" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Results</Link>
-          <Link href="/#pricing" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Prices</Link>
+          <Link href="/#how-it-works" onClick={e => onAnchorClick(e, 'how-it-works')} className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">How it works</Link>
+          <Link href="/#results" onClick={e => onAnchorClick(e, 'results')} className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Results</Link>
+          <Link href="/#pricing" onClick={e => onAnchorClick(e, 'pricing')} className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Prices</Link>
           <Link href="/blog" className="text-zinc-100 hover:text-white text-sm font-medium transition-colors">Blog</Link>
         </nav>
 

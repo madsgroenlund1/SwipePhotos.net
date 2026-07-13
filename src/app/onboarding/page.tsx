@@ -709,10 +709,10 @@ export default function OnboardingPage() {
                   {/* 2 × 2: Left + Front / Right + Full body */}
                   <div className="grid grid-cols-2 gap-2">
                     {[
+                      { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
                       { src: '/photos/upload-examples/left.jpg',  label: 'Left'      },
                       { src: '/photos/upload-examples/front.jpg', label: 'Front'     },
                       { src: '/photos/upload-examples/right.jpg', label: 'Right'     },
-                      { src: '/photos/upload-examples/body.jpg',  label: 'Full body' },
                     ].map(({ src, label }) => (
                       <div key={label} className="relative rounded-xl overflow-hidden border-2 border-green-500/60" style={{ aspectRatio: '3/4' }}>
                         <img src={src} alt={label} className="w-full h-full object-cover object-top" />
