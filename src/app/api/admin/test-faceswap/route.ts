@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClientDirect } from '@/lib/supabase/server'
-import { submitFaceSwapJobs, pollFaceSwapJobs, pickBestFacePhoto } from '@/lib/faceswap'
+import { submitFaceSwapJobs, pollFaceSwapJobs } from '@/lib/faceswap'
+import type { PackageId } from '@/lib/stripe'
 import { fal } from '@fal-ai/client'
 import { sendReadyEmail } from '@/lib/resend'
 
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id, email, status')
+    .select('id, email, status, package_type, selected_presets')
     .eq('id', orderId)
     .single()
 
@@ -33,17 +34,25 @@ export async function POST(req: NextRequest) {
 
   if (!uploads?.length) return NextResponse.json({ error: 'No uploads for this order' }, { status: 400 })
 
-  const faceUrl = pickBestFacePhoto(uploads.map((u: { file_url: string }) => u.file_url))
+  const allUrls = uploads.map((u: { file_url: string }) => u.file_url)
+  const tattooSourceUrl = allUrls.find(u => u.includes('tattoo-reference'))
+  const faceUrls = allUrls.filter(u => u !== tattooSourceUrl)
+  const hasTattoos = ((order.selected_presets as string[] | null) ?? []).includes('has_tattoos')
+  const packageId = (order.package_type as PackageId) ?? 'popular'
 
   await supabase.from('generated_photos').delete().eq('order_id', orderId)
   await supabase.from('orders').update({ status: 'generating' }).eq('id', orderId)
 
   try {
-    const falFaceUrl = await fal.storage.upload(
-      await fetch(faceUrl).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
-    )
+    async function toFalUrl(url: string) {
+      return fal.storage.upload(
+        await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
+      )
+    }
+    const falPhotoUrls = await Promise.all(faceUrls.map(toFalUrl))
+    const falTattooUrl = tattooSourceUrl ? await toFalUrl(tattooSourceUrl).catch(() => undefined) : undefined
 
-    let entries = await submitFaceSwapJobs([falFaceUrl])
+    let entries = await submitFaceSwapJobs(falPhotoUrls, packageId, hasTattoos, falTattooUrl)
     await supabase.from('orders').update({ replicate_training_id: JSON.stringify(entries) }).eq('id', orderId)
 
     // Poll until done (max 50s)

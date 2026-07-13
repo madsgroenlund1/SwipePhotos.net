@@ -18,8 +18,8 @@ const POSTS = [
   },
   {
     slug: 'how-to-make-ai-photos-look-real',
-    title: 'How to Perfect Your AI Photos After You Get Them',
-    excerpt: 'A simple 2-minute edit in the Apple Photos app — auto-enhance, light and color — is the final 1% that makes your photos perfect. Step-by-step guide.',
+    title: 'How to Quickly Edit Your Photo — Brightness, Tan and More',
+    excerpt: 'A step-by-step guide with screenshots: brighten your photo, add a natural tan, and fix lighting in under 2 minutes using the free Apple Photos app.',
     readTime: '4 min read',
     date: 'June 8, 2026',
     tag: 'How-To Guide',

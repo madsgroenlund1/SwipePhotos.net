@@ -562,6 +562,12 @@ export default function OnboardingPage() {
           const compressed = await Promise.all(files.map(f => compressImage(f)))
           const fd = new FormData(); fd.append('orderId', data.orderId)
           for (const c of compressed) fd.append('files', c)
+          // Tattoo reference gets a recognisable filename so paid generation
+          // can single it out from the angle photos (see stripe webhook).
+          if (hasTattoos === true && tattooFile) {
+            const compressedTattoo = await compressImage(tattooFile)
+            fd.append('files', compressedTattoo, 'tattoo-reference.jpg')
+          }
           await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
         }
       }

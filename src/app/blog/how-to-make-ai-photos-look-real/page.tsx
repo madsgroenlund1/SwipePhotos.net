@@ -3,23 +3,43 @@ import { Navbar } from '@/components/Navbar'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'How to Perfect Your AI Photos After You Get Them — SwipePhotos.net',
-  description: 'A simple 2-minute edit in the Apple Photos app — auto-enhance, light and color — is the final 1% that makes your AI photos indistinguishable from a real camera shot.',
+  title: 'How to Quickly Edit Your Photo — Brightness, Tan and More — SwipePhotos.net',
+  description: 'A simple step-by-step guide to editing your dating photos in the Apple Photos app: increase brightness, add a natural tan, and fix lighting in under 2 minutes.',
   openGraph: {
-    title: 'How to Perfect Your AI Photos After You Get Them',
-    description: 'The simple 2-minute edit that makes your AI photos look straight off an iPhone camera roll.',
+    title: 'How to Quickly Edit Your Photo — Brightness, Tan and More',
+    description: 'Step-by-step guide with screenshots: brighten, warm up and perfect any photo in under 2 minutes.',
     type: 'article',
   },
 }
 
-// Red arrow pointing right, with a label to its left
-function ArrowLabel({ top, left, width, label }: { top: string; left: string; width: string; label: string }) {
+// Small red arrow pointing at a specific spot on the screenshot below it.
+function Arrow({ top, left, rotate = 0, size = 34 }: { top: string; left: string; rotate?: number; size?: number }) {
   return (
-    <div className="absolute flex items-center gap-1.5" style={{ top, left, width }}>
-      <span className="bg-red-600 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md whitespace-nowrap shadow-lg">{label}</span>
-      <svg className="text-red-500 drop-shadow-md flex-1 min-w-6" viewBox="0 0 40 16" fill="none" aria-hidden preserveAspectRatio="none">
-        <path d="M2 8h28m0 0l-7-6m7 6l-7 6" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+    <svg
+      className="absolute text-red-500 drop-shadow-lg"
+      style={{ top, left, width: size, height: size, transform: `translate(-50%, -50%) rotate(${rotate}deg)` }}
+      viewBox="0 0 24 24" fill="none" aria-hidden
+    >
+      <path d="M12 20V5M12 5l-6 6M12 5l6 6" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Step({ n, title, body, img, alt, arrows }: {
+  n: number; title: string; body: string; img: string; alt: string
+  arrows?: { top: string; left: string; rotate?: number }[]
+}) {
+  return (
+    <div className="mt-8">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">{n}</div>
+        <h3 className="text-lg font-bold text-white">{title}</h3>
+      </div>
+      <p className="text-zinc-400 text-sm leading-relaxed mb-4">{body}</p>
+      <div className="relative rounded-2xl overflow-hidden border border-white/10 max-w-xs mx-auto">
+        <img src={img} alt={alt} className="w-full h-auto" />
+        {arrows?.map((a, i) => <Arrow key={i} {...a} />)}
+      </div>
     </div>
   )
 }
@@ -39,78 +59,104 @@ export default async function BlogPost2() {
         </div>
 
         <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
-          How to Perfect Your AI Photos After You Get Them
+          How to Quickly Edit Your Photo — Brightness, Tan and More
         </h1>
 
         <p className="text-zinc-400 text-lg mb-8 leading-relaxed">
-          Your photos arrive ready to use — but a quick 2-minute pass in the Apple Photos editor is the
-          final 1% that makes them feel like they came straight off your camera roll. Here&apos;s the exact routine.
+          Your photos arrive ready to use — but a 2-minute pass in the free Apple Photos editor is the
+          final touch that makes them pop: brighter, a natural tan, better contrast. Here&apos;s the exact
+          routine, step by step.
         </p>
 
-        <div className="prose prose-invert max-w-none space-y-6 text-zinc-300 leading-relaxed">
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">Why edit at all?</h2>
+        <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed">
+          <Step
+            n={1}
+            title="Open Edit → tap Auto"
+            body="Open the photo, tap Edit, then tap the magic wand at the bottom of the toolbar. This applies Apple's own balanced correction as a starting point — every iPhone photo goes through something similar."
+            img="/photos/blog/edit-step1-start.jpg"
+            alt="Apple Photos Adjust screen before any edits"
+            arrows={[{ top: '79.7%', left: '50%' }]}
+          />
+
+          <Step
+            n={2}
+            title="Drag the dial to taste"
+            body="After tapping Auto, a dial appears below the tools. Drag it left or right to control how strong the auto-correction is — usually somewhere in the middle looks most natural. Too far right and it starts looking over-processed."
+            img="/photos/blog/edit-step2-auto.jpg"
+            alt="Auto adjustment dial after tapping the magic wand"
+            arrows={[{ top: '89%', left: '50%', rotate: -90 }]}
+          />
+
+          <Step
+            n={3}
+            title="Increase brightness — Exposure"
+            body="Swipe to the Exposure tool. This is your main brightness control. Push it up (positive) if the photo feels dark, or pull it down a little if it's overexposed. Keep changes small — ±10 to ±20 is usually plenty."
+            img="/photos/blog/edit-step3-exposure.jpg"
+            alt="Exposure slider example"
+            arrows={[{ top: '79.7%', left: '32.2%' }]}
+          />
+
+          <Step
+            n={4}
+            title="Add depth — Brilliance"
+            body="Brilliance lifts shadows and adds subtle depth without blowing out highlights. It's the single most flattering slider for portraits — a value around +20 to +35 gives skin a healthy, three-dimensional look."
+            img="/photos/blog/edit-step4-brilliance.jpg"
+            alt="Brilliance slider example"
+            arrows={[{ top: '79.7%', left: '49.8%' }]}
+          />
+
+          <Step
+            n={5}
+            title="Recover detail — Highlights"
+            body="If bright areas (like light clothing or a bright background) look washed out, pull Highlights down. This brings back detail without darkening the rest of the photo — don't overdo it, a small negative value is enough."
+            img="/photos/blog/edit-step5-highlights.jpg"
+            alt="Highlights slider example"
+            arrows={[{ top: '79.7%', left: '49.8%' }]}
+          />
+
+          <Step
+            n={6}
+            title="Open up dark areas — Shadows"
+            body="Push Shadows up slightly to lighten dark areas — this is what makes a photo feel bright and clear without raising the overall exposure too much. A moderate positive value works for most photos."
+            img="/photos/blog/edit-step6-shadows.jpg"
+            alt="Shadows slider example"
+            arrows={[{ top: '79.7%', left: '49.8%' }]}
+          />
+
+          <h2 className="text-2xl font-bold text-white mt-12 mb-4">Adding a natural tan — Warmth</h2>
           <p>
-            Every photo on your phone has been through Apple&apos;s image pipeline — its light balance, its
-            color rendering, its subtle processing. When your AI photo gets the same one-pass treatment,
-            it blends perfectly with the rest of your profile. Small adjustments, big difference.
+            Scroll to the <strong className="text-white">Warmth</strong> tool (the half-black, half-white circle icon).
+            Drag it toward the warm side (+10 to +25) to shift skin tone toward a natural, sun-kissed golden hue instead
+            of a flat or cool tone. This is the fastest way to make a photo look like it was taken somewhere warm and
+            sunny, even if it wasn&apos;t. Pair it with a touch of <strong className="text-white">Vibrance</strong> (+5 to +15)
+            for richer, more saturated skin without looking orange — always prefer Vibrance over Saturation, which
+            affects everything equally and can look artificial.
           </p>
-
-          <h2 className="text-2xl font-bold text-white mt-10 mb-4">The 3 controls that matter</h2>
-
-          {/* Annotated screenshot */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 max-w-sm mx-auto my-8">
-            <img src="/photos/blog/edit-guide-apple.jpg" alt="Apple Photos adjust screen" className="w-full h-auto" />
-            <ArrowLabel top="78.5%" left="8%" width="36%" label="1. Tap Auto" />
-            <ArrowLabel top="85%"   left="4%" width="28%" label="2. Fine-tune" />
-            <ArrowLabel top="92.5%" left="2%" width="24%" label="3. Adjust tools" />
-          </div>
-
-          <h3 className="text-xl font-bold text-white mt-8 mb-3">Step 1 — Start with Auto</h3>
-          <p>
-            Open the photo → tap <strong className="text-white">Edit</strong> → tap the{' '}
-            <strong className="text-white">magic wand</strong> (Auto). Apple analyses the image and applies
-            its own balanced light and color correction — the same look every iPhone photo gets. Then drag
-            the dial below to taste: usually somewhere between <strong className="text-white">50 and 80</strong> feels
-            most natural. 100 is often too much.
-          </p>
-
-          <h3 className="text-xl font-bold text-white mt-8 mb-3">Step 2 — Light: Exposure &amp; Brilliance</h3>
-          <p>
-            Swipe through the adjust tools to <strong className="text-white">Exposure</strong> and{' '}
-            <strong className="text-white">Brilliance</strong>:
-          </p>
-          <ul className="list-disc ml-6 space-y-2">
-            <li><strong className="text-white">Exposure +5 to +10</strong> if the photo feels slightly dark — never more.</li>
-            <li><strong className="text-white">Brilliance +10 to +20</strong> lifts shadows and adds depth without blowing out highlights. This is the single most flattering slider for portraits.</li>
-            <li>Leave <strong className="text-white">Highlights</strong> and <strong className="text-white">Shadows</strong> alone unless something looks clearly off.</li>
-          </ul>
-
-          <h3 className="text-xl font-bold text-white mt-8 mb-3">Step 3 — Color: Warmth &amp; Vibrance</h3>
-          <ul className="list-disc ml-6 space-y-2">
-            <li><strong className="text-white">Warmth +5 to +10</strong> gives skin a healthy, golden-hour tone. Cold photos read as &ldquo;stock photo&rdquo;.</li>
-            <li><strong className="text-white">Vibrance +5 to +15</strong> deepens colors without making skin look orange — always prefer Vibrance over Saturation.</li>
-            <li>If skin looks too red, pull <strong className="text-white">Tint</strong> a touch toward green (−5).</li>
-          </ul>
 
           <h2 className="text-2xl font-bold text-white mt-10 mb-4">The golden rule: keep it subtle</h2>
           <p>
-            Every adjustment should stay in the <strong className="text-white">±5 to ±20 range</strong>. If you can
-            immediately tell the photo was edited, you&apos;ve gone too far — tap and hold the photo while editing to
-            compare with the original, and dial back until the edit is invisible but the photo simply looks{' '}
-            <em>better</em>.
+            Every slider above should stay in a range you&apos;d barely notice on its own. If you can immediately tell
+            the photo was edited, you&apos;ve gone too far — press and hold the photo while editing to compare with the
+            original, and dial back until the change is invisible but the photo simply looks <em>better</em>. Skip the
+            Filters tab entirely — named filters apply a look that experienced swipers subconsciously register as
+            processed.
           </p>
-          <p>
-            Skip the Filters tab entirely. Named filters (Vivid, Dramatic…) apply a recognisable look that
-            experienced swipers subconsciously register as processed.
-          </p>
+
+          <h2 className="text-2xl font-bold text-white mt-10 mb-4">The result</h2>
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 max-w-xs mx-auto my-6">
+            <img src="/photos/blog/edit-final-result.jpg" alt="Final edited photo result" className="w-full h-auto" />
+          </div>
+          <p className="text-center text-zinc-500 text-sm italic">Same photo, 2 minutes of editing — brighter, warmer, more natural.</p>
 
           <h2 className="text-2xl font-bold text-white mt-10 mb-4">The 60-second checklist</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>Auto (magic wand) → dial to ~50–80</li>
-            <li>Brilliance +10–20, Exposure only if needed</li>
-            <li>Warmth +5–10, Vibrance +5–15</li>
+            <li>Auto (magic wand) → dial to taste</li>
+            <li>Exposure — brighten if needed</li>
+            <li>Brilliance +20 to +35</li>
+            <li>Highlights — small negative if anything looks washed out</li>
+            <li>Shadows — small positive to open up dark areas</li>
+            <li>Warmth +10 to +25 for a natural tan, Vibrance +5 to +15</li>
             <li>Compare with the original — if you can see the edit, reduce it</li>
-            <li>Done. Save and upload.</li>
           </ul>
         </div>
 

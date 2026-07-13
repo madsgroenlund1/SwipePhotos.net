@@ -1,6 +1,9 @@
 import { fal } from '@fal-ai/client'
-import { getPreviewTemplatesForCategory, pickPaidTemplates, pickCustomerPhotoForTemplate, Template, TEMPLATES } from './templates'
+import { getPreviewTemplatesForCategory, Template, TEMPLATES } from './templates'
 import { TEMPLATE_PROMPTS, tattooNote } from './template-prompts'
+import { getMonthlyTemplates } from './products'
+import { buildPaidGenerationPrompt } from './paid-prompt'
+import type { PackageId } from './stripe'
 
 fal.config({ credentials: process.env.FAL_KEY })
 
@@ -310,31 +313,39 @@ export async function runPreviewFaceSwaps(
 }
 
 // ─── Paid generation (async queue, post-payment) ──────────────────────────────
+//
+// Uses the customer's PACKAGE TIER to pick the current month's real-model-photo
+// folder (Produktet/<Month>/<Starter|Premium|Pro>, uploaded to Supabase — see
+// src/lib/products.ts) and runs the bulletproof identity-lock prompt from
+// src/lib/paid-prompt.ts against every photo in that folder. One job per photo,
+// full customer photo set (all angles + tattoo ref) sent to every job.
 
 export async function submitFaceSwapJobs(
   customerPhotoUrls: string[],
-  preferredCategory?: string,
-  hasTattoos?: boolean
+  packageId: PackageId,
+  hasTattoos?: boolean,
+  tattooUrl?: string
 ): Promise<JobEntry[]> {
   if (!customerPhotoUrls.length) throw new Error('No customer photos provided')
 
-  const templates = pickPaidTemplates(preferredCategory, 20)
+  const templates = await getMonthlyTemplates(packageId)
+  if (!templates.length) {
+    console.error(`[faceswap] No templates found for package ${packageId} in current or prior months`)
+    return []
+  }
+
+  const prompt = buildPaidGenerationPrompt(!!(hasTattoos && tattooUrl))
 
   console.log(
     `[faceswap] Submitting ${templates.length} jobs — model: ${MODEL}`,
-    `photos: ${customerPhotoUrls.length}, tattoos: ${!!hasTattoos}`,
+    `package: ${packageId}, photos: ${customerPhotoUrls.length}, tattoos: ${!!hasTattoos}`,
     templates.map(t => t.id)
   )
 
   const jobs = await Promise.allSettled(
-    templates.map((template, idx) => {
-      // Rotate customer photos for variety; always include the second photo if available
-      const primary = pickCustomerPhotoForTemplate(customerPhotoUrls, idx)
-      const secondary = customerPhotoUrls.find(u => u !== primary)
-      const imageUrls = secondary
-        ? [template.url, primary, secondary]
-        : [template.url, primary]
-      const prompt = buildPrompt(template, imageUrls.length - 1)
+    templates.map(template => {
+      const imageUrls = [template.url, ...customerPhotoUrls]
+      if (hasTattoos && tattooUrl) imageUrls.push(tattooUrl)
 
       return fal.queue
         .submit(MODEL, { input: { image_urls: imageUrls, prompt } as SeedreamInput })
@@ -419,14 +430,6 @@ export function parseJobEntries(raw: string): JobEntry[] {
   } catch {
     return []
   }
-}
-
-/** @deprecated use submitFaceSwapJobs */
-export async function submitFaceSwaps(
-  customerPhotoUrl: string,
-  preferredScene?: string
-): Promise<JobEntry[]> {
-  return submitFaceSwapJobs([customerPhotoUrl], preferredScene)
 }
 
 export function pickBestFacePhoto(photoUrls: string[]): string {

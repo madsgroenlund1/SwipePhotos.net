@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { stripe, PackageId } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
 import { submitFaceSwapJobs } from '@/lib/faceswap'
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const [{ data: uploads }, { data: orderRow }] = await Promise.all([
       supabase.from('uploads').select('file_url').eq('order_id', orderId),
-      supabase.from('orders').select('selected_presets, referred_by_code, user_id').eq('id', orderId).single(),
+      supabase.from('orders').select('selected_presets, referred_by_code, user_id, package_type').eq('id', orderId).single(),
     ])
 
     if (!uploads?.length) {
@@ -64,27 +64,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
+    // The tattoo reference is uploaded under a recognisable filename (see
+    // onboarding prepareCheckout) so it can be kept separate from the angle
+    // photos — it must be sent to every job, never rotated away.
+    const allUrls = uploads.map((u: { file_url: string }) => u.file_url)
+    const tattooSourceUrl = allUrls.find(u => u.includes('tattoo-reference'))
+    const imageUrls = allUrls.filter(u => u !== tattooSourceUrl)
     const selectedPresets = (orderRow?.selected_presets as string[] | null) ?? []
-    const preferredScene = selectedPresets.find(p => p !== 'has_tattoos')
     const hasTattoos = selectedPresets.includes('has_tattoos')
+    const packageId = (orderRow?.package_type as PackageId) ?? 'popular'
 
     try {
-      // Upload all customer photos to fal.ai storage so we can rotate through them per template
+      // Upload all customer photos (+ tattoo ref) to fal.ai storage
+      async function toFalUrl(url: string) {
+        const falUrl = await fal.storage.upload(
+          await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
+        )
+        return falUrl
+      }
+
       const falPhotoUrls: string[] = []
       for (const url of imageUrls) {
         try {
-          const falUrl = await fal.storage.upload(
-            await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
-          )
-          falPhotoUrls.push(falUrl)
+          falPhotoUrls.push(await toFalUrl(url))
         } catch (e) {
           console.warn('[stripe webhook] Failed to upload photo to fal.ai:', url, e)
         }
       }
       if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      const entries = await submitFaceSwapJobs(falPhotoUrls, preferredScene, hasTattoos)
+      const falTattooUrl = tattooSourceUrl ? await toFalUrl(tattooSourceUrl).catch(() => undefined) : undefined
+
+      const entries = await submitFaceSwapJobs(falPhotoUrls, packageId, hasTattoos, falTattooUrl)
 
       if (!entries.length) throw new Error('No jobs submitted')
 

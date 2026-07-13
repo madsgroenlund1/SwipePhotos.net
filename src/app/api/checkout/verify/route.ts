@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
-import { stripe } from '@/lib/stripe'
+import { stripe, PackageId } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/resend'
 import { submitFaceSwapJobs } from '@/lib/faceswap'
@@ -47,29 +47,38 @@ export async function POST(req: NextRequest) {
       if (data?.length) { uploads = data; break }
       if (attempt < 4) await new Promise(r => setTimeout(r, 3_000))
     }
-    const { data: orderFull } = await supabase.from('orders').select('selected_presets').eq('id', orderId).single()
+    const { data: orderFull } = await supabase.from('orders').select('selected_presets, package_type').eq('id', orderId).single()
 
     if (!uploads?.length) {
       console.warn('[verify] No uploads after retries for order', orderId, '— leaving as processing')
       return NextResponse.json({ ok: true, warning: 'no_uploads' })
     }
 
-    const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-    const preferredScene = (orderFull?.selected_presets as string[] | null)?.[0]
+    const allUrls = uploads.map((u: { file_url: string }) => u.file_url)
+    const tattooSourceUrl = allUrls.find(u => u.includes('tattoo-reference'))
+    const imageUrls = allUrls.filter(u => u !== tattooSourceUrl)
+    const selectedPresets = (orderFull?.selected_presets as string[] | null) ?? []
+    const hasTattoos = selectedPresets.includes('has_tattoos')
+    const packageId = (orderFull?.package_type as PackageId) ?? 'popular'
 
     try {
+      async function toFalUrl(url: string) {
+        return fal.storage.upload(
+          await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
+        )
+      }
+
       const falPhotoUrls: string[] = []
       for (const url of imageUrls) {
         try {
-          const falUrl = await fal.storage.upload(
-            await fetch(url).then(r => r.blob()).then(b => new File([b], 'face.jpg', { type: 'image/jpeg' }))
-          )
-          falPhotoUrls.push(falUrl)
+          falPhotoUrls.push(await toFalUrl(url))
         } catch (e) { console.warn('[verify] Failed to upload photo to fal.ai:', e) }
       }
       if (!falPhotoUrls.length) throw new Error('Could not upload any customer photos to fal.ai')
 
-      const entries = await submitFaceSwapJobs(falPhotoUrls, preferredScene)
+      const falTattooUrl = tattooSourceUrl ? await toFalUrl(tattooSourceUrl).catch(() => undefined) : undefined
+
+      const entries = await submitFaceSwapJobs(falPhotoUrls, packageId, hasTattoos, falTattooUrl)
       if (!entries.length) throw new Error('No jobs submitted')
 
       await supabase.from('orders').update({

@@ -1,10 +1,12 @@
 /**
- * Template catalog — model photos used as base images for identity generation.
+ * Template catalog — used for the free PREVIEW step only (the 4 mannequin
+ * settings + variety fallback for onboarding style selection).
  *
- * The catalog is built from the ACTUAL contents of the Supabase "references"
- * bucket (files are stored under descriptive names without extensions).
+ * Paid, post-purchase generation no longer uses this file — it pulls the
+ * customer's package tier + current month from src/lib/products.ts instead
+ * (see Produktet/<Month>/<Tier>/ and scripts/upload-products.mjs).
  *
- * HOW TO ADD YOUR OWN PHOTOS:
+ * HOW TO ADD YOUR OWN PREVIEW PHOTOS:
  *  1. Upload to Supabase bucket "references" (currently public)
  *  2. Add an entry to CATALOG below (name must match the bucket object name)
  *  3. previewEligible is reserved for the 4 mannequin templates
@@ -260,81 +262,9 @@ export function getPreviewTemplatesForCategory(category: string): Template[] {
   return picked.slice(0, 5)
 }
 
-/**
- * Pick up to `count` templates for the paid photo set.
- * Prioritises variety: different categories, expressions, crops, face angles.
- * Put preferredCategory first.
- */
 // Map onboarding style IDs that don't exactly match template categories
+// (still used by getPreviewTemplatesForCategory above).
 const STYLE_TO_CATEGORY: Record<string, Category> = {
   rooftop: 'outdoor',
   beach:   'outdoor',
-}
-
-export function pickPaidTemplates(preferredCategory?: string, count = 20): Template[] {
-  const pool = getActiveTemplates().sort((a, b) => b.quality - a.quality)
-
-  const resolved = preferredCategory
-    ? (STYLE_TO_CATEGORY[preferredCategory] ?? preferredCategory as Category)
-    : undefined
-
-  const preferred = pool.filter(t => t.category === resolved)
-  const rest = pool.filter(t => t.category !== resolved)
-
-  // Interleave: 40% preferred, 60% variety
-  const preferredCount = Math.min(Math.round(count * 0.4), preferred.length)
-  const selectedPreferred = preferred.slice(0, preferredCount)
-  const selectedRest = pickVaried(rest, count - selectedPreferred.length)
-
-  return [...selectedPreferred, ...selectedRest].slice(0, count)
-}
-
-/**
- * Select templates maximising variety across category, expression, crop, and face angle.
- */
-function pickVaried(pool: Template[], count: number): Template[] {
-  const result: Template[] = []
-  const usedCats = new Set<string>()
-  const usedExpressions = new Set<string>()
-  const usedAngles = new Set<string>()
-  const usedCrops = new Set<string>()
-
-  // First pass: pick one of each expression
-  for (const expr of ['smile', 'serious', 'confident', 'candid', 'neutral', 'slight-smile'] as const) {
-    if (result.length >= count) break
-    const match = pool.find(t => t.expression === expr && !result.includes(t))
-    if (match) result.push(match)
-  }
-
-  // Second pass: fill remaining with variety
-  for (const t of pool) {
-    if (result.length >= count) break
-    if (result.includes(t)) continue
-    const novelty =
-      (!usedCats.has(t.category) ? 2 : 0) +
-      (!usedExpressions.has(t.expression) ? 1 : 0) +
-      (!usedAngles.has(t.faceAngle) ? 1 : 0) +
-      (!usedCrops.has(t.crop) ? 1 : 0)
-    if (novelty > 0 || result.length < count) {
-      result.push(t)
-      usedCats.add(t.category)
-      usedExpressions.add(t.expression)
-      usedAngles.add(t.faceAngle)
-      usedCrops.add(t.crop)
-    }
-  }
-
-  return result.slice(0, count)
-}
-
-/**
- * Pick the best customer upload URL for a given template.
- * Rotates through all customer uploads so each template uses a different source photo.
- */
-export function pickCustomerPhotoForTemplate(
-  customerPhotoUrls: string[],
-  templateIndex: number
-): string {
-  if (!customerPhotoUrls.length) throw new Error('No customer photos')
-  return customerPhotoUrls[templateIndex % customerPhotoUrls.length]
 }

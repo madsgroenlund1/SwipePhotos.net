@@ -21,7 +21,7 @@ for (const orderId of ORDER_IDS) {
   console.log('=== order', orderId)
   const [{ data: uploads }, { data: order }] = await Promise.all([
     supabase.from('uploads').select('file_url').eq('order_id', orderId),
-    supabase.from('orders').select('selected_presets, status').eq('id', orderId).single(),
+    supabase.from('orders').select('selected_presets, status, package_type').eq('id', orderId).single(),
   ])
   if (!uploads?.length) { console.log('no uploads — skipping'); continue }
 
@@ -33,8 +33,8 @@ for (const orderId of ORDER_IDS) {
   console.log('uploaded', falUrls.length, 'photos to fal')
 
   const presets = (order?.selected_presets as string[] | null) ?? []
-  const scene = presets.find(p => p !== 'has_tattoos')
-  const entries = await submitFaceSwapJobs(falUrls, scene, presets.includes('has_tattoos'))
+  const packageId = (order?.package_type as 'starter' | 'popular' | 'elite') ?? 'popular'
+  const entries = await submitFaceSwapJobs(falUrls, packageId, presets.includes('has_tattoos'))
   console.log('submitted', entries.length, 'jobs')
 
   await supabase.from('orders')
