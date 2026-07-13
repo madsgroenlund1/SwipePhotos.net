@@ -342,7 +342,30 @@ function AffiliateTab({ data, onJoined }: {
     )
   }
 
-  // ── State 2: Affiliate dashboard ──────────────────────────────────────────
+  // ── State 1.5: Applied, awaiting manual approval ──────────────────────────
+  // No referral link, stats or commission data until an admin approves the
+  // account in /admin — mirrors the public /affiliate application flow.
+  if (data.status !== 'approved') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-5">
+        <div className="relative overflow-hidden rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-950/20 to-[#111] p-8 text-center">
+          <div className="relative">
+            <div className="w-14 h-14 bg-yellow-600/15 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-yellow-500/20">
+              <Clock className="w-7 h-7 text-yellow-400" />
+            </div>
+            <h2 className="text-white font-bold text-2xl mb-2 tracking-tight">Application under review</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
+              Thanks for applying to the affiliate program. We review every application manually —
+              you&apos;ll get an email as soon as you&apos;re approved, and your referral link and stats
+              will appear here.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── State 2: Affiliate dashboard (approved) ───────────────────────────────
 
   const convRate       = data.clicks > 0 ? ((data.conversions / data.clicks) * 100).toFixed(1) : '0.0'
   const availableCents = data.approvedCents
@@ -351,17 +374,6 @@ function AffiliateTab({ data, onJoined }: {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-
-      {data.status !== 'approved' && (
-        <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-4 flex items-center gap-3">
-          <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-          <div>
-            <p className="text-yellow-300 text-sm font-semibold">Under review</p>
-            <p className="text-zinc-400 text-xs mt-0.5">Your affiliate account is being reviewed. You&apos;ll receive an email when approved.</p>
-          </div>
-        </div>
-      )}
-
       {/* Referral link */}
       <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">

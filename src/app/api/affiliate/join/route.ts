@@ -44,10 +44,11 @@ export async function POST() {
     .update({ referral_code: refCode })
     .eq('id', user.id)
 
-  // Create affiliate row — auto-approved for self-service signups
+  // Create affiliate row — pending until manually approved in /admin
+  // (same review queue as the public /affiliate application form).
   const { error } = await admin.from('affiliates').insert({
     user_id: user.id,
-    status: 'approved',
+    status: 'pending',
     clicks: 0,
     signups: 0,
     conversions: 0,
@@ -62,7 +63,7 @@ export async function POST() {
 
   return NextResponse.json({
     ok: true,
-    status: 'approved',
+    status: 'pending',
     refCode,
     refLink: `${appUrl}/${refCode}`,
   })
