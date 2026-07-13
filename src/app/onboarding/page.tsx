@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { useUser } from '@clerk/nextjs'
+import { useUser, SignUp } from '@clerk/nextjs'
+import { clerkAppearance } from '@/lib/clerk-appearance'
 import { PLANS } from '@/lib/pricing'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -181,7 +182,7 @@ function DetectorCard({ img, brand, detected }: { img: string; brand: DetectorBr
   const accent = detected ? 'text-red-500' : 'text-green-600'
   const pillBg = detected ? 'bg-red-500' : 'bg-green-600'
   return (
-    <div className="flex-shrink-0 w-[190px] snap-center">
+    <div className="min-w-0">
       <div className="flex justify-center mb-1.5"><BrandChip brand={brand} /></div>
       <div className={cn('rounded-xl border-2 overflow-hidden bg-white text-left',
         detected ? 'border-red-500/80 shadow-lg shadow-red-500/10' : 'border-green-500/80 shadow-lg shadow-green-500/10')}>
@@ -272,12 +273,34 @@ function DetectorCard({ img, brand, detected }: { img: string; brand: DetectorBr
   )
 }
 
-// Horizontal snap-scroll row of the three detector cards
+// All three detector cards side by side — no scrolling
 function DetectorRow({ img, detected }: { img: string; detected: boolean }) {
   const brands: DetectorBrand[] = detected ? ['TruthScan', 'sightengine', 'IsThisAI'] : ['sightengine', 'TruthScan', 'IsThisAI']
   return (
-    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 px-4 -mx-4 scrollbar-hide">
+    <div className="grid grid-cols-3 gap-2">
       {brands.map(brand => <DetectorCard key={brand} img={img} brand={brand} detected={detected} />)}
+    </div>
+  )
+}
+
+// Skeleton row shown while "scanning"/"verifying" — empty cards with an
+// animated progress bar, revealed as the real result cards afterwards.
+function DetectorSkeletonRow({ detected }: { detected: boolean }) {
+  const brands: DetectorBrand[] = detected ? ['TruthScan', 'sightengine', 'IsThisAI'] : ['sightengine', 'TruthScan', 'IsThisAI']
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {brands.map((brand, i) => (
+        <div key={brand} className="min-w-0">
+          <div className="flex justify-center mb-1.5"><BrandChip brand={brand} /></div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center" style={{ aspectRatio: '3/5' }}>
+            <div className="w-3/5 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className={cn('h-full rounded-full', detected ? 'bg-red-500' : 'bg-green-500')}
+                style={{ animation: 'fillbar 2.4s ease-in-out forwards', animationDelay: `${i * 0.2}s`, width: '0%' }} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <style>{`@keyframes fillbar { from { width: 0% } to { width: 100% } }`}</style>
     </div>
   )
 }
@@ -311,13 +334,11 @@ export default function OnboardingPage() {
   const [hasTattoos, setHasTattoos]         = useState<boolean|null>(null)
   const [tattooFile, setTattooFile]         = useState<File|null>(null)
   const [tattooPreview, setTattooPreview]   = useState<string|null>(null)
-  const [tattooDesc, setTattooDesc]         = useState('')
   const [selectedStyle, setSelectedStyle]   = useState('restaurant')
   const [selectedPackage, setSelectedPackage] = useState('popular')
   const [billing, setBilling] = useState<'monthly'|'yearly'>('monthly')
   const priceIdFor = (pkg: typeof PACKAGES[number]) => billing === 'yearly' ? pkg.yearlyPriceId : pkg.monthlyPriceId
-  const [email, setEmail]                   = useState('')
-  const [agreedToTerms, setAgreedToTerms]   = useState(false)
+  const [checkoutReady, setCheckoutReady]   = useState(false)
   const [loading, setLoading]               = useState(false)
   const [checkoutError, setCheckoutError]   = useState<string|null>(null)
 
@@ -400,7 +421,6 @@ export default function OnboardingPage() {
         fd.append('hasTattoos', String(hasTattoos === true))
         if (hasTattoos === true && tattooFile) {
           fd.append('tattooPhoto', await compressImage(tattooFile))
-          if (tattooDesc.trim()) fd.append('tattooDesc', tattooDesc.trim().slice(0, 200))
         }
         setGenStatus('uploading')
 
@@ -518,14 +538,16 @@ export default function OnboardingPage() {
 
   // ─── Checkout ─────────────────────────────────────────────────────────────
 
-  async function handleEmailSubmit() {
-    if (!email.includes('@') || !agreedToTerms) return
+  // Create the Stripe checkout session + upload photos, then either go
+  // straight to payment (signed in) or stash it and show the Clerk box.
+  async function prepareCheckout() {
     setLoading(true); setCheckoutError(null)
     try {
       const pkg = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES.find(p => p.popular) || PACKAGES[1]
+      const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress ?? ''
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, priceId: priceIdFor(pkg), email, style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
+        body: JSON.stringify({ packageId: pkg.id, priceId: priceIdFor(pkg), email: clerkEmail, style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
       })
       const data = await res.json()
       if (!res.ok || data.error) { setCheckoutError(data.error || `Something went wrong (${res.status})`); setLoading(false); return }
@@ -534,15 +556,42 @@ export default function OnboardingPage() {
         if (files.length > 0) {
           const compressed = await Promise.all(files.map(f => compressImage(f)))
           const fd = new FormData(); fd.append('orderId', data.orderId)
-          for (const p of compressed) fd.append('files', p)
+          for (const c of compressed) fd.append('files', c)
           await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
         }
       }
-      if (data.url) { window.location.href = data.url; return }
-      setCheckoutError('No payment URL received. Please try again.')
-    } catch (err) { setCheckoutError(`Something went wrong. Please try again.`) }
-    setLoading(false)
+      if (!data.url) { setCheckoutError('No payment URL received. Please try again.'); setLoading(false); return }
+
+      if (clerkUser && clerkEmail) {
+        // Already signed in → straight to Stripe
+        if (data.orderId) {
+          await fetch(`/api/orders/${data.orderId}/set-email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clerkEmail }) }).catch(() => {})
+        }
+        window.location.href = data.url
+        return
+      }
+
+      // Not signed in — stash and show the Clerk sign-up box. After sign-up
+      // Clerk force-redirects to /go-checkout which forwards to Stripe.
+      localStorage.setItem('sw_pending_checkout', data.url)
+      if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
+      if (displayPhoto) localStorage.setItem('sw_pending_preview_url', displayPhoto)
+      setCheckoutReady(true)
+      setLoading(false)
+    } catch {
+      setCheckoutError('Something went wrong. Please try again.')
+      setLoading(false)
+    }
   }
+
+  // Prepare the checkout as soon as the user reaches the final step
+  useEffect(() => {
+    if (step !== 10) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCheckoutReady(false)
+    prepareCheckout()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -707,10 +756,14 @@ export default function OnboardingPage() {
                   {hasTattoos === true && (
                     <div className="mt-3 bg-white/[0.03] border border-white/8 rounded-2xl p-3.5">
                       <div className="flex gap-3">
-                        {/* Example */}
-                        <div className="flex-shrink-0 w-20">
+                        {/* Example with arrow pointing at the tattoo */}
+                        <div className="flex-shrink-0 w-24">
                           <div className="relative rounded-xl overflow-hidden border border-green-500/40" style={{ aspectRatio: '3/4' }}>
                             <img src="/photos/upload-examples/tattoo-example.jpg" alt="Tattoo example" className="w-full h-full object-cover object-top" />
+                            {/* Red arrow, left → right, pointing at the tattoo */}
+                            <svg className="absolute text-red-500 drop-shadow-md" style={{ left: '1%', top: '56%', width: '34%' }} viewBox="0 0 40 16" fill="none" aria-hidden>
+                              <path d="M2 8h28m0 0l-7-6m7 6l-7 6" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                           </div>
                           <p className="text-green-400 text-[9px] text-center mt-1 font-medium">✓ Good example</p>
                         </div>
@@ -733,10 +786,7 @@ export default function OnboardingPage() {
                               <>＋ Upload a photo of your tattoos</>
                             )}
                           </button>
-                          <textarea value={tattooDesc} onChange={e => setTattooDesc(e.target.value)}
-                            placeholder="Describe them briefly — e.g. 'portrait tattoo on my left forearm'"
-                            rows={2} maxLength={200}
-                            className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-white text-xs placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 transition-all resize-none" />
+                          <p className="text-zinc-500 text-[11px] leading-relaxed">Make sure the tattoo is clearly visible, in natural light and not covered by clothing.</p>
                         </div>
                       </div>
                     </div>
@@ -872,37 +922,25 @@ export default function OnboardingPage() {
               <div className="p-6 pb-0">
                 <ProgressBar step={6} total={TOTAL_STEPS} onBack={back} />
               </div>
-              {!scanDone ? (
-                <div className="px-5 pt-6 pb-10 flex flex-col items-center min-h-[420px] justify-center">
-                  <div className="relative mb-6">
-                    <img src={previewUrls[pickedIdx] ?? stylePlaceholder} alt="" className="w-32 h-40 object-cover object-top rounded-2xl border border-white/10" onContextMenu={e => e.preventDefault()} />
-                    <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-                      <div className="absolute inset-x-0 h-10 bg-gradient-to-b from-transparent via-blue-400/40 to-transparent animate-[scanline_1.4s_ease-in-out_infinite]" />
-                    </div>
-                  </div>
-                  <h2 className="text-xl font-bold text-white mb-2">Scanning your photo…</h2>
-                  <p className="text-zinc-500 text-sm mb-6">Running it through the major AI detectors.</p>
-                  <div className="flex gap-2">
-                    {(['TruthScan', 'sightengine', 'IsThisAI'] as const).map((b, i) => (
-                      <div key={b} className="animate-pulse" style={{ animationDelay: `${i * 0.3}s` }}><BrandChip brand={b} /></div>
-                    ))}
-                  </div>
-                  <style>{`@keyframes scanline { 0%,100% { top: -12% } 50% { top: 100% } }`}</style>
-                </div>
-              ) : (
-                <>
-                  <div className="px-5 pt-2 pb-3 text-center">
-                    <h2 className="text-2xl font-extrabold text-red-500 mb-1.5 uppercase tracking-tight">Don&apos;t use this photo yet!</h2>
-                    <p className="text-zinc-400 text-sm leading-relaxed">Dating apps can detect it&apos;s AI generated and might permanently ban you.</p>
-                  </div>
-                  <div className="px-4 pb-3">
-                    <DetectorRow img={previewUrls[pickedIdx] ?? stylePlaceholder} detected />
-                  </div>
-                  <div className="px-4 pb-4">
-                    <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-                  </div>
-                </>
-              )}
+              <div className="px-5 pt-2 pb-3 text-center">
+                <h2 className={cn('text-2xl font-extrabold mb-1.5 tracking-tight', scanDone ? 'text-red-500 uppercase' : 'text-white')}>
+                  {scanDone ? "Don't use this photo yet!" : 'Scanning your photo…'}
+                </h2>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  {scanDone ? "Dating apps can detect it's AI generated and might permanently ban you." : 'Running it through the major AI detectors.'}
+                </p>
+              </div>
+              <div className="px-4 pb-3">
+                {scanDone
+                  ? <DetectorRow img={previewUrls[pickedIdx] ?? stylePlaceholder} detected />
+                  : <DetectorSkeletonRow detected />}
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} disabled={!scanDone}
+                  className={cn('w-full font-semibold py-4 rounded-2xl transition-all text-base', scanDone ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
+                  {scanDone ? 'Continue →' : 'Scanning…'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -955,31 +993,25 @@ export default function OnboardingPage() {
               <div className="p-6 pb-0">
                 <ProgressBar step={8} total={TOTAL_STEPS} />
               </div>
-              {!verifyDone ? (
-                <div className="px-5 pt-6 pb-10 flex flex-col items-center min-h-[420px] justify-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-green-400/30 border-t-green-400 animate-spin mb-6" />
-                  <h2 className="text-xl font-bold text-white mb-2">Verifying your new photo…</h2>
-                  <p className="text-zinc-500 text-sm mb-6">Re-running all AI detection tools.</p>
-                  <div className="flex gap-2">
-                    {(['sightengine', 'TruthScan', 'IsThisAI'] as const).map((b, i) => (
-                      <div key={b} className="animate-pulse" style={{ animationDelay: `${i * 0.3}s` }}><BrandChip brand={b} /></div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="px-5 pt-2 pb-3 text-center">
-                    <h2 className="text-3xl font-extrabold text-green-400 mb-1.5">Undetectable</h2>
-                    <p className="text-zinc-400 text-sm leading-relaxed">Your photo now passes all major AI detection tools. Safe to upload to any dating app.</p>
-                  </div>
-                  <div className="px-4 pb-3">
-                    <DetectorRow img={displayPhoto} detected={false} />
-                  </div>
-                  <div className="px-4 pb-4">
-                    <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Continue →</button>
-                  </div>
-                </>
-              )}
+              <div className="px-5 pt-2 pb-3 text-center">
+                <h2 className={cn('text-3xl font-extrabold mb-1.5', verifyDone ? 'text-green-400' : 'text-white')}>
+                  {verifyDone ? 'Undetectable' : 'Verifying your new photo…'}
+                </h2>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  {verifyDone ? 'Your photo now passes all major AI detection tools. Safe to upload to any dating app.' : 'Re-running all AI detection tools.'}
+                </p>
+              </div>
+              <div className="px-4 pb-3">
+                {verifyDone
+                  ? <DetectorRow img={displayPhoto} detected={false} />
+                  : <DetectorSkeletonRow detected={false} />}
+              </div>
+              <div className="px-4 pb-4">
+                <button onClick={next} disabled={!verifyDone}
+                  className={cn('w-full font-semibold py-4 rounded-2xl transition-all text-base', verifyDone ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
+                  {verifyDone ? 'Continue →' : 'Verifying…'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -1070,85 +1102,33 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 10: Email / Checkout ────────────────────────── */}
+          {/* ── STEP 10: Sign in with Clerk → payment ────────────── */}
           {step === 10 && (
             <div className="bg-[#111] rounded-3xl overflow-hidden">
-              <div className="p-6 pb-5">
+              <div className="p-6 pb-2">
                 <ProgressBar step={10} total={TOTAL_STEPS} onBack={back} />
-                <h2 className="text-2xl font-bold text-white mb-1 tracking-tight">Almost there</h2>
-                <p className="text-zinc-500 text-sm">Enter your email to receive your photos and proceed to payment.</p>
+                <h2 className="text-2xl font-bold text-white mb-1 tracking-tight text-center">Almost there</h2>
+                <p className="text-zinc-500 text-sm text-center">Create your account to save your photos and continue to payment.</p>
               </div>
-              <div className="px-6 pb-6 space-y-3">
-                {/* Google */}
-                <button disabled={loading} onClick={async () => {
-                  setLoading(true); setCheckoutError(null)
-                  try {
-                    const pkgG = PACKAGES.find(p => p.id === selectedPackage) || PACKAGES[1]
-                    const res = await fetch('/api/checkout', {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ packageId: pkgG.id, priceId: priceIdFor(pkgG), email: '', style: selectedStyle, hasTattoos: hasTattoos===true, selectedPreviewUrl: displayPhoto }),
-                    })
-                    const data = await res.json()
-                    if (!res.ok || data.error) { setCheckoutError(data.error || `Something went wrong (${res.status})`); setLoading(false); return }
-                    if (data.orderId) {
-                      const files = getSlotFiles()
-                      if (files.length > 0) {
-                        const compressed = await Promise.all(files.map(f => compressImage(f)))
-                        const fd = new FormData(); fd.append('orderId', data.orderId)
-                        for (const p of compressed) fd.append('files', p)
-                        await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
-                      }
-                    }
-                    if (data.url) {
-                      const email = clerkUser?.primaryEmailAddress?.emailAddress
-                      if (clerkUser && email) {
-                        if (data.orderId) {
-                          await fetch(`/api/orders/${data.orderId}/set-email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }).catch(() => {})
-                        }
-                        window.location.href = data.url
-                      } else {
-                        // Not signed in — stash the checkout and send them through Clerk sign-in
-                        localStorage.setItem('sw_pending_checkout', data.url)
-                        if (data.orderId) localStorage.setItem('sw_pending_order_id', data.orderId)
-                        if (displayPhoto) localStorage.setItem('sw_pending_preview_url', displayPhoto)
-                        window.location.href = '/auth/signin?redirect_url=' + encodeURIComponent('/go-checkout')
-                      }
-                    } else { setCheckoutError('No payment URL received.'); setLoading(false) }
-                  } catch (err) { console.error('[checkout/google]', err); setCheckoutError('Could not connect to payment. Please use the email option instead.'); setLoading(false) }
-                }} className="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-50 text-gray-900 font-semibold py-3.5 rounded-2xl text-sm transition-all shadow-sm disabled:opacity-60">
-                  {loading ? <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" /> : (
-                    <>
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Continue with Google
-                    </>
-                  )}
-                </button>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-white/8" />
-                  <span className="text-zinc-600 text-xs">or use email</span>
-                  <div className="flex-1 h-px bg-white/8" />
-                </div>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-2xl px-4 py-3.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 transition-all" />
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <div onPointerDown={() => setAgreedToTerms(v => !v)} className={cn('mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors', agreedToTerms ? 'bg-blue-500 border-blue-500' : 'border-zinc-600 bg-transparent')}>
-                    {agreedToTerms && <CheckIcon className="text-white w-2.5 h-2.5" />}
+              <div className="px-2 pb-6 flex justify-center">
+                {checkoutError ? (
+                  <div className="px-4 py-6 w-full">
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-3">{checkoutError}</div>
+                    <button onClick={prepareCheckout} className="w-full bg-blue-600 hover:brightness-110 text-white font-semibold py-4 rounded-2xl transition-all text-base">Try again</button>
                   </div>
-                  <span className="text-zinc-500 text-xs leading-relaxed">
-                    I agree to the{' '}<Link href="/terms" className="text-zinc-300 underline underline-offset-2">Terms of Service</Link>{' '}and{' '}<Link href="/privacy" className="text-zinc-300 underline underline-offset-2">Privacy Policy</Link>
-                  </span>
-                </label>
-                {checkoutError && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">{checkoutError}</div>}
-                <button onPointerDown={handleEmailSubmit} disabled={!email.includes('@') || !agreedToTerms || loading}
-                  className={cn('w-full py-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-2', email.includes('@') && agreedToTerms && !loading ? 'bg-blue-600 hover:brightness-110 text-white' : 'bg-white/5 text-zinc-600 cursor-not-allowed')}>
-                  {loading ? <div className="w-4 h-4 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" /> : 'Continue to Payment →'}
-                </button>
-                <p className="text-center text-zinc-700 text-xs">Already have an account? <Link href="/auth/signin" className="text-blue-400 hover:text-blue-300 font-medium">Sign in</Link></p>
+                ) : !checkoutReady || loading ? (
+                  <div className="flex flex-col items-center gap-3 py-12">
+                    <div className="w-8 h-8 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+                    <p className="text-zinc-500 text-sm">Preparing your order…</p>
+                  </div>
+                ) : (
+                  <SignUp
+                    routing="hash"
+                    appearance={clerkAppearance}
+                    signInUrl="/auth/signin?redirect_url=%2Fgo-checkout"
+                    forceRedirectUrl="/go-checkout"
+                  />
+                )}
               </div>
             </div>
           )}
