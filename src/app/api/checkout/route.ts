@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, PACKAGES, PackageId } from '@/lib/stripe'
+import type Stripe from 'stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
@@ -76,8 +77,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not create order. Please try again.' }, { status: 500 })
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Only card, PayPal, MobilePay and Link — no Satispay etc.
+    // Methods not yet activated in the Stripe dashboard are dropped one by
+    // one so checkout keeps working while they're pending activation.
+    const wantedMethods = ['card', 'paypal', 'mobilepay', 'link']
+
+    const createSession = (methods: string[]) => stripe.checkout.sessions.create({
       mode: 'subscription',
+      payment_method_types: methods as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
       locale: 'auto',
       customer: customerId,
       customer_email: customerId ? undefined : (email || undefined),
@@ -100,7 +107,26 @@ export async function POST(req: NextRequest) {
       cancel_url: `${appUrl}/onboarding`,
     })
 
-    console.log('[checkout] Session created:', session.id, 'url:', session.url?.slice(0, 60))
+    let session: Stripe.Checkout.Session | null = null
+    const methods = [...wantedMethods]
+    while (methods.length > 0) {
+      try {
+        session = await createSession(methods)
+        break
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        const bad = methods.find(m => msg.includes(`: ${m} is invalid`) || msg.includes(`'${m}'`))
+        if (bad && methods.length > 1) {
+          console.warn(`[checkout] Payment method '${bad}' not activated — retrying without it`)
+          methods.splice(methods.indexOf(bad), 1)
+        } else {
+          throw e
+        }
+      }
+    }
+    if (!session) throw new Error('Could not create checkout session')
+
+    console.log('[checkout] Session created:', session.id, 'methods:', methods.join(','))
     return NextResponse.json({ url: session.url, orderId: order?.id })
   } catch (err) {
     console.error('[checkout] Error:', err)
