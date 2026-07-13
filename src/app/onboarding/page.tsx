@@ -664,11 +664,11 @@ export default function OnboardingPage() {
               <div className="px-4 mt-1 mb-2">
                 <div className="flex items-center gap-2">
                   {['1', '2', '3', '4'].map(n => (
-                    <div key={n} className="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
+                    <div key={n} className="flex-1 min-w-0 aspect-square rounded-2xl overflow-hidden border border-white/10">
                       <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   ))}
-                  <span className="ml-auto text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40 styles</span>
+                  <span className="flex-shrink-0 text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40</span>
                 </div>
               </div>
               <div className="px-4 pb-4 pt-1">
@@ -910,11 +910,11 @@ export default function OnboardingPage() {
               <div className="px-4 pb-3">
                 <div className="flex items-center gap-2">
                   {['1', '2', '3', '4'].map(n => (
-                    <div key={n} className="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
+                    <div key={n} className="flex-1 min-w-0 aspect-square rounded-2xl overflow-hidden border border-white/10">
                       <img src={`/photos/template-strip/${n}.jpg`} alt="" className="w-full h-full object-cover object-top" />
                     </div>
                   ))}
-                  <span className="ml-auto text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40 styles</span>
+                  <span className="flex-shrink-0 text-white text-xs font-semibold bg-white/10 border border-white/10 rounded-full px-3 py-1.5 whitespace-nowrap">+40</span>
                 </div>
               </div>
               <div className="px-4 pb-4">
