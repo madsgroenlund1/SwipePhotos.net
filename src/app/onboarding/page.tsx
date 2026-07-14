@@ -1137,6 +1137,7 @@ export default function OnboardingPage() {
                     appearance={clerkAppearance}
                     signInUrl="/auth/signin?redirect_url=%2Fgo-checkout"
                     forceRedirectUrl="/go-checkout"
+                    signInForceRedirectUrl="/go-checkout"
                   />
                 )}
               </div>
