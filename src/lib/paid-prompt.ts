@@ -30,9 +30,11 @@ Realism requirements — the result must be indistinguishable from an authentic,
 - No plastic or waxy skin texture, no mismatched lighting between face and body, no warped or malformed hands, no extra or missing fingers, no blurred or duplicated ears/hairline, no double edges, no floating hair strands, no gray or CGI undertone anywhere on the skin.
 - Seamless blending at the hairline, ears, jaw, neck and wrists — no visible seams or compositing artifacts.
 - Do not idealise, slim, smooth or beautify the face. Reproduce the exact real person.
+Tattoos — read carefully, this is a common mistake:
+- If the MODEL in image #1 has any visible tattoo on their arms, hands, neck, chest or anywhere else, that tattoo belongs to the model, NOT the customer. Remove it completely and replace it with clean, plain skin matching the customer's real skin tone and texture. Never let the model's tattoo carry over onto the customer.
 ${hasTattooRef
-  ? '\nA tattoo reference photo is included. Reproduce the tattoo(s) faithfully — correct design, correct location, correct scale — on the visible skin wherever it is exposed in image #1. Do not invent tattoos not shown in the reference.'
-  : '\nNo tattoo reference photo was provided. Do not invent tattoos or other markings that are not visible in the customer\'s reference photos.'}
+  ? '- A tattoo reference photo of the CUSTOMER is included. Reproduce the customer\'s own tattoo(s) faithfully — correct design, correct location, correct scale — on the visible skin wherever that body part is exposed in image #1.'
+  : '- No tattoo reference photo was provided for the customer, so he should show no tattoos at all in the result. Do not invent tattoos and do not keep the model\'s original tattoos.'}
 
 The final image must look like one real, unedited photograph of this exact person, taken in the exact setting, pose and moment shown in image #1.`
 }
