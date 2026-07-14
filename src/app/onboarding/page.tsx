@@ -883,19 +883,20 @@ export default function OnboardingPage() {
               </div>
               {previewUrls.length >= 2 ? (
                 <div className="px-4 pb-3">
+                  <p className="text-zinc-500 text-xs mb-2">Two looks, two vibes — a bad-boy edge and a gentleman charm.</p>
                   <div className="grid grid-cols-2 gap-2">
                     {previewUrls.map((url, i) => (
                       <button key={i} onClick={() => setPickedIdx(i)}
                         className={cn('relative rounded-2xl overflow-hidden transition-all', i===pickedIdx ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#111]' : 'ring-1 ring-white/10 opacity-70 hover:opacity-90')}
                         style={{ aspectRatio: '3/4' }} onContextMenu={e => e.preventDefault()}>
-                        <img src={url} alt={`Preview ${i+1}`} className="w-full h-full object-cover object-top select-none" draggable={false} />
+                        <img src={url} alt={i===0 ? 'Bad boy look' : 'Gentleman look'} className="w-full h-full object-cover object-top select-none" draggable={false} />
                         {i===pickedIdx && (
                           <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
                             <CheckIcon className="text-white w-3.5 h-3.5" />
                           </div>
                         )}
                         <div className="absolute top-2 left-2">
-                          <span className="text-white text-[10px] font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">Preview {i+1}</span>
+                          <span className="text-white text-[10px] font-semibold bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">{i===0 ? 'Bad Boy' : 'Gentleman'}</span>
                         </div>
                       </button>
                     ))}

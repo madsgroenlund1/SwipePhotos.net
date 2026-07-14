@@ -16,8 +16,8 @@ const WATCH_TATTOO = `If the customer has a clearly visible personal watch in th
 
 const REALISM = `Critical realism requirements: seamless skin blending, natural pores, realistic shadows, realistic ear and neck transitions, realistic hands and fingers, realistic fabric folds, and no gray mannequin remnants anywhere. Do not change the environment or scene objects. No face distortion, no extra fingers, no wrong skin tone, no cartoonish texture, and no AI look. The final image must look like a genuine photograph of the customer, not AI-generated.`
 
-const EXPRESSION_A = `Expression: neutral, composed, calm, and quietly confident. Mouth closed. No teeth visible. Not angry, not sad, not smiling — just relaxed and slightly aloof.`
-const EXPRESSION_B = `Expression: slightly positive and approachable, but subtle. Closed-mouth smile only. No teeth visible. Relaxed, lightly pleased and natural — not overly cheerful.`
+const EXPRESSION_A = `Expression ("Bad Boy" look): mouth closed, no teeth visible, not angry, not sad, not smiling. A magnetic, self-assured gaze — sharp, direct eye contact with real intensity, slightly lowered brow, a hint of a smirk at the corner of the mouth. Confident, a little edgy and mysterious, never blank or robotic. This must still be an exact match of the customer's own eyes, brow shape, and facial structure — only the intensity and focus of the expression changes, not the underlying face.`
+const EXPRESSION_B = `Expression ("Gentleman" look): a genuine, warm closed-mouth smile, no teeth visible. Eyes softly engaged and slightly crinkled at the corners as in a real natural smile, relaxed brow, approachable and charming rather than stiff or forced. Should read as effortlessly attractive and likeable — the kind of expression that makes someone want to swipe right — while remaining unmistakably the customer's own face, eyes, and features, not an idealised or generic face.`
 
 type StylePrompts = { neutral: string; smile: string }
 
