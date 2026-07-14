@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+// Last stage caps at 95%, not 100 — 100% is reserved for when the order is
+// actually confirmed ready (customer can download + email sent), not just
+// when this cosmetic timer finishes.
 const STAGES = [
   { label: 'Uploading your photos', pct: 15 },
   { label: 'Analyzing your features', pct: 35 },
   { label: 'Generating your photos', pct: 60 },
-  { label: 'Quality check', pct: 85 },
-  { label: 'Saving your photos', pct: 100 },
+  { label: 'Quality check', pct: 80 },
+  { label: 'Saving your photos', pct: 95 },
 ]
 
 // Face-swap takes ~30-60 sec per job. Advance stages every 12 sec so animation
@@ -64,6 +67,7 @@ export function ProcessingPageClient() {
           stopped = true
           clearInterval(poll)
           setActuallyReady(true)
+          setDisplayProgress(100)
           router.push(`/dashboard?order=${orderId}`)
         } else if (data.status === 'failed') {
           stopped = true
