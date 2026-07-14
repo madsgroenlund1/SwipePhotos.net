@@ -341,6 +341,7 @@ export default function OnboardingPage() {
   const [checkoutReady, setCheckoutReady]   = useState(false)
   const [loading, setLoading]               = useState(false)
   const [checkoutError, setCheckoutError]   = useState<string|null>(null)
+  const [restoredNotice, setRestoredNotice] = useState(false)
 
   const stylePlaceholder = STYLE_PLACEHOLDERS[selectedStyle] ?? STYLE_PLACEHOLDERS.restaurant
   // Use refined URL if available, fall back to picked raw preview, then placeholder
@@ -606,6 +607,58 @@ export default function OnboardingPage() {
     prepareCheckout()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, clerkLoaded])
+
+  // ─── Resume after Stripe "back" ─────────────────────────────────────────
+  // Clicking Stripe Checkout's back arrow is a full navigation back to
+  // /onboarding — every in-memory React state (uploaded photos, generated
+  // previews) is wiped, so without this the customer is dumped back at
+  // step 1 and has to redo photo upload + generation from scratch just to
+  // pick a different package. Since previews are already permanently saved
+  // in Supabase Storage (see /api/generate/preview), we only need to persist
+  // the small set of URLs/choices needed to jump straight back to the
+  // package-picker step.
+  const RESUME_KEY = 'sw_resume_v1'
+
+  // Save a snapshot once the customer has previews and reaches the package step.
+  useEffect(() => {
+    if (step < 9 || previewUrls.length < 2) return
+    try {
+      localStorage.setItem(RESUME_KEY, JSON.stringify({
+        previewUrls, pickedIdx, refinedUrl, selectedStyle, selectedPackage, billing,
+        hasTattoos: hasTattoos === true,
+      }))
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, previewUrls, pickedIdx, refinedUrl, selectedStyle, selectedPackage, billing, hasTattoos])
+
+  // Restore on first mount, e.g. after bouncing back from Stripe Checkout.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RESUME_KEY)
+      if (!raw) return
+      const saved = JSON.parse(raw) as {
+        previewUrls: string[]; pickedIdx: number; refinedUrl: string | null
+        selectedStyle: string; selectedPackage: string; billing: 'monthly'|'yearly'; hasTattoos: boolean
+      }
+      if (!saved.previewUrls?.length) return
+      setPreviewUrls(saved.previewUrls)
+      setPickedIdx(saved.pickedIdx ?? 0)
+      setRefinedUrl(saved.refinedUrl ?? null)
+      setSelectedStyle(saved.selectedStyle ?? 'restaurant')
+      setSelectedPackage(saved.selectedPackage ?? 'popular')
+      setBilling(saved.billing ?? 'monthly')
+      setHasTattoos(saved.hasTattoos === true)
+      setGenStatus('done')
+      setStep(9)
+      setRestoredNotice(true)
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function startOver() {
+    try { localStorage.removeItem(RESUME_KEY) } catch {}
+    window.location.href = '/onboarding'
+  }
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -1035,6 +1088,12 @@ export default function OnboardingPage() {
               <div className="p-4 pb-0">
                 <ProgressBar step={9} total={TOTAL_STEPS} onBack={back} />
               </div>
+              {restoredNotice && (
+                <div className="mx-4 mb-2 flex items-center justify-between gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2">
+                  <span className="text-blue-300 text-xs">Welcome back — pick a package to continue.</span>
+                  <button onClick={startOver} className="text-zinc-400 hover:text-white text-xs underline underline-offset-2 flex-shrink-0">Start over</button>
+                </div>
+              )}
               {/* Central photo with floating app icons */}
               <div className="relative flex justify-center pt-4 pb-6">
                 <div className="relative">

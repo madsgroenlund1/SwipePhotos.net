@@ -27,6 +27,12 @@ export function ProcessingPageClient() {
   const [displayProgress, setDisplayProgress] = useState(0)
   const [actuallyReady, setActuallyReady] = useState(false)
 
+  // Payment succeeded — clear the onboarding "resume after Stripe back" snapshot
+  // so a future visit doesn't offer to resume this already-paid order.
+  useEffect(() => {
+    try { localStorage.removeItem('sw_resume_v1') } catch {}
+  }, [])
+
   // Start polling for order status immediately — face-swap is fast (~30-60 sec)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
