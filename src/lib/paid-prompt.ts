@@ -15,6 +15,8 @@ export function buildPaidGenerationPrompt(hasTattooRef: boolean): string {
 
 The remaining images are reference photos of the real customer from different angles (and, if present, his full body and his tattoos). Use all of them together to reconstruct his exact identity: face shape, eyes and eye color, eyebrows, nose, lips, jawline, cheekbones, chin, ears, hairline, hair color and hairstyle, skin tone and skin texture, hands and finger shape, and arm/forearm proportions.
 
+Hands and visible body must match the customer, not the template model or a generic idealised body. Check the customer's full-body reference photo carefully and carry over: his actual hand shape, finger length and thickness, knuckle size, and any hand/finger hair. Match his real muscle definition and build — if he is lean, do not add muscle; if he visibly has noticeable muscle or forearm/vein definition in his reference photos, keep that, don't smooth it away. Match visible vein patterns on hands/forearms if present. Keep skin tone consistent between face, neck, hands and any other exposed skin — these must all look like the same real person, not a lighter or more "airbrushed" body than the face.
+
 Replace ONLY the person's face, head, hair, skin, hands and arms in image #1 with the customer's real identity from the reference photos. Do not change the pose, body position, clothing, framing, camera angle, background, or any scene object from image #1.
 
 Critical matching rules — these override everything else:
@@ -28,6 +30,7 @@ Critical matching rules — these override everything else:
 Realism requirements — the result must be indistinguishable from an authentic, unedited photograph, never AI-generated, never illustrated, never airbrushed:
 - Natural skin with visible pores, subtle imperfections, and realistic shadow falloff consistent with image #1's lighting.
 - No plastic or waxy skin texture, no mismatched lighting between face and body, no warped or malformed hands, no extra or missing fingers, no blurred or duplicated ears/hairline, no double edges, no floating hair strands, no gray or CGI undertone anywhere on the skin.
+- Avoid the classic "too perfect" AI look: keep natural micro-texture and slight tonal variation in the skin, especially around the mouth, cheeks and eyes when smiling — do not smooth it into a flat, retouched, plastic surface. Keep natural smile lines and creases.
 - Seamless blending at the hairline, ears, jaw, neck and wrists — no visible seams or compositing artifacts.
 - Do not idealise, slim, smooth or beautify the face. Reproduce the exact real person.
 Tattoos — read carefully, this is a common mistake:
