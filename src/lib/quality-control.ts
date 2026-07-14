@@ -20,18 +20,22 @@ export type QCResult = { pass: boolean; reason: string }
 
 const QC_MODEL = 'google/gemini-flash-1.5'
 
-const QC_PROMPT = `You are a strict quality inspector for a premium AI dating-photo service.
+const QC_PROMPT = `You are a strict quality inspector for a premium AI dating-photo service. Customers have complained about bad identity matches slipping through, so be genuinely strict — err on the side of FAIL when in doubt.
+
 Image 1 is the CUSTOMER's real reference photo (ground truth identity).
 Image 2 is the GENERATED result, which should show the same customer in a new scene.
 
 Reject (FAIL) if ANY of these are true:
-- The face in image 2 does not clearly look like the same person as image 1 — compare face shape, eyes, nose, and overall bone structure carefully
-- The face in image 2 looks AI-generated, plastic, waxy, or has visible artifacts
-- Hands or fingers in image 2 are malformed, extra, or missing
-- There are visible seams, blending errors, or mismatched lighting on the face in image 2
-- Gray or CGI undertone, or leftover mannequin-like skin, remains anywhere in image 2
+- EYE COLOR does not match image 1. Look closely at the exact shade (brown/blue/green/hazel) — this is the single most common failure, check it carefully every time.
+- The face in image 2 does not clearly look like the same person as image 1 — compare face shape, eyebrows, nose, lips, jawline, and overall bone structure carefully. If you would not confidently recognize this as the same person from image 1 alone, FAIL.
+- The head in image 2 looks disproportionate — too large, too small, or oddly shaped relative to a normal human head and body.
+- The face in image 2 looks AI-generated, plastic, waxy, overly smooth/airbrushed, or has visible artifacts.
+- Hands or fingers in image 2 are malformed, extra, or missing.
+- There are visible seams, blending errors, or mismatched lighting on the face in image 2.
+- Gray or CGI undertone, or leftover mannequin-like skin, remains anywhere in image 2.
+- Any OTHER person visible in image 2 (background people, bystanders, other customers) appears to have been altered, regenerated, or looks different in kind from a normal untouched photo — only the primary subject should ever be changed.
 
-Otherwise PASS. Be strict but fair — minor, barely-visible imperfections that a real customer would not notice on a phone screen are still a PASS.
+Otherwise PASS. Be strict but fair — minor, barely-visible imperfections that a real customer would not notice on a phone screen are still a PASS, but any identity mismatch (especially eye color) is always a FAIL regardless of how good the rest of the photo looks.
 
 Respond in EXACTLY this format, nothing else:
 VERDICT: PASS or FAIL
