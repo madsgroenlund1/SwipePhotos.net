@@ -44,27 +44,28 @@ export function IPhoneMockup({ children, className, darkStatusBar = false }: IPh
           9:41
         </span>
 
-        <div className="flex items-center gap-[6px]">
-          {/* Cellular — Apple SF style: 4 rounded bars increasing height */}
-          <svg width="17" height="12" viewBox="0 0 17 12" fill={iconColor}>
-            <rect x="0"  y="9"   width="3" height="3"  rx="1"/>
-            <rect x="4.5" y="6"  width="3" height="6"  rx="1"/>
-            <rect x="9"  y="3.5" width="3" height="8.5" rx="1"/>
-            <rect x="13.5" y="0" width="3" height="12" rx="1"/>
+        <div className="flex items-center gap-[7px]">
+          {/* Cellular — 4 rounded bars, increasing height, evenly spaced */}
+          <svg width="18" height="12" viewBox="0 0 18 12" fill={iconColor}>
+            <rect x="0"    y="8"    width="3.2" height="4"    rx="1"/>
+            <rect x="4.9"  y="6"    width="3.2" height="6"    rx="1"/>
+            <rect x="9.8"  y="3.2"  width="3.2" height="8.8"  rx="1"/>
+            <rect x="14.7" y="0.5"  width="3.2" height="11.5" rx="1"/>
           </svg>
 
-          {/* WiFi — Apple style: 3 arcs + filled dot */}
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="8" cy="11" r="1.5" fill={iconColor}/>
-            <path d="M4.2 7.8a5.5 5.5 0 0 1 7.6 0" stroke={iconColor} strokeWidth="1.6"/>
-            <path d="M1 4.6a10 10 0 0 1 14 0" stroke={iconColor} strokeWidth="1.6"/>
+          {/* WiFi — 3 concentric arcs + dot, equal stroke weight */}
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" strokeLinecap="round">
+            <path d="M0.8 4.6a10.5 10.5 0 0 1 14.4 0" stroke={iconColor} strokeWidth="1.5"/>
+            <path d="M3.4 7.4a6.8 6.8 0 0 1 9.2 0"    stroke={iconColor} strokeWidth="1.5"/>
+            <path d="M6 10.1a3.1 3.1 0 0 1 4 0"        stroke={iconColor} strokeWidth="1.5"/>
+            <circle cx="8" cy="11.3" r="0.9" fill={iconColor}/>
           </svg>
 
-          {/* Battery — Apple style: rounded rect shell + fill + small nub */}
+          {/* Battery — shell + fill + small rect nub (not a curved bump) */}
           <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-            <rect x="0.5" y="0.5" width="20" height="11" rx="3.5" stroke={iconColor} strokeWidth="1" fillOpacity="0"/>
-            <rect x="2" y="2" width="14" height="8" rx="2" fill={iconColor}/>
-            <path d="M21.5 4 C22.8 4 23.5 4.8 23.5 6 C23.5 7.2 22.8 8 21.5 8" stroke={iconColor} strokeWidth="1.3" strokeLinecap="round"/>
+            <rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke={iconColor} strokeOpacity="0.4" strokeWidth="1"/>
+            <rect x="2" y="2" width="17" height="8" rx="2" fill={iconColor}/>
+            <rect x="22.5" y="4" width="1.6" height="4" rx="0.8" fill={iconColor} fillOpacity="0.4"/>
           </svg>
         </div>
       </div>
