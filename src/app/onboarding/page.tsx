@@ -309,7 +309,7 @@ function DetectorSkeletonRow({ detected }: { detected: boolean }) {
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1)
-  const { user: clerkUser } = useUser()
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
 
   // Upload slots
   const [slots, setSlots] = useState<AngleSlots>({ front: null, left: null, right: null, body: null })
@@ -595,14 +595,17 @@ export default function OnboardingPage() {
     }
   }
 
-  // Prepare the checkout as soon as the user reaches the final step
+  // Prepare the checkout as soon as the user reaches the final step.
+  // Must wait for Clerk to finish loading — otherwise clerkUser is still
+  // undefined for a signed-in user, we wrongly treat them as a guest, and
+  // show the sign-up box instead of sending them straight to Stripe.
   useEffect(() => {
-    if (step !== 10) return
+    if (step !== 10 || !clerkLoaded) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCheckoutReady(false)
     prepareCheckout()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }, [step, clerkLoaded])
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
