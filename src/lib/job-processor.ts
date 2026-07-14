@@ -75,8 +75,23 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
   const alreadySavedCount = existingPhotos?.length ?? 0
   const alreadySavedUrls  = new Set((existingPhotos || []).map((p: { file_url: string }) => p.file_url))
 
-  const { passed, failedCount, pending } = await pollFaceSwapJobs(entries)
+  const { passed: allPassed, failedCount, pending: falPending } = await pollFaceSwapJobs(entries)
   if (failedCount) console.warn(`[job-processor] ${failedCount} rejected by quality gate for order ${orderId}`)
+
+  // Cap how many completed-but-unprocessed jobs get QC + saved in a single
+  // invocation. Each QC check is a fal.ai vision call, and when many templates
+  // finish around the same time (common for a 15/45-photo package), running
+  // QC + storage save for all of them at once can blow past the serverless
+  // function's maxDuration — the whole invocation gets killed and NOTHING
+  // commits, which looked like the order being permanently stuck at 0 saved.
+  // Deferred ones are simply treated as still-pending; the next poll (fal's
+  // own completion check is cheap and idempotent) picks them up and makes
+  // real incremental progress every cycle instead of risking an all-or-nothing
+  // timeout.
+  const MAX_QC_PER_INVOCATION = 6
+  const passed   = allPassed.slice(0, MAX_QC_PER_INVOCATION)
+  const deferred = allPassed.slice(MAX_QC_PER_INVOCATION)
+  const pending  = [...falPending, ...deferred.map(d => d.entry)]
 
   // ── Critical quality control ────────────────────────────────────────────
   // Every completed photo is checked against the customer's own reference
