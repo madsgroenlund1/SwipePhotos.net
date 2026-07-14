@@ -77,10 +77,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not create order. Please try again.' }, { status: 500 })
     }
 
-    // Only card, PayPal, MobilePay and Link — no Satispay etc.
+    // Only card, MobilePay and Link — no Satispay etc.
+    // PayPal is NOT supported by Stripe in `subscription` mode (all our
+    // packages are subscriptions), so it's excluded entirely rather than
+    // relying on the retry-fallback below.
     // Methods not yet activated in the Stripe dashboard are dropped one by
     // one so checkout keeps working while they're pending activation.
-    const wantedMethods = ['card', 'paypal', 'mobilepay', 'link']
+    const wantedMethods = ['card', 'mobilepay', 'link']
 
     const createSession = (methods: string[]) => stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -115,7 +118,7 @@ export async function POST(req: NextRequest) {
         break
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        const bad = methods.find(m => msg.includes(`: ${m} is invalid`) || msg.includes(`'${m}'`))
+        const bad = methods.find(m => msg.includes(`: ${m} is invalid`) || msg.includes(`'${m}'`) || msg.includes(`\`${m}\``))
         if (bad && methods.length > 1) {
           console.warn(`[checkout] Payment method '${bad}' not activated — retrying without it`)
           methods.splice(methods.indexOf(bad), 1)
