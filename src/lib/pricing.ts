@@ -10,6 +10,7 @@ export type Plan = {
   monthly: number   // EUR per month
   yearly: number    // EUR per year (50% off monthly×12)
   photos: string
+  photoQuota: number // numeric photos-per-cycle, for usage tracking
   popular: boolean
 }
 
@@ -22,6 +23,7 @@ export const PLANS: Plan[] = [
     monthly: 29,
     yearly: 174,
     photos: '5 AI photos / month',
+    photoQuota: 5,
     popular: false,
   },
   {
@@ -32,6 +34,7 @@ export const PLANS: Plan[] = [
     monthly: 49,
     yearly: 294,
     photos: '15 AI photos / month',
+    photoQuota: 15,
     popular: true,
   },
   {
@@ -42,6 +45,7 @@ export const PLANS: Plan[] = [
     monthly: 74,
     yearly: 444,
     photos: '45 AI photos / month',
+    photoQuota: 45,
     popular: false,
   },
 ]

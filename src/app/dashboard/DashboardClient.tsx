@@ -12,9 +12,13 @@ import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Photo  = { file_url: string }
-type Order  = { id: string; package_type: string; status: string; created_at: string; generated_photos: Photo[] }
-type Payout = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
+type Photo   = { file_url: string }
+type Order   = { id: string; package_type: string; status: string; created_at: string; generated_photos: Photo[] }
+type Payout  = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
+type Invoice = {
+  id: string; created: number; amountCents: number; currency: string
+  status: string; hostedUrl: string | null; pdfUrl: string | null; description: string
+}
 
 type AffiliateData = {
   id: string
@@ -511,6 +515,80 @@ function AffiliateTab({ data, onJoined }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+// ── Usage card ─────────────────────────────────────────────────────────────────
+
+function UsageCard({ used, quota, periodEnd }: { used: number; quota: number; periodEnd: number | null }) {
+  const pct = Math.min(100, Math.round((used / quota) * 100))
+  const remaining = Math.max(0, quota - used)
+  const resetDate = periodEnd
+    ? new Date(periodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null
+
+  return (
+    <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-white font-semibold text-sm">Usage this cycle</p>
+        <span className="text-zinc-400 text-xs">{used} / {quota} photos</span>
+      </div>
+      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-3">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }}
+        />
+      </div>
+      <p className="text-zinc-500 text-xs">
+        {remaining} photo{remaining === 1 ? '' : 's'} remaining
+        {resetDate ? ` · Renews on ${resetDate}` : ''}
+      </p>
+    </div>
+  )
+}
+
+// ── Invoices card ────────────────────────────────────────────────────────────
+
+const INVOICE_STATUS_STYLES: Record<string, string> = {
+  paid:          'text-green-400 bg-green-400/10 border-green-400/20',
+  open:          'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
+  uncollectible: 'text-red-400 bg-red-400/10 border-red-400/20',
+  void:          'text-zinc-500 bg-zinc-500/10 border-zinc-500/20',
+}
+
+function InvoicesCard({ invoices }: { invoices: Invoice[] }) {
+  return (
+    <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
+      <p className="text-white font-semibold text-sm mb-4">Invoices</p>
+      <div className="space-y-2">
+        {invoices.map(inv => (
+          <div key={inv.id} className="flex items-center justify-between gap-3 py-2.5 border-b border-white/5 last:border-0">
+            <div className="min-w-0">
+              <p className="text-white text-sm truncate">{inv.description}</p>
+              <p className="text-zinc-600 text-xs mt-0.5">
+                {new Date(inv.created * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {' · '}{(inv.amountCents / 100).toFixed(2)} {inv.currency.toUpperCase()}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className={cn('text-[10px] font-semibold px-2 py-1 rounded-full border capitalize', INVOICE_STATUS_STYLES[inv.status] ?? INVOICE_STATUS_STYLES.void)}>
+                {inv.status}
+              </span>
+              {(inv.pdfUrl || inv.hostedUrl) && (
+                <a
+                  href={inv.pdfUrl ?? inv.hostedUrl ?? '#'}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-zinc-400 hover:text-white transition-colors"
+                  aria-label="Download invoice"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Cancellation Modal ────────────────────────────────────────────────────────
 
 type CancelStep = 'reason' | 'offer' | 'confirm'
@@ -713,6 +791,9 @@ export function DashboardClient({
   subscriptionInterval = 'month',
   retentionOfferUsed = false,
   affiliateData: initialAffiliateData = null,
+  photoQuota = 0,
+  photosUsedThisCycle = 0,
+  invoices = [],
 }: {
   orders: Order[]
   userEmail: string
@@ -722,6 +803,9 @@ export function DashboardClient({
   subscriptionInterval?: 'month' | 'year'
   retentionOfferUsed?: boolean
   affiliateData?: AffiliateData
+  photoQuota?: number
+  photosUsedThisCycle?: number
+  invoices?: Invoice[]
 }) {
   const router       = useRouter()
   const searchParams = useSearchParams()
@@ -965,6 +1049,12 @@ export function DashboardClient({
               onOfferAccepted={() => setOfferApplied(true)}
             />
           )}
+
+          {hasActiveSubscription && photoQuota > 0 && (
+            <UsageCard used={photosUsedThisCycle} quota={photoQuota} periodEnd={periodEnd} />
+          )}
+
+          {invoices.length > 0 && <InvoicesCard invoices={invoices} />}
 
           <div className="bg-[#111] border border-white/8 rounded-2xl p-5">
             <button onClick={handleLogout} disabled={loggingOut}

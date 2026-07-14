@@ -5,6 +5,7 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { ensureUsernameRefCode } from '@/lib/referral'
 import { getDbUser } from '@/lib/auth'
+import { PLANS } from '@/lib/pricing'
 
 export default async function DashboardPage() {
   const user = await getDbUser()
@@ -39,7 +40,20 @@ export default async function DashboardPage() {
 
   const allOrders = [...(ordersByUserId || []), ...ordersByEmail]
   const seen = new Set<string>()
-  const orders = allOrders.filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
+  const deduped = allOrders.filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
+
+  // A 'pending' order only ever gets a stripe_session_id once the webhook
+  // confirms payment (at which point status also moves past 'pending') — so
+  // any order still 'pending' after a few minutes was abandoned before
+  // checkout completed and will never resolve. Hide these from the customer
+  // instead of showing a permanently stuck "Pending" order. A brand new
+  // pending order (within the webhook's normal processing window) still
+  // shows, so the real "confirming payment" case is unaffected.
+  const PENDING_GRACE_MS = 15 * 60 * 1000
+  const orders = deduped.filter(o => {
+    if (o.status !== 'pending') return true
+    return Date.now() - new Date(o.created_at).getTime() < PENDING_GRACE_MS
+  })
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
 
@@ -47,7 +61,9 @@ export default async function DashboardPage() {
   let subscriptionCancelledAtPeriodEnd = false
   let hasActiveSubscription = false
   let subscriptionPeriodEnd: number | null = null
+  let subscriptionPeriodStart: number | null = null
   let subscriptionInterval: 'month' | 'year' = 'month'
+  let photoQuota = 0
   if (userRow?.stripe_customer_id) {
     try {
       const subs = await stripe.subscriptions.list({
@@ -60,13 +76,45 @@ export default async function DashboardPage() {
         hasActiveSubscription = true
         subscriptionCancelledAtPeriodEnd = sub.cancel_at_period_end
         subscriptionPeriodEnd = sub.items.data[0]?.current_period_end ?? null
+        subscriptionPeriodStart = sub.items.data[0]?.current_period_start ?? null
         subscriptionInterval = (sub.items.data[0]?.plan?.interval ?? 'month') as 'month' | 'year'
+        const priceId = sub.items.data[0]?.price?.id
+        photoQuota = PLANS.find(p => p.monthlyPriceId === priceId || p.yearlyPriceId === priceId)?.photoQuota ?? 0
       }
     } catch { /* ignore */ }
   }
 
   // Retention offer status (field already loaded via userRow above)
   const retentionOfferUsed = !!userRow?.retention_offer_accepted_at
+
+  // Photos generated within the current billing cycle (for the Usage card).
+  const photosUsedThisCycle = subscriptionPeriodStart
+    ? orders
+        .filter(o => new Date(o.created_at).getTime() >= subscriptionPeriodStart * 1000)
+        .reduce((sum, o) => sum + (o.generated_photos?.length ?? 0), 0)
+    : 0
+
+  // Invoice history for the Invoices card.
+  type InvoiceRow = {
+    id: string; created: number; amountCents: number; currency: string
+    status: string; hostedUrl: string | null; pdfUrl: string | null; description: string
+  }
+  let invoices: InvoiceRow[] = []
+  if (userRow?.stripe_customer_id) {
+    try {
+      const list = await stripe.invoices.list({ customer: userRow.stripe_customer_id, limit: 24 })
+      invoices = list.data.map(inv => ({
+        id: inv.id ?? '',
+        created: inv.created,
+        amountCents: inv.amount_paid || inv.amount_due,
+        currency: inv.currency,
+        status: inv.status ?? 'open',
+        hostedUrl: inv.hosted_invoice_url ?? null,
+        pdfUrl: inv.invoice_pdf ?? null,
+        description: inv.lines.data[0]?.description ?? 'Subscription',
+      }))
+    } catch { /* ignore */ }
+  }
 
   // Full affiliate data
   type Payout = { id: string; amount_cents: number; status: string; created_at: string; paid_at: string | null }
@@ -155,6 +203,9 @@ export default async function DashboardPage() {
         subscriptionInterval={subscriptionInterval}
         retentionOfferUsed={retentionOfferUsed}
         affiliateData={affiliateData}
+        photoQuota={photoQuota}
+        photosUsedThisCycle={photosUsedThisCycle}
+        invoices={invoices}
       />
     </div>
   )
