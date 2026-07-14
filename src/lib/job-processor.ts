@@ -88,7 +88,7 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
   // own completion check is cheap and idempotent) picks them up and makes
   // real incremental progress every cycle instead of risking an all-or-nothing
   // timeout.
-  const MAX_QC_PER_INVOCATION = 6
+  const MAX_QC_PER_INVOCATION = 4
   const passed   = allPassed.slice(0, MAX_QC_PER_INVOCATION)
   const deferred = allPassed.slice(MAX_QC_PER_INVOCATION)
   const pending  = [...falPending, ...deferred.map(d => d.entry)]

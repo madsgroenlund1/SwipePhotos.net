@@ -2,7 +2,8 @@ import { fal } from '@fal-ai/client'
 import { getPreviewTemplatesForCategory, Template, TEMPLATES } from './templates'
 import { TEMPLATE_PROMPTS, tattooNote } from './template-prompts'
 import { getMonthlyTemplates } from './products'
-import { buildPaidGenerationPrompt } from './paid-prompt'
+import { buildPaidGenerationPrompt, eyeColorNote } from './paid-prompt'
+import { detectEyeColor } from './quality-control'
 import type { PackageId } from './stripe'
 
 fal.config({ credentials: process.env.FAL_KEY })
@@ -52,6 +53,9 @@ export type JobEntry = {
   customerPhotoUrls?: string[]
   tattooUrl?: string
   qcRetries?: number
+  // Pre-detected from the customer's own reference photo once per order —
+  // stated as a fact in the prompt instead of asking the model to infer it.
+  eyeColor?: string
 }
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
@@ -198,6 +202,8 @@ export async function runTwoPreviewFaceSwaps(
   if (!template) return { urls: [null, null], jobs: [], templateId: 'none' }
 
   const prompts = TEMPLATE_PROMPTS[style] ?? TEMPLATE_PROMPTS.restaurant
+  const eyeColor = await detectEyeColor(photos.front)
+  const eyeNote = eyeColor ? `\n\n${eyeColorNote(eyeColor)}` : ''
 
   // Image order per the template md files:
   // 1 template, 2 full body, 3 left angle, 4 front, 5 right angle, 6 tattoo (optional)
@@ -220,7 +226,7 @@ export async function runTwoPreviewFaceSwaps(
   let firstDone = false
 
   const jobs = variants.map(({ variant, prompt }, idx) => {
-    let fullPrompt = prompt
+    let fullPrompt = prompt + eyeNote
     if (hasTattoos && tattooRef) {
       fullPrompt += `\n\n${tattooNote(imageUrls.length)}`
     }
@@ -341,7 +347,11 @@ export async function submitFaceSwapJobs(
     return []
   }
 
-  const prompt = buildPaidGenerationPrompt(!!(hasTattoos && tattooUrl))
+  // Detect the customer's real eye color ONCE from his own reference photo
+  // and state it as a fact in every job's prompt — see eyeColorNote for why.
+  const eyeColor = await detectEyeColor(customerPhotoUrls[0])
+  const basePrompt = buildPaidGenerationPrompt(!!(hasTattoos && tattooUrl))
+  const prompt = eyeColor ? `${basePrompt}\n\n${eyeColorNote(eyeColor)}` : basePrompt
 
   console.log(
     `[faceswap] Submitting ${templates.length} jobs — model: ${MODEL}`,
@@ -370,6 +380,7 @@ export async function submitFaceSwapJobs(
         customerPhotoUrls,
         tattooUrl: hasTattoos ? tattooUrl : undefined,
         qcRetries: 0,
+        eyeColor: eyeColor ?? undefined,
       })
     } else if (job.status === 'rejected') {
       console.error('[faceswap] Submit failed:', job.reason)
@@ -392,7 +403,8 @@ export async function resubmitTemplateJob(entry: JobEntry): Promise<JobEntry | n
     return null
   }
 
-  const prompt = buildPaidGenerationPrompt(!!entry.tattooUrl)
+  const basePrompt = buildPaidGenerationPrompt(!!entry.tattooUrl)
+  const prompt = entry.eyeColor ? `${basePrompt}\n\n${eyeColorNote(entry.eyeColor)}` : basePrompt
   const imageUrls = [entry.templateUrl, ...entry.customerPhotoUrls]
   if (entry.tattooUrl) imageUrls.push(entry.tattooUrl)
 

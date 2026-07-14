@@ -16,6 +16,11 @@
 // variety, before everything. A photo with a perfect scene but a face that
 // isn't the customer is a failed photo, full stop.
 
+/** Appended when eye color has been pre-detected from the customer's own photo — states it as a fact instead of asking the model to infer it (the model is unreliable at inferring, especially for brown eyes). */
+export function eyeColorNote(eyeColor: string): string {
+  return `CONFIRMED FACT — the customer's real eye color, verified from his reference photos, is: ${eyeColor}. Render his eyes in exactly this color. Do not use blue, gray, green or any other color unless that is literally the color stated here.`
+}
+
 export function buildPaidGenerationPrompt(hasTattooRef: boolean): string {
   return `You are compositing ONE specific real customer into a reference photograph. Precision on his identity matters more than anything else in this task — take your time, this is not a race.
 

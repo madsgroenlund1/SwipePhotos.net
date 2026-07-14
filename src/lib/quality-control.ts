@@ -41,6 +41,33 @@ Respond in EXACTLY this format, nothing else:
 VERDICT: PASS or FAIL
 REASON: <one short sentence>`
 
+// ─── Eye-color pre-detection ─────────────────────────────────────────────────
+//
+// The generation model is unreliable at INFERRING eye color from reference
+// photos on its own — QC logs showed it consistently defaulting to blue
+// regardless of the customer's real (often brown) eyes, even when the
+// generation prompt said "match the reference photos." Instead of hoping the
+// image model reads the reference correctly, we ask a vision model to name
+// the color ONCE up front, then inject that literal word into the generation
+// prompt as a stated fact (see eyeColorNote in paid-prompt.ts /
+// template-prompts.ts). Much higher hit rate than "figure it out yourself."
+const EYE_COLOR_PROMPT = `Look at the person's eyes in this photo. Respond with ONLY a short, precise eye color description (2-4 words max), e.g. "dark brown", "light blue", "hazel green", "warm brown". No other text.`
+
+export async function detectEyeColor(customerRefUrl: string): Promise<string | null> {
+  try {
+    const result = await fal.subscribe('fal-ai/any-llm/vision', {
+      input: { model: QC_MODEL, prompt: EYE_COLOR_PROMPT, image_urls: [customerRefUrl] },
+      logs: false,
+    })
+    const output = String((result as { data?: { output?: string } })?.data?.output ?? '').trim()
+    if (!output || output.length > 40) return null
+    return output.replace(/["'.]/g, '')
+  } catch (err) {
+    console.error('[quality-control] Eye color detection failed:', err)
+    return null
+  }
+}
+
 export async function assessPhotoQuality(customerRefUrl: string, generatedUrl: string): Promise<QCResult> {
   try {
     const result = await fal.subscribe('fal-ai/any-llm/vision', {
