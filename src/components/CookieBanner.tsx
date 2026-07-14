@@ -52,8 +52,7 @@ export function CookieBanner() {
 
           <p className="text-zinc-400 text-[13px] leading-relaxed mb-4">
             We use essential cookies for authentication and session management, plus an affiliate
-            tracking cookie (<code className="text-[11px] bg-white/8 text-zinc-300 px-1.5 py-0.5 rounded-md">sw_ref</code>) to attribute referrals.
-            See our{' '}
+            tracking cookie to attribute referrals. See our{' '}
             <a href="/privacy" className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors">
               Privacy Policy
             </a>{' '}
