@@ -23,6 +23,7 @@ Critical matching rules — these override everything else:
 - Facial expression must exactly match the model in image #1 — same mouth position, same eye openness, same overall mood. Do not invent a different expression than the one in image #1.
 - Use the customer's real skin tone from his reference photos, not the original model's skin tone.
 - If the customer has a clearly visible personal watch in his reference photos, reproduce that watch instead of any watch in image #1. Otherwise keep image #1's watch/accessories unchanged.
+- If the model in image #1 is wearing sunglasses (or any other eyewear), the customer must wear that exact same eyewear in the same position on his face — do not remove it and do not leave him bare-eyed. Match the customer's identity through his other visible features (face shape, eyebrows, nose, lips, jawline, cheekbones, chin, ears, hairline, skin tone) exactly as precisely as when the eyes are visible. If image #1 has no eyewear, do not add any.
 
 Realism requirements — the result must be indistinguishable from an authentic, unedited photograph, never AI-generated, never illustrated, never airbrushed:
 - Natural skin with visible pores, subtle imperfections, and realistic shadow falloff consistent with image #1's lighting.

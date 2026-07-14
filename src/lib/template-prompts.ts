@@ -38,7 +38,7 @@ ${REALISM}`
 export const TEMPLATE_PROMPTS: Record<string, StylePrompts> = {
   beach: build(
     'Preserve the exact beach-club setting, camera framing, seated laid-back pose, body position, white linen shirt with open collar, sunglasses, wristwatch, fruit platter, drink in hand, woven parasols, cream textiles, and luxury daytime atmosphere.',
-    'Even with sunglasses on, the result must still feel like the customer: match face shape, cheekbones, jawline, mouth shape, skin tone, hairline, hair color, and visible facial structure. Keep the sunglasses exactly as positioned in the template.'
+    'The customer must wear the exact same sunglasses as the template model, in the same position on his face — never remove them, never show him bare-eyed. Even with sunglasses on, the result must still feel like the customer: match face shape, cheekbones, jawline, mouth shape, skin tone, hairline, hair color, and visible facial structure. Identity must be locked through these visible features exactly as precisely as if the eyes were shown.'
   ),
   restaurant: build(
     'Keep the exact Italian street-restaurant scene, camera angle, framing, head tilt, leaning-forward pose, body proportions, white linen shirt, pizza foreground, plates, glasses, visible forearms and hands, and ambient narrow-street background with natural restaurant lighting.'
