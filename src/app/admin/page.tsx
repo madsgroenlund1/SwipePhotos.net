@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { AdminClient } from './AdminClient'
+import { PLANS } from '@/lib/pricing'
 
 export default async function AdminPage() {
   const cookieStore = await cookies()
@@ -29,9 +30,14 @@ export default async function AdminPage() {
       .eq('status', 'ready'),
   ])
 
+  // Current live EUR monthly prices (see src/lib/pricing.ts) — package_type
+  // values are the Stripe PackageId keys (starter/popular/elite).
+  const priceById: Record<string, number> = Object.fromEntries(
+    PLANS.map(p => [p.id, p.monthly])
+  )
+
   const revenue = (revenueOrders || []).reduce((acc, o) => {
-    const prices: Record<string, number> = { starter: 19, popular: 39, elite: 79, starter_yearly: 114, popular_yearly: 234, elite_yearly: 474 }
-    return acc + (prices[o.package_type] || 0)
+    return acc + (priceById[o.package_type] || 0)
   }, 0)
 
   return <AdminClient orders={orders || []} affiliates={affiliates || []} revenue={revenue} />
