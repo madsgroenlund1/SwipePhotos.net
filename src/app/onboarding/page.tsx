@@ -1171,6 +1171,10 @@ export default function OnboardingPage() {
               </div>
               <div className="px-4 pb-4">
                 <button onClick={next} className="w-full bg-blue-600 hover:brightness-110 text-white font-bold py-4 rounded-2xl transition-all text-base shadow-lg shadow-blue-500/20">Get started →</button>
+                <p className="text-zinc-600 text-[11px] text-center mt-3 leading-relaxed">
+                  AI results can vary slightly photo to photo. Not fully happy with one? Email us and we&apos;ll regenerate it free — see our{' '}
+                  <Link href="/terms#refund" className="text-zinc-400 underline underline-offset-2">quality &amp; refund policy</Link>.
+                </p>
               </div>
             </div>
           )}

@@ -114,15 +114,27 @@ export default async function TermsPage() {
           </p>
         </section>
 
-        <section className="mb-8">
-          <h2 className="text-white font-semibold text-base mb-3">7. Refund Policy</h2>
+        <section className="mb-8" id="refund">
+          <h2 className="text-white font-semibold text-base mb-3">7. Quality &amp; Refund Policy</h2>
           <p className="mb-3">
-            If your photos fail to generate due to a technical error on our side (e.g. a processing failure
-            unrelated to your photo quality), you are entitled to a full refund. Contact{' '}
+            SwipePhotos.net uses AI image generation, which is inherently probabilistic — we run every photo through
+            an automated quality check before delivery, but we cannot guarantee that every single photo in your set
+            will be 100% flawless (e.g. an occasional artifact, lighting inconsistency, or minor likeness variation).
+            This is a known limitation of current AI technology, not a promise we make and then break.
+          </p>
+          <p className="mb-3">
+            If you&apos;re unhappy with one or more specific photos, email{' '}
             <a href="mailto:support@swipephotos.net" className="text-blue-400 underline">
               support@swipephotos.net
             </a>{' '}
-            within 14 days of your purchase and we will resolve it.
+            with your order number and the photo(s) you&apos;re unhappy with attached. We will review it and
+            regenerate the affected photo(s) at no extra cost — we want every customer to leave with a set they
+            actually like.
+          </p>
+          <p className="mb-3">
+            If your photos fail to generate entirely due to a technical error on our side (e.g. a processing failure
+            unrelated to your photo quality), you are entitled to a full refund. Contact us within 14 days of your
+            purchase and we will resolve it.
           </p>
           <p>
             For all other cases, payments are non-refundable due to the AI processing costs involved in generating
