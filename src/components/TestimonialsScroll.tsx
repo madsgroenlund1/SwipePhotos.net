@@ -129,7 +129,7 @@ function RowHeading({ emoji, title, subtitle }: { emoji: string; title: string; 
   return (
     <div className="px-6 mb-4">
       <div className="flex items-center gap-2 mb-0.5">
-        <span className="text-lg leading-none">{emoji}</span>
+        <span className="text-lg leading-[1.4]">{emoji}</span>
         <h3 className="text-white font-semibold text-base leading-none">{title}</h3>
       </div>
       <p className="text-zinc-500 text-xs pl-7">{subtitle}</p>

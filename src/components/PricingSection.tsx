@@ -41,9 +41,9 @@ export function PricingSection() {
           const price = yearly ? Math.round(plan.yearly / 12) : plan.monthly
           return (
             <div key={plan.id} className={cn('rounded-2xl border p-5 flex flex-col gap-3', plan.popular ? 'border-blue-500/40 bg-blue-600/5' : 'border-white/8 bg-white/[0.02]')}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-white font-semibold">{plan.name}</span>
-                {plan.popular && <span className="text-blue-400 text-xs font-medium bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Most popular</span>}
+                {plan.popular && <span className="text-blue-400 text-xs font-medium bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">Most popular</span>}
               </div>
               <div>
                 <div className="text-2xl font-bold text-white">
