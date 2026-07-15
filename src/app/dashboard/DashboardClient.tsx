@@ -968,6 +968,25 @@ export function DashboardClient({
             </div>
           )}
 
+          {!affiliateData && (
+            <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/30 to-[#111] p-5 flex items-center gap-4 flex-wrap">
+              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, #3b82f6 0%, transparent 65%)' }} />
+              <div className="relative w-11 h-11 bg-blue-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                <DollarSign className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="relative flex-1 min-w-[180px]">
+                <p className="text-white font-semibold text-sm">Earn 30% commission</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Share your link, get paid on every sale — free to join.</p>
+              </div>
+              <button
+                onClick={() => switchTab('affiliate')}
+                className="relative bg-blue-600 hover:brightness-110 text-white font-semibold px-5 py-2.5 rounded-full transition-all flex-shrink-0 text-sm"
+              >
+                Become an affiliate →
+              </button>
+            </div>
+          )}
+
           {orders.length > 0 ? (
             <div className="space-y-3">
               <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wide px-1">
