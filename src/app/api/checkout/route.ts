@@ -88,7 +88,11 @@ export async function POST(req: NextRequest) {
     const createSession = (methods: string[]) => stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: methods as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
-      locale: 'auto',
+      // The site itself is English-only — 'auto' let Stripe guess the
+      // customer's browser locale, which then carries over to their
+      // invoices (e.g. a Danish browser produced a Danish-language invoice
+      // for an all-English product). Force English everywhere instead.
+      locale: 'en',
       customer: customerId,
       customer_email: customerId ? undefined : (email || undefined),
       line_items: [{ price: resolvedPriceId, quantity: 1 }],
