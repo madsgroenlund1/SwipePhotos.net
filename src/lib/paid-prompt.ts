@@ -52,12 +52,13 @@ Before touching identity, lock these purely geometric properties from the model 
 - Head size relative to the body and frame — measure the model's head in image #1 (crown to chin) and reproduce that exact size. Do not enlarge or shrink the head. An oversized, undersized, or oddly-proportioned head compared to image #1 is an automatic failure.
 - Head position, tilt, and rotation — identical angle and direction as image #1.
 - Eye gaze direction — the customer's eyes must look in the exact same direction as the model's eyes in image #1 (same target, same angle off-camera or same direct-to-camera look). Gaze direction is judged separately from head rotation — get both right.
+- Both eyes must point in the SAME coherent direction as each other — natural binocular alignment, like a real person looking at one point. Cross-eyed, wall-eyed, or misaligned eyes (each eye pointing a different way) is a hard failure and an instant reject, regardless of how good the rest of the face looks.
 - Camera distance and framing — identical.
 
 ═══════════════════════════════════════════════════════════════
 STEP 2 — REPLACE THE FACE WITH THE CUSTOMER'S FACE, 1:1
 ═══════════════════════════════════════════════════════════════
-Within that locked head frame, the face itself must be the customer's real face, reconstructed with the same precision as a passport photo comparison — not "similar," not "inspired by," an exact match:
+Within that locked head frame, the face itself must be the customer's real face, reconstructed with the same precision as a passport photo comparison — not "similar," not "inspired by," an exact match. This has been getting flagged as still not looking like the actual customer — treat every one of these as strict, individually-checked requirements, not general inspiration:
 - Eye color: use the customer's ACTUAL eye color from his reference photos. Look closely at the reference photos and match the exact shade (e.g. brown, blue, green, hazel) — do not default to a generic or lighter/different eye color. Wrong eye color is one of the most common failures and an instant reject.
 - Face shape, jawline, chin, and cheekbones — trace the customer's real bone structure, not a smoothed or generic oval.
 - Eyebrows — shape, thickness, and color must match.
