@@ -2,11 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe, PACKAGES, PackageId } from '@/lib/stripe'
 import type Stripe from 'stripe'
 import { createAdminClientDirect } from '@/lib/supabase/server'
+import { getDbUser } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
-    const { packageId, priceId: customPriceId, email, presets, style, hasTattoos, selectedPreviewUrl } = await req.json()
-    console.log('[checkout] packageId:', packageId, 'email:', email)
+    const { packageId, priceId: customPriceId, email: clientEmail, presets, style, hasTattoos, selectedPreviewUrl } = await req.json()
+
+    // Trust the server-verified Clerk session over whatever the client sent.
+    // A real incident: prepareCheckout ran with an empty client-side email
+    // (Clerk hadn't finished hydrating the user's email at that exact
+    // render), so this route couldn't find/reuse the customer's existing
+    // Stripe customer — Stripe then silently created a BRAND NEW customer
+    // during checkout, leaving a duplicate, un-tracked, still-billing
+    // subscription that our dashboard never knew existed. Falling back to
+    // the authenticated session's own email closes that gap; only truly
+    // signed-out guests fall through to the client-supplied email.
+    const dbUser = await getDbUser().catch(() => null)
+    const email = dbUser?.email || clientEmail
+    console.log('[checkout] packageId:', packageId, 'email:', email, dbUser ? '(server-verified)' : '(client-supplied)')
 
     // Allow custom priceId (for yearly billing), fall back to PACKAGES lookup
     const pkg = PACKAGES[packageId as PackageId]
