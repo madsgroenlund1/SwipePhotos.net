@@ -745,17 +745,23 @@ function CancelModal({
         {/* Step 2 — Retention offer */}
         {currentStep === 'offer' && (
           <>
-            <div className="text-center mb-6">
-              <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-                <span className="text-2xl">🎁</span>
+            <div className="relative text-center mb-7 -mx-6 -mt-6 px-6 pt-8 pb-2 overflow-hidden rounded-t-2xl">
+              <div
+                className="absolute inset-0 opacity-25 pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse at 50% 0%, #3b82f6 0%, transparent 65%)' }}
+              />
+              <div className="relative w-14 h-14 bg-gradient-to-br from-blue-500/25 to-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-blue-500/25 shadow-[0_0_30px_rgba(59,130,246,0.25)]">
+                <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v13.5m0-13.5a2.25 2.25 0 10-2.25-2.25c0 1.152.6 1.803 1.088 2.25M12 8.25a2.25 2.25 0 102.25-2.25c-.844 0-1.5.406-1.088 2.25M3.75 12h16.5M4.5 12l.5 8.5a1 1 0 001 .95h12a1 1 0 001-.95l.5-8.5M3.75 8.25h16.5a1 1 0 011 1v2a1 1 0 01-1 1H3.75a1 1 0 01-1-1v-2a1 1 0 011-1z" />
+                </svg>
               </div>
-              <h3 className="text-white font-bold text-xl mb-2">{offerText}</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">{offerDesc}</p>
+              <h3 className="relative text-white font-bold text-xl mb-2 tracking-tight">{offerText}</h3>
+              <p className="relative text-zinc-400 text-sm leading-relaxed max-w-[300px] mx-auto">{offerDesc}</p>
             </div>
             <button
               onClick={handleAcceptOffer}
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:brightness-110 disabled:opacity-50 text-white text-sm font-semibold transition-all mb-3"
+              className="w-full py-3.5 rounded-xl bg-blue-600 hover:brightness-110 disabled:opacity-50 text-white text-sm font-semibold shadow-[0_4px_20px_rgba(59,130,246,0.35)] transition-all mb-2.5"
             >
               {loading ? 'Applying…' : 'Accept offer'}
             </button>
