@@ -2,7 +2,7 @@ import { fal } from '@fal-ai/client'
 import { getPreviewTemplatesForCategory, Template, TEMPLATES } from './templates'
 import { TEMPLATE_PROMPTS, tattooNote } from './template-prompts'
 import { getMonthlyTemplates } from './products'
-import { buildPaidGenerationPrompt, eyeColorNote } from './paid-prompt'
+import { buildPaidGenerationPrompt, eyeColorHeader } from './paid-prompt'
 import { detectEyeColor } from './quality-control'
 import type { PackageId } from './stripe'
 
@@ -203,7 +203,7 @@ export async function runTwoPreviewFaceSwaps(
 
   const prompts = TEMPLATE_PROMPTS[style] ?? TEMPLATE_PROMPTS.restaurant
   const eyeColor = await detectEyeColor(photos.front)
-  const eyeNote = eyeColor ? `\n\n${eyeColorNote(eyeColor)}` : ''
+  const eyeHeader = eyeColor ? eyeColorHeader(eyeColor) : ''
 
   // Image order per the template md files:
   // 1 template, 2 full body, 3 left angle, 4 front, 5 right angle, 6 tattoo (optional)
@@ -226,7 +226,7 @@ export async function runTwoPreviewFaceSwaps(
   let firstDone = false
 
   const jobs = variants.map(({ variant, prompt }, idx) => {
-    let fullPrompt = prompt + eyeNote
+    let fullPrompt = eyeHeader + prompt
     if (hasTattoos && tattooRef) {
       fullPrompt += `\n\n${tattooNote(imageUrls.length)}`
     }
@@ -348,10 +348,9 @@ export async function submitFaceSwapJobs(
   }
 
   // Detect the customer's real eye color ONCE from his own reference photo
-  // and state it as a fact in every job's prompt — see eyeColorNote for why.
+  // and state it as a fact at the FRONT of the prompt (see buildPaidGenerationPrompt).
   const eyeColor = await detectEyeColor(customerPhotoUrls[0])
-  const basePrompt = buildPaidGenerationPrompt(!!(hasTattoos && tattooUrl))
-  const prompt = eyeColor ? `${basePrompt}\n\n${eyeColorNote(eyeColor)}` : basePrompt
+  const prompt = buildPaidGenerationPrompt(!!(hasTattoos && tattooUrl), eyeColor ?? undefined)
 
   console.log(
     `[faceswap] Submitting ${templates.length} jobs — model: ${MODEL}`,
@@ -403,8 +402,7 @@ export async function resubmitTemplateJob(entry: JobEntry): Promise<JobEntry | n
     return null
   }
 
-  const basePrompt = buildPaidGenerationPrompt(!!entry.tattooUrl)
-  const prompt = entry.eyeColor ? `${basePrompt}\n\n${eyeColorNote(entry.eyeColor)}` : basePrompt
+  const prompt = buildPaidGenerationPrompt(!!entry.tattooUrl, entry.eyeColor)
   const imageUrls = [entry.templateUrl, ...entry.customerPhotoUrls]
   if (entry.tattooUrl) imageUrls.push(entry.tattooUrl)
 

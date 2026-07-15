@@ -16,13 +16,30 @@
 // variety, before everything. A photo with a perfect scene but a face that
 // isn't the customer is a failed photo, full stop.
 
-/** Appended when eye color has been pre-detected from the customer's own photo — states it as a fact instead of asking the model to infer it (the model is unreliable at inferring, especially for brown eyes). */
+// The single most-violated rule across every prompt in this app is eye
+// color — logs show the model repeatedly rendering blue eyes despite
+// explicit, correct instructions elsewhere. That happened because the
+// instruction lived at the END of a long prompt; models reliably
+// under-weight facts buried after everything else. Stating it as the VERY
+// FIRST thing (and repeating it at the end) fixes that positional bias.
+// Every caller (paid generation AND the free preview) must prepend this,
+// never append it.
+export function eyeColorHeader(eyeColor: string): string {
+  return `⚠️ MOST IMPORTANT RULE, READ FIRST — EYE COLOR ⚠️
+The customer's real, confirmed eye color is: ${eyeColor}. His eyes in the final image MUST be exactly this color. Do not render blue, gray, or green eyes unless "${eyeColor}" literally says so — this is the single most common mistake and an automatic reject if wrong. Keep this in mind for every step below.
+
+`
+}
+
+/** @deprecated kept only so old call sites still compile — prepend eyeColorHeader() instead of appending this. */
 export function eyeColorNote(eyeColor: string): string {
   return `CONFIRMED FACT — the customer's real eye color, verified from his reference photos, is: ${eyeColor}. Render his eyes in exactly this color. Do not use blue, gray, green or any other color unless that is literally the color stated here.`
 }
 
-export function buildPaidGenerationPrompt(hasTattooRef: boolean): string {
-  return `You are compositing ONE specific real customer into a reference photograph. Precision on his identity matters more than anything else in this task — take your time, this is not a race.
+export function buildPaidGenerationPrompt(hasTattooRef: boolean, eyeColor?: string): string {
+  const header = eyeColor ? eyeColorHeader(eyeColor) : ''
+
+  return `${header}You are compositing ONE specific real customer into a reference photograph. Precision on his identity matters more than anything else in this task — take your time, this is not a race.
 
 Image #1 is the reference frame: a real photograph of a professional model, in a specific scene. Image #1 defines the exact scene, composition, camera angle, framing, crop, camera distance, pose, body position, clothing, props and lighting. None of that changes.
 
@@ -89,5 +106,5 @@ ${hasTattooRef
   ? '- A tattoo reference photo of the CUSTOMER is included. Reproduce the customer\'s own tattoo(s) faithfully — correct design, correct location, correct scale — on the visible skin wherever that body part is exposed in image #1.'
   : '- No tattoo reference photo was provided for the customer, so he should show no tattoos at all in the result. Do not invent tattoos and do not keep the model\'s original tattoos.'}
 
-FINAL BAR: this must be 1:1. Nobody should be able to look at the result and the customer's own reference photos and tell which parts came from where — same eye color, same hair, same face, same gaze direction, same real build from his full-body photo. The final image must look like one real, unedited photograph of this exact customer, taken in the exact setting, pose and moment shown in image #1, with every other person in the scene completely unchanged.`
+FINAL BAR: this must be 1:1. Nobody should be able to look at the result and the customer's own reference photos and tell which parts came from where — same eye color, same hair, same face, same gaze direction, same real build from his full-body photo. The final image must look like one real, unedited photograph of this exact customer, taken in the exact setting, pose and moment shown in image #1, with every other person in the scene completely unchanged.${eyeColor ? `\n\nLAST CHECK BEFORE YOU FINISH: eyes must be "${eyeColor}" — this was stated at the top of this prompt and is the single most common mistake. Verify it now.` : ''}`
 }
