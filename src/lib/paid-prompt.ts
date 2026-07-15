@@ -34,6 +34,7 @@ STEP 1 — LOCK THE HEAD FRAME FROM IMAGE #1 (do this first)
 Before touching identity, lock these purely geometric properties from the model in image #1, and never deviate from them:
 - Head size relative to the body and frame — measure the model's head in image #1 (crown to chin) and reproduce that exact size. Do not enlarge or shrink the head. An oversized, undersized, or oddly-proportioned head compared to image #1 is an automatic failure.
 - Head position, tilt, and rotation — identical angle and direction as image #1.
+- Eye gaze direction — the customer's eyes must look in the exact same direction as the model's eyes in image #1 (same target, same angle off-camera or same direct-to-camera look). Gaze direction is judged separately from head rotation — get both right.
 - Camera distance and framing — identical.
 
 ═══════════════════════════════════════════════════════════════
@@ -60,10 +61,10 @@ This is critical and has been a repeated mistake: ONLY the primary subject (the 
 ═══════════════════════════════════════════════════════════════
 STEP 4 — HANDS, BODY AND BUILD MATCH THE CUSTOMER
 ═══════════════════════════════════════════════════════════════
-Hands and visible body must also come from the customer, not the template model or a generic idealised body:
+The customer's full-body reference photo is the ONLY source of truth for his build — not the template model's body in image #1, not what would "look good" in the scene. This is a common and repeated mistake: giving a slim customer a muscular body because the template model is muscular. That is wrong every time. His body in the final image must look like the SAME PERSON as his full-body reference photo, dropped into image #1's pose and clothing — not the template model's physique with his face attached.
+- Look at the customer's actual build in his full-body photo first: is he slim, average, stocky, muscular? Reproduce THAT — do not add muscle, do not add bulk, do not add definition that isn't visible in his own reference photo, even if the template model is more muscular. If he is slim, the result must look slim in that exact pose/clothing.
 - Use the customer's full-body reference photo for his actual hand shape, finger length and thickness, knuckle size, and any hand/finger hair.
-- Match his real muscle definition and build — if he is lean, do not add muscle; if he has visible muscle or forearm/vein definition in his reference photos, keep it, don't smooth it away.
-- Match visible vein patterns on hands/forearms if present.
+- Match visible vein patterns on hands/forearms only if they are actually visible in his reference photos — do not invent them.
 - Keep skin tone consistent between face, neck, hands and any other exposed skin — one real person, not a lighter/more airbrushed body than the face.
 
 ═══════════════════════════════════════════════════════════════
@@ -88,5 +89,5 @@ ${hasTattooRef
   ? '- A tattoo reference photo of the CUSTOMER is included. Reproduce the customer\'s own tattoo(s) faithfully — correct design, correct location, correct scale — on the visible skin wherever that body part is exposed in image #1.'
   : '- No tattoo reference photo was provided for the customer, so he should show no tattoos at all in the result. Do not invent tattoos and do not keep the model\'s original tattoos.'}
 
-The final image must look like one real, unedited photograph of this exact customer — this exact eye color, this exact face — taken in the exact setting, pose and moment shown in image #1, with every other person in the scene completely unchanged.`
+FINAL BAR: this must be 1:1. Nobody should be able to look at the result and the customer's own reference photos and tell which parts came from where — same eye color, same hair, same face, same gaze direction, same real build from his full-body photo. The final image must look like one real, unedited photograph of this exact customer, taken in the exact setting, pose and moment shown in image #1, with every other person in the scene completely unchanged.`
 }
