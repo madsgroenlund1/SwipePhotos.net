@@ -53,6 +53,24 @@ const PACKAGE_LABELS: Record<string, string> = { starter: 'Starter', popular: 'P
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Plain `<a href download>` only forces a download for same-origin URLs —
+// browsers silently ignore the `download` attribute for cross-origin links
+// (our photos are hosted on Supabase Storage, a different origin), so it
+// just opened/navigated instead of downloading. Fetch as a blob instead.
+async function downloadSingle(url: string, filename: string) {
+  try {
+    const res  = await fetch(url)
+    const blob = await res.blob()
+    const a    = document.createElement('a')
+    a.href     = URL.createObjectURL(blob)
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(a.href)
+  } catch {
+    window.open(url, '_blank')
+  }
+}
+
 async function downloadAll(photos: Photo[]) {
   for (let i = 0; i < photos.length; i++) {
     try {
@@ -125,10 +143,12 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
             <img src={p.file_url} alt="" loading="lazy"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-end justify-end p-2.5 opacity-0 group-hover:opacity-100">
-              <a href={p.file_url} download onClick={e => e.stopPropagation()}
-                className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <button
+                onClick={e => { e.stopPropagation(); downloadSingle(p.file_url, `swipephoto-${String(i + 1).padStart(2, '0')}.jpg`) }}
+                className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
+              >
                 <Download className="w-3.5 h-3.5 text-black" />
-              </a>
+              </button>
             </div>
           </div>
         ))}
@@ -154,10 +174,11 @@ function PhotoGrid({ photos, orderId }: { photos: Photo[]; orderId: string }) {
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={lightbox} alt="" className="max-h-[88vh] max-w-[88vw] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
-          <a href={lightbox} download onClick={e => e.stopPropagation()}
+          <button
+            onClick={e => { e.stopPropagation(); downloadSingle(lightbox, 'swipephoto.jpg') }}
             className="absolute bottom-6 flex items-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-full shadow-xl hover:bg-zinc-100 transition-all">
             <Download className="w-4 h-4" /> Download
-          </a>
+          </button>
         </div>
       )}
     </>
