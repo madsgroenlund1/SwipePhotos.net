@@ -100,19 +100,32 @@ export default async function DashboardPage() {
     status: string; hostedUrl: string | null; pdfUrl: string | null; description: string
   }
   let invoices: InvoiceRow[] = []
-  if (userRow?.stripe_customer_id) {
+  if (user.email) {
     try {
-      const list = await stripe.invoices.list({ customer: userRow.stripe_customer_id, limit: 24 })
-      invoices = list.data.map(inv => ({
-        id: inv.id ?? '',
-        created: inv.created,
-        amountCents: inv.amount_paid || inv.amount_due,
-        currency: inv.currency,
-        status: inv.status ?? 'open',
-        hostedUrl: inv.hosted_invoice_url ?? null,
-        pdfUrl: inv.invoice_pdf ?? null,
-        description: inv.lines.data[0]?.description ?? 'Subscription',
-      }))
+      // A past bug (checkout occasionally lost track of the customer's real
+      // email mid-flow) let Stripe silently create duplicate Customer
+      // records for the same person over time — each with its own separate
+      // invoices. Querying only the ONE customer id currently on file made
+      // real, already-paid invoices from the other duplicates invisible
+      // here. Look up every Stripe customer for this email and merge all of
+      // their invoices instead of just one.
+      const customers = await stripe.customers.list({ email: user.email, limit: 20 })
+      const perCustomerInvoices = await Promise.all(
+        customers.data.map(c => stripe.invoices.list({ customer: c.id, limit: 24 }))
+      )
+      invoices = perCustomerInvoices
+        .flatMap(list => list.data)
+        .sort((a, b) => b.created - a.created)
+        .map(inv => ({
+          id: inv.id ?? '',
+          created: inv.created,
+          amountCents: inv.amount_paid || inv.amount_due,
+          currency: inv.currency,
+          status: inv.status ?? 'open',
+          hostedUrl: inv.hosted_invoice_url ?? null,
+          pdfUrl: inv.invoice_pdf ?? null,
+          description: inv.lines.data[0]?.description ?? 'Subscription',
+        }))
     } catch { /* ignore */ }
   }
 
