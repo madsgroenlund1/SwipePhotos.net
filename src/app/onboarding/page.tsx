@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useUser, SignUp } from '@clerk/nextjs'
@@ -341,6 +341,11 @@ export default function OnboardingPage() {
   const [checkoutReady, setCheckoutReady]   = useState(false)
   const [loading, setLoading]               = useState(false)
   const [checkoutError, setCheckoutError]   = useState<string|null>(null)
+  // Angle-photo + tattoo URLs from the most recent successful /api/upload —
+  // survives a Stripe-back resume (when the raw File objects in `slots` are
+  // gone) so a re-checkout can link the SAME already-uploaded photos to the
+  // new order instead of silently uploading nothing.
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [restoredNotice, setRestoredNotice] = useState(false)
 
   const stylePlaceholder = STYLE_PLACEHOLDERS[selectedStyle] ?? STYLE_PLACEHOLDERS.restaurant
@@ -569,7 +574,22 @@ export default function OnboardingPage() {
             const compressedTattoo = await compressImage(tattooFile)
             fd.append('files', compressedTattoo, 'tattoo-reference.jpg')
           }
-          await fetch('/api/upload', { method: 'POST', body: fd }).catch(console.error)
+          const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd }).catch(() => null)
+          const uploadData = await uploadRes?.json().catch(() => null)
+          if (uploadData?.urls?.length) setUploadedPhotoUrls(uploadData.urls)
+        } else if (uploadedPhotoUrls.length > 0) {
+          // Resumed session (e.g. after clicking Stripe Checkout's back
+          // button) — the original File objects in `slots` don't survive a
+          // reload, but we still have the URLs from the FIRST successful
+          // upload. Link those to this new order instead of uploading
+          // nothing, which would otherwise leave a paid order stuck forever
+          // with no photos to generate from.
+          await fetch('/api/upload/link', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: data.orderId, urls: uploadedPhotoUrls }),
+          }).catch(console.error)
+        } else {
+          console.error('[checkout] No photos available to upload or link for order', data.orderId)
         }
       }
       if (!data.url) { setCheckoutError('No payment URL received. Please try again.'); setLoading(false); return }
@@ -600,8 +620,16 @@ export default function OnboardingPage() {
   // Must wait for Clerk to finish loading — otherwise clerkUser is still
   // undefined for a signed-in user, we wrongly treat them as a guest, and
   // show the sign-up box instead of sending them straight to Stripe.
+  // Guards against prepareCheckout firing twice for the same step-10 visit
+  // (e.g. this effect's dependency array includes clerkLoaded, which can
+  // flip true shortly after step becomes 10) — a double-fire would create
+  // TWO separate orders and TWO Stripe sessions from one checkout attempt,
+  // with only one of them ever receiving the uploaded photos.
+  const checkoutStartedRef = useRef(false)
   useEffect(() => {
-    if (step !== 10 || !clerkLoaded) return
+    if (step !== 10) { checkoutStartedRef.current = false; return }
+    if (!clerkLoaded || checkoutStartedRef.current) return
+    checkoutStartedRef.current = true
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCheckoutReady(false)
     prepareCheckout()
@@ -625,11 +653,11 @@ export default function OnboardingPage() {
     try {
       localStorage.setItem(RESUME_KEY, JSON.stringify({
         previewUrls, pickedIdx, refinedUrl, selectedStyle, selectedPackage, billing,
-        hasTattoos: hasTattoos === true,
+        hasTattoos: hasTattoos === true, uploadedPhotoUrls,
       }))
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, previewUrls, pickedIdx, refinedUrl, selectedStyle, selectedPackage, billing, hasTattoos])
+  }, [step, previewUrls, pickedIdx, refinedUrl, selectedStyle, selectedPackage, billing, hasTattoos, uploadedPhotoUrls])
 
   // Restore on first mount, e.g. after bouncing back from Stripe Checkout.
   useEffect(() => {
@@ -639,6 +667,7 @@ export default function OnboardingPage() {
       const saved = JSON.parse(raw) as {
         previewUrls: string[]; pickedIdx: number; refinedUrl: string | null
         selectedStyle: string; selectedPackage: string; billing: 'monthly'|'yearly'; hasTattoos: boolean
+        uploadedPhotoUrls?: string[]
       }
       if (!saved.previewUrls?.length) return
       setPreviewUrls(saved.previewUrls)
@@ -648,6 +677,11 @@ export default function OnboardingPage() {
       setSelectedPackage(saved.selectedPackage ?? 'popular')
       setBilling(saved.billing ?? 'monthly')
       setHasTattoos(saved.hasTattoos === true)
+      // Critical: without these, a resumed checkout re-runs prepareCheckout
+      // with empty `slots` (raw Files can't survive localStorage) and would
+      // silently create a new order with ZERO uploaded photos — a paid order
+      // stuck in "processing" forever with nothing to generate from.
+      setUploadedPhotoUrls(saved.uploadedPhotoUrls ?? [])
       setGenStatus('done')
       setStep(9)
       setRestoredNotice(true)
