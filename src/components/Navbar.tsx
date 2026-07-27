@@ -87,7 +87,7 @@ export function Navbar({ initialLoggedIn: _ignored }: { initialLoggedIn?: boolea
             className="w-8 h-8 rounded-lg overflow-hidden hover:scale-105 transition-transform">
             <img src="/icons/instagram.svg" alt="Instagram" className="w-full h-full" />
           </a>
-          <a href="https://www.tiktok.com/@cardsnap.app" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
+          <a href="https://www.tiktok.com/@swipephotos.net" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
             className="w-8 h-8 rounded-lg overflow-hidden hover:scale-105 transition-transform">
             <img src="/icons/tiktok.png" alt="TikTok" className="w-full h-full" />
           </a>
