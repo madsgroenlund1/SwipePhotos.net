@@ -14,6 +14,12 @@ interface Order {
   users?: { email: string }
 }
 
+interface PreviewEvent {
+  created_at: string
+  style: string | null
+  outcome: string
+}
+
 interface Affiliate {
   id: string
   status: string
@@ -55,12 +61,16 @@ export function AdminClient({
   orders,
   affiliates,
   revenue,
+  previewEvents,
+  totalOrdersCount,
 }: {
   orders: Order[]
   affiliates: Affiliate[]
   revenue: number
+  previewEvents: PreviewEvent[]
+  totalOrdersCount: number
 }) {
-  const [tab, setTab] = useState<'orders' | 'affiliates'>('orders')
+  const [tab, setTab] = useState<'orders' | 'affiliates' | 'analytics'>('orders')
   const [updating, setUpdating] = useState<string | null>(null)
   const [approvingCommissions, setApprovingCommissions] = useState(false)
   const [recovering, setRecovering] = useState(false)
@@ -104,6 +114,20 @@ export function AdminClient({
   const processingCount = orders.filter(o => ['processing', 'training', 'generating'].includes(o.status)).length
   const pendingAffiliates = affiliates.filter(a => a.status === 'pending').length
 
+  const now = Date.now()
+  const DAY = 24 * 60 * 60 * 1000
+  const previewsLast7d = previewEvents.filter(e => now - new Date(e.created_at).getTime() < 7 * DAY).length
+  const previewsLast30d = previewEvents.filter(e => now - new Date(e.created_at).getTime() < 30 * DAY).length
+  const previewsSuccess = previewEvents.filter(e => e.outcome === 'success').length
+  const previewSuccessRate = previewEvents.length ? Math.round((previewsSuccess / previewEvents.length) * 100) : 0
+  const conversionRate = previewEvents.length ? ((totalOrdersCount / previewEvents.length) * 100).toFixed(1) : '0'
+
+  const stylesCount = previewEvents.reduce<Record<string, number>>((acc, e) => {
+    const key = e.style || 'unknown'
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <nav className="border-b border-white/5 px-6 h-16 flex items-center justify-between max-w-7xl mx-auto">
@@ -137,7 +161,7 @@ export function AdminClient({
         {/* Tabs */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex gap-1 bg-white/5 border border-white/8 rounded-xl p-1 w-fit">
-            {(['orders', 'affiliates'] as const).map((t) => (
+            {(['orders', 'affiliates', 'analytics'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -270,6 +294,50 @@ export function AdminClient({
             </table>
           </div>
           )
+        )}
+
+        {tab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Previews — last 7 days" value={previewsLast7d} accent="#3b82f6" />
+              <StatCard label="Previews — last 30 days" value={previewsLast30d} accent="#3b82f6" />
+              <StatCard label="Preview success rate" value={`${previewSuccessRate}%`} accent="#22c55e" />
+              <StatCard label="Preview → paid order rate" value={`${conversionRate}%`} accent="#f59e0b" />
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Previews by style (all-time, last 2000)</h3>
+              {Object.keys(stylesCount).length === 0 ? (
+                <p className="text-zinc-500 text-sm">No preview attempts logged yet — this fills in as visitors try the free preview.</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(stylesCount).sort((a, b) => b[1] - a[1]).map(([style, count]) => (
+                    <div key={style} className="flex items-center gap-3">
+                      <span className="w-28 text-sm text-zinc-400 capitalize">{style}</span>
+                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${(count / Math.max(...Object.values(stylesCount))) * 100}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-sm text-zinc-300 tabular-nums text-right">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-zinc-300 mb-2">Overall site visitor traffic</h3>
+              <p className="text-zinc-500 text-sm">
+                Page-view / referrer / device stats are tracked separately via Vercel Analytics — see the{' '}
+                <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                  Vercel dashboard
+                </a>{' '}
+                → your project → Analytics tab.
+              </p>
+            </div>
+          </div>
         )}
       </main>
     </div>

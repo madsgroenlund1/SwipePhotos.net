@@ -43,6 +43,19 @@ async function saveRunLog(runId: string, log: object) {
   }
 }
 
+// Log a row in preview_events so /admin can show how many visitors try the
+// free preview and how many of them go on to buy.
+async function logPreviewEvent(runId: string, style: string, hasTattoos: boolean, outcome: string, error?: string) {
+  try {
+    const supabase = createAdminClientDirect()
+    await supabase.from('preview_events').insert({
+      run_id: runId, style, has_tattoos: hasTattoos, outcome, error: error ?? null,
+    })
+  } catch (err) {
+    console.error('[preview] Event log failed:', err)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const encoder = new TextEncoder()
 
@@ -105,6 +118,7 @@ export async function POST(req: NextRequest) {
 
         if (!neutralUrl && !smileUrl) {
           await saveRunLog(runId, { runId, style, hasTattoos, templateId: result.templateId, jobs: result.jobs, outcome: 'both_failed' })
+          await logPreviewEvent(runId, style, hasTattoos, 'both_failed', failed.map(f => f.error).join('; '))
           send({ status: 'error', error: 'Generation failed — please try again or use different photos' })
           controller.close()
           return
@@ -112,6 +126,7 @@ export async function POST(req: NextRequest) {
         if (!neutralUrl || !smileUrl) {
           // One of the two jobs failed — surface a clear error so the customer can retry.
           await saveRunLog(runId, { runId, style, hasTattoos, templateId: result.templateId, jobs: result.jobs, outcome: 'partial_failure' })
+          await logPreviewEvent(runId, style, hasTattoos, 'partial_failure', failed.map(f => f.error).join('; '))
           send({ status: 'error', error: `One of your two previews failed (${failed.map(f => f.error).join('; ')}). Please tap retry.` })
           controller.close()
           return
@@ -126,12 +141,14 @@ export async function POST(req: NextRequest) {
           runId, style, hasTattoos, templateId: result.templateId,
           jobs: result.jobs, savedUrls: [savedNeutral, savedSmile], outcome: 'success',
         })
+        await logPreviewEvent(runId, style, hasTattoos, 'success')
 
         send({ status: 'done', urls: [savedNeutral, savedSmile] })
         console.log('[preview] Done — run', runId)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[preview] Error:', msg)
+        await logPreviewEvent(`${Date.now()}-error`, 'unknown', false, 'error', msg)
         send({ status: 'error', error: msg })
       }
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
+import { Analytics } from '@vercel/analytics/next'
 import { CookieBanner } from '@/components/CookieBanner'
 import { clerkLocalization } from '@/lib/clerk-appearance'
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className="min-h-full flex flex-col bg-[#0A0A0A] text-white">
           {children}
           <CookieBanner />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
