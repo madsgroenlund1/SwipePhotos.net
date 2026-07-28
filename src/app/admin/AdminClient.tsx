@@ -20,6 +20,13 @@ interface PreviewEvent {
   outcome: string
 }
 
+interface SiteVisit {
+  created_at: string
+  path: string
+  ip: string | null
+  referrer: string | null
+}
+
 interface Affiliate {
   id: string
   status: string
@@ -63,17 +70,28 @@ export function AdminClient({
   revenue,
   previewEvents,
   totalOrdersCount,
+  siteVisits,
 }: {
   orders: Order[]
   affiliates: Affiliate[]
   revenue: number
   previewEvents: PreviewEvent[]
   totalOrdersCount: number
+  siteVisits: SiteVisit[]
 }) {
   const [tab, setTab] = useState<'orders' | 'affiliates' | 'analytics'>('orders')
   const [updating, setUpdating] = useState<string | null>(null)
   const [approvingCommissions, setApprovingCommissions] = useState(false)
   const [recovering, setRecovering] = useState(false)
+  const [excluding, setExcluding] = useState(false)
+  const [excluded, setExcluded] = useState(false)
+
+  async function excludeMe() {
+    setExcluding(true)
+    await fetch('/api/admin/exclude-me', { method: 'POST' })
+    setExcluding(false)
+    setExcluded(true)
+  }
 
   async function runRecovery() {
     if (!confirm('Scan for stuck orders and attempt recovery? This is safe to run multiple times.')) return
@@ -128,6 +146,18 @@ export function AdminClient({
     return acc
   }, {})
 
+  const visits7d = siteVisits.filter(v => now - new Date(v.created_at).getTime() < 7 * DAY)
+  const visits30d = siteVisits.filter(v => now - new Date(v.created_at).getTime() < 30 * DAY)
+  const uniqueIps7d = new Set(visits7d.map(v => v.ip).filter(Boolean)).size
+  const uniqueIps30d = new Set(visits30d.map(v => v.ip).filter(Boolean)).size
+  const uniqueIpsAllTime = new Set(siteVisits.map(v => v.ip).filter(Boolean)).size
+
+  const topPages = siteVisits.reduce<Record<string, number>>((acc, v) => {
+    acc[v.path] = (acc[v.path] || 0) + 1
+    return acc
+  }, {})
+  const recentVisits = siteVisits.slice(0, 30)
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <nav className="border-b border-white/5 px-6 h-16 flex items-center justify-between max-w-7xl mx-auto">
@@ -139,6 +169,14 @@ export function AdminClient({
           <span className="text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2.5 py-1">Admin</span>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={excludeMe}
+            disabled={excluding || excluded}
+            className="text-xs font-medium bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 px-3.5 py-2 rounded-xl transition-all disabled:opacity-60"
+            title="Excludes your own browsing (on this browser) from the visitor stats"
+          >
+            {excluded ? '✓ You are excluded' : excluding ? 'Excluding…' : "Don't track my visits"}
+          </button>
           <button
             onClick={runRecovery}
             disabled={recovering}
@@ -299,10 +337,68 @@ export function AdminClient({
         {tab === 'analytics' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Unique visitors — 7 days" value={uniqueIps7d} accent="#3b82f6" />
+              <StatCard label="Unique visitors — 30 days" value={uniqueIps30d} accent="#3b82f6" />
+              <StatCard label="Unique visitors — all-time" value={uniqueIpsAllTime} accent="#3b82f6" />
+              <StatCard label="Page views — 7 days" value={visits7d.length} accent="#22c55e" />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Previews — last 7 days" value={previewsLast7d} accent="#3b82f6" />
               <StatCard label="Previews — last 30 days" value={previewsLast30d} accent="#3b82f6" />
               <StatCard label="Preview success rate" value={`${previewSuccessRate}%`} accent="#22c55e" />
               <StatCard label="Preview → paid order rate" value={`${conversionRate}%`} accent="#f59e0b" />
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Most visited pages (all-time, last 5000 views)</h3>
+              {Object.keys(topPages).length === 0 ? (
+                <p className="text-zinc-500 text-sm">No visits logged yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(topPages).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([path, count]) => (
+                    <div key={path} className="flex items-center gap-3">
+                      <span className="w-40 text-sm text-zinc-400 truncate">{path}</span>
+                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${(count / Math.max(...Object.values(topPages))) * 100}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-sm text-zinc-300 tabular-nums text-right">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-white/8">
+                <h3 className="text-sm font-semibold text-zinc-300">Recent visits (last 30)</h3>
+              </div>
+              {recentVisits.length === 0 ? (
+                <p className="text-zinc-500 text-sm p-6">No visits logged yet — this fills in as people browse the site.</p>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/8">
+                      {['Time', 'Page', 'IP', 'Referrer'].map((h) => (
+                        <th key={h} className="px-5 py-3 text-left text-xs text-zinc-500 font-semibold uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentVisits.map((v, i) => (
+                      <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors">
+                        <td className="px-5 py-3 text-sm text-zinc-500">{new Date(v.created_at).toLocaleString()}</td>
+                        <td className="px-5 py-3 text-sm text-zinc-300 truncate max-w-[200px]">{v.path}</td>
+                        <td className="px-5 py-3 text-sm text-zinc-400 font-mono">{v.ip || '—'}</td>
+                        <td className="px-5 py-3 text-sm text-zinc-500 truncate max-w-[220px]">{v.referrer || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             <div className="bg-[#111] border border-white/8 rounded-2xl p-6">

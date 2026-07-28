@@ -14,7 +14,7 @@ export default async function AdminPage() {
 
   const supabase = await createAdminClient()
 
-  const [{ data: orders }, { data: affiliates }, { data: revenueOrders }, { data: previewEvents }, { count: totalOrdersCount }] = await Promise.all([
+  const [{ data: orders }, { data: affiliates }, { data: revenueOrders }, { data: previewEvents }, { count: totalOrdersCount }, { data: siteVisits }] = await Promise.all([
     supabase
       .from('orders')
       .select('*, users(email)')
@@ -36,6 +36,11 @@ export default async function AdminPage() {
     supabase
       .from('orders')
       .select('id', { count: 'exact', head: true }),
+    supabase
+      .from('site_visits')
+      .select('created_at, path, ip, referrer')
+      .order('created_at', { ascending: false })
+      .limit(5000),
   ])
 
   // Current live EUR monthly prices (see src/lib/pricing.ts) — package_type
@@ -55,6 +60,7 @@ export default async function AdminPage() {
       revenue={revenue}
       previewEvents={previewEvents || []}
       totalOrdersCount={totalOrdersCount || 0}
+      siteVisits={siteVisits || []}
     />
   )
 }

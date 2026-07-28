@@ -28,6 +28,31 @@ export default clerkMiddleware(async (auth, request) => {
     })
   }
 
+  // Log real page visits for the /admin analytics tab, excluding the site
+  // owner's own browsing (marked via the sw_visitor_exclude cookie, set once
+  // from /admin) and non-page requests (api, admin itself, static assets).
+  const path = request.nextUrl.pathname
+  const isPageRequest = !path.startsWith('/api') && !path.startsWith('/admin') && !path.includes('.')
+  if (isPageRequest && !request.cookies.get('sw_visitor_exclude')) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
+    const userAgent = request.headers.get('user-agent') || null
+    const referrer = request.headers.get('referer') || null
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (url && key) {
+      fetch(`${url}/rest/v1/site_visits`, {
+        method: 'POST',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ path, ip, user_agent: userAgent, referrer }),
+      }).catch(() => {})
+    }
+  }
+
   return response
 })
 
