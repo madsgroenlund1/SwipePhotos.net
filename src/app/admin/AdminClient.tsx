@@ -139,12 +139,13 @@ export function AdminClient({
     window.location.reload()
   }
 
-  const readyCount = orders.filter(o => o.status === 'ready').length
-  const processingCount = orders.filter(o => ['processing', 'training', 'generating'].includes(o.status)).length
-  const pendingAffiliates = affiliates.filter(a => a.status === 'pending').length
-
   const now = Date.now()
   const DAY = 24 * 60 * 60 * 1000
+
+  const failedCount = orders.filter(o => o.status === 'failed').length
+  const newThisWeekCount = orders.filter(o => now - new Date(o.created_at).getTime() < 7 * DAY).length
+  const pendingAffiliates = affiliates.filter(a => a.status === 'pending').length
+
   const previewsLast30d = previewEvents.filter(e => now - new Date(e.created_at).getTime() < 30 * DAY).length
   const conversionRate = previewEvents.length ? ((totalOrdersCount / previewEvents.length) * 100).toFixed(1) : '0'
 
@@ -194,8 +195,8 @@ export function AdminClient({
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <StatCard label="Total Orders" value={orders.length} accent="#3b82f6" />
-          <StatCard label="Ready" value={readyCount} accent="#22c55e" />
-          <StatCard label="Processing" value={processingCount} accent="#3b82f6" />
+          <StatCard label="Failed" value={failedCount} accent="#ef4444" />
+          <StatCard label="New this week" value={newThisWeekCount} accent="#3b82f6" />
           <StatCard label="Revenue (MRR)" value={`€${revenue.toLocaleString()}`} accent="#f59e0b" />
         </div>
 
