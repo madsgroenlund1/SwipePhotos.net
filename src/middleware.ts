@@ -37,6 +37,8 @@ export default clerkMiddleware(async (auth, request) => {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = request.headers.get('user-agent') || null
     const referrer = request.headers.get('referer') || null
+    // Vercel's edge network sets this on every request — no external geo-IP lookup needed.
+    const country = request.headers.get('x-vercel-ip-country') || null
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (url && key) {
@@ -48,7 +50,7 @@ export default clerkMiddleware(async (auth, request) => {
           'Content-Type': 'application/json',
           Prefer: 'return=minimal',
         },
-        body: JSON.stringify({ path, ip, user_agent: userAgent, referrer }),
+        body: JSON.stringify({ path, ip, user_agent: userAgent, referrer, country }),
       }).catch(() => {})
     }
   }

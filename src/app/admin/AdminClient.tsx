@@ -24,7 +24,7 @@ interface SiteVisit {
   created_at: string
   path: string
   ip: string | null
-  referrer: string | null
+  country: string | null
 }
 
 interface Affiliate {
@@ -134,17 +134,8 @@ export function AdminClient({
 
   const now = Date.now()
   const DAY = 24 * 60 * 60 * 1000
-  const previewsLast7d = previewEvents.filter(e => now - new Date(e.created_at).getTime() < 7 * DAY).length
   const previewsLast30d = previewEvents.filter(e => now - new Date(e.created_at).getTime() < 30 * DAY).length
-  const previewsSuccess = previewEvents.filter(e => e.outcome === 'success').length
-  const previewSuccessRate = previewEvents.length ? Math.round((previewsSuccess / previewEvents.length) * 100) : 0
   const conversionRate = previewEvents.length ? ((totalOrdersCount / previewEvents.length) * 100).toFixed(1) : '0'
-
-  const stylesCount = previewEvents.reduce<Record<string, number>>((acc, e) => {
-    const key = e.style || 'unknown'
-    acc[key] = (acc[key] || 0) + 1
-    return acc
-  }, {})
 
   const visits7d = siteVisits.filter(v => now - new Date(v.created_at).getTime() < 7 * DAY)
   const visits30d = siteVisits.filter(v => now - new Date(v.created_at).getTime() < 30 * DAY)
@@ -152,11 +143,12 @@ export function AdminClient({
   const uniqueIps30d = new Set(visits30d.map(v => v.ip).filter(Boolean)).size
   const uniqueIpsAllTime = new Set(siteVisits.map(v => v.ip).filter(Boolean)).size
 
-  const topPages = siteVisits.reduce<Record<string, number>>((acc, v) => {
-    acc[v.path] = (acc[v.path] || 0) + 1
+  const topCountries = siteVisits.reduce<Record<string, number>>((acc, v) => {
+    const key = v.country || 'Unknown'
+    acc[key] = (acc[key] || 0) + 1
     return acc
   }, {})
-  const recentVisits = siteVisits.slice(0, 30)
+  const recentVisits = siteVisits.slice(0, 20)
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
@@ -337,32 +329,26 @@ export function AdminClient({
         {tab === 'analytics' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Unique visitors — 7 days" value={uniqueIps7d} accent="#3b82f6" />
-              <StatCard label="Unique visitors — 30 days" value={uniqueIps30d} accent="#3b82f6" />
-              <StatCard label="Unique visitors — all-time" value={uniqueIpsAllTime} accent="#3b82f6" />
-              <StatCard label="Page views — 7 days" value={visits7d.length} accent="#22c55e" />
+              <StatCard label="Visitors — 7 days" value={uniqueIps7d} accent="#3b82f6" />
+              <StatCard label="Visitors — 30 days" value={uniqueIps30d} accent="#3b82f6" />
+              <StatCard label="Visitors — all-time" value={uniqueIpsAllTime} accent="#3b82f6" />
+              <StatCard label="Free previews — 30 days" value={previewsLast30d} accent="#f59e0b" />
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Previews — last 7 days" value={previewsLast7d} accent="#3b82f6" />
-              <StatCard label="Previews — last 30 days" value={previewsLast30d} accent="#3b82f6" />
-              <StatCard label="Preview success rate" value={`${previewSuccessRate}%`} accent="#22c55e" />
-              <StatCard label="Preview → paid order rate" value={`${conversionRate}%`} accent="#f59e0b" />
-            </div>
+            <p className="text-zinc-500 text-sm -mt-2">{conversionRate}% of free previews go on to become a paid order.</p>
 
             <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Most visited pages (all-time, last 5000 views)</h3>
-              {Object.keys(topPages).length === 0 ? (
+              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Visitors by country</h3>
+              {Object.keys(topCountries).length === 0 ? (
                 <p className="text-zinc-500 text-sm">No visits logged yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {Object.entries(topPages).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([path, count]) => (
-                    <div key={path} className="flex items-center gap-3">
-                      <span className="w-40 text-sm text-zinc-400 truncate">{path}</span>
+                  {Object.entries(topCountries).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([country, count]) => (
+                    <div key={country} className="flex items-center gap-3">
+                      <span className="w-16 text-sm text-zinc-400">{country}</span>
                       <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${(count / Math.max(...Object.values(topPages))) * 100}%` }}
+                          style={{ width: `${(count / Math.max(...Object.values(topCountries))) * 100}%` }}
                         />
                       </div>
                       <span className="w-10 text-sm text-zinc-300 tabular-nums text-right">{count}</span>
@@ -374,7 +360,7 @@ export function AdminClient({
 
             <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-white/8">
-                <h3 className="text-sm font-semibold text-zinc-300">Recent visits (last 30)</h3>
+                <h3 className="text-sm font-semibold text-zinc-300">Recent visits</h3>
               </div>
               {recentVisits.length === 0 ? (
                 <p className="text-zinc-500 text-sm p-6">No visits logged yet — this fills in as people browse the site.</p>
@@ -382,7 +368,7 @@ export function AdminClient({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/8">
-                      {['Time', 'Page', 'IP', 'Referrer'].map((h) => (
+                      {['Time', 'Page', 'Country', 'IP'].map((h) => (
                         <th key={h} className="px-5 py-3 text-left text-xs text-zinc-500 font-semibold uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
@@ -392,46 +378,13 @@ export function AdminClient({
                       <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors">
                         <td className="px-5 py-3 text-sm text-zinc-500">{new Date(v.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3 text-sm text-zinc-300 truncate max-w-[200px]">{v.path}</td>
+                        <td className="px-5 py-3 text-sm text-zinc-300">{v.country || '—'}</td>
                         <td className="px-5 py-3 text-sm text-zinc-400 font-mono">{v.ip || '—'}</td>
-                        <td className="px-5 py-3 text-sm text-zinc-500 truncate max-w-[220px]">{v.referrer || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
-            </div>
-
-            <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Previews by style (all-time, last 2000)</h3>
-              {Object.keys(stylesCount).length === 0 ? (
-                <p className="text-zinc-500 text-sm">No preview attempts logged yet — this fills in as visitors try the free preview.</p>
-              ) : (
-                <div className="space-y-3">
-                  {Object.entries(stylesCount).sort((a, b) => b[1] - a[1]).map(([style, count]) => (
-                    <div key={style} className="flex items-center gap-3">
-                      <span className="w-28 text-sm text-zinc-400 capitalize">{style}</span>
-                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${(count / Math.max(...Object.values(stylesCount))) * 100}%` }}
-                        />
-                      </div>
-                      <span className="w-10 text-sm text-zinc-300 tabular-nums text-right">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-[#111] border border-white/8 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-2">Overall site visitor traffic</h3>
-              <p className="text-zinc-500 text-sm">
-                Page-view / referrer / device stats are tracked separately via Vercel Analytics — see the{' '}
-                <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                  Vercel dashboard
-                </a>{' '}
-                → your project → Analytics tab.
-              </p>
             </div>
           </div>
         )}

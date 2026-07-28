@@ -38,7 +38,7 @@ export default async function AdminPage() {
       .select('id', { count: 'exact', head: true }),
     supabase
       .from('site_visits')
-      .select('created_at, path, ip, referrer')
+      .select('created_at, path, ip, country')
       .order('created_at', { ascending: false })
       .limit(5000),
   ])
