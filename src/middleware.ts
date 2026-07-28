@@ -34,11 +34,17 @@ export default clerkMiddleware(async (auth, request) => {
   const path = request.nextUrl.pathname
   const isPageRequest = !path.startsWith('/api') && !path.startsWith('/admin') && !path.includes('.')
   if (isPageRequest && !request.cookies.get('sw_visitor_exclude')) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
+    // The site is proxied through Cloudflare, so Vercel only ever sees
+    // Cloudflare's own edge-node IP in x-forwarded-for / x-vercel-ip-country.
+    // Cloudflare sets the TRUE visitor IP/country in its own headers — prefer those.
+    const ip = request.headers.get('cf-connecting-ip')
+      || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || null
     const userAgent = request.headers.get('user-agent') || null
     const referrer = request.headers.get('referer') || null
-    // Vercel's edge network sets this on every request — no external geo-IP lookup needed.
-    const country = request.headers.get('x-vercel-ip-country') || null
+    const country = request.headers.get('cf-ipcountry')
+      || request.headers.get('x-vercel-ip-country')
+      || null
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (url && key) {

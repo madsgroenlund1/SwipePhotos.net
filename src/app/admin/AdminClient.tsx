@@ -52,6 +52,17 @@ const PACKAGE_STYLES: Record<string, string> = {
   elite:   'bg-amber-500/10 text-amber-300 border border-amber-500/20',
 }
 
+const countryNames = new Intl.DisplayNames(['en'], { type: 'region' })
+
+// Converts a 2-letter country code (e.g. "DK") to its flag emoji + English name.
+function formatCountry(code: string | null): string {
+  if (!code || code.length !== 2) return 'Unknown'
+  const flag = String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1f1e6 + c.charCodeAt(0) - 65))
+  let name = code
+  try { name = countryNames.of(code.toUpperCase()) || code } catch {}
+  return `${flag} ${name}`
+}
+
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#111] p-5">
@@ -344,7 +355,7 @@ export function AdminClient({
                 <div className="space-y-3">
                   {Object.entries(topCountries).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([country, count]) => (
                     <div key={country} className="flex items-center gap-3">
-                      <span className="w-16 text-sm text-zinc-400">{country}</span>
+                      <span className="w-40 text-sm text-zinc-400">{formatCountry(country)}</span>
                       <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-500 rounded-full"
@@ -378,7 +389,7 @@ export function AdminClient({
                       <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors">
                         <td className="px-5 py-3 text-sm text-zinc-500">{new Date(v.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3 text-sm text-zinc-300 truncate max-w-[200px]">{v.path}</td>
-                        <td className="px-5 py-3 text-sm text-zinc-300">{v.country || '—'}</td>
+                        <td className="px-5 py-3 text-sm text-zinc-300">{formatCountry(v.country)}</td>
                         <td className="px-5 py-3 text-sm text-zinc-400 font-mono">{v.ip || '—'}</td>
                       </tr>
                     ))}
