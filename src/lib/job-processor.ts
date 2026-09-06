@@ -51,11 +51,17 @@ export type ProcessResult =
   | { status: 'generating'; saved: number; pending: number }
   | { status: string }   // any other order status (not generating)
 
+// A single stuck order must never be able to run up an unbounded fal.ai
+// bill. This is a hard, order-level ceiling on TOTAL generation calls
+// (initial submissions + every QC retry combined) — set once to the
+// package's photo count when jobs are first queued. See resubmitIfAllowed().
+const LOCK_TTL_MS = 25_000
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function processOrderJobs(orderId: string, supabase: any): Promise<ProcessResult> {
   const { data: order } = await supabase
     .from('orders')
-    .select('id, status, email, replicate_training_id')
+    .select('id, status, email, replicate_training_id, max_generation_attempts, generation_attempts_used')
     .eq('id', orderId)
     .single()
 
@@ -65,6 +71,30 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
 
   const entries = parseJobEntries(order.replicate_training_id || '[]')
   if (!entries.length) return { status: order.status }
+
+  // Only one invocation may process a given order at a time. Without this,
+  // the browser's poll and the server cron (or two overlapping browser
+  // polls) can both see the same QC-failing job and resubmit it at the
+  // same time — their writes race, the per-entry retry counter never
+  // actually accumulates, and a single order can spiral into hundreds of
+  // fal.ai calls instead of the intended few-per-photo cap. This happened
+  // for real: one 45-photo order burned 328 generations (~$56) this way.
+  const lockCutoff = new Date(Date.now() - LOCK_TTL_MS).toISOString()
+  const { data: lockRows } = await supabase
+    .from('orders')
+    .update({ processing_locked_at: new Date().toISOString() })
+    .eq('id', orderId)
+    .eq('status', 'generating')
+    .or(`processing_locked_at.is.null,processing_locked_at.lt.${lockCutoff}`)
+    .select('id')
+
+  if (!lockRows?.length) {
+    // Another invocation is already processing this order right now.
+    return { status: 'generating', saved: 0, pending: entries.length }
+  }
+
+  const maxAttempts = order.max_generation_attempts ?? entries.length
+  let attemptsUsed = order.generation_attempts_used ?? entries.length
 
   // Fetch already-saved photos to avoid duplicate inserts
   const { data: existingPhotos } = await supabase
@@ -120,14 +150,21 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
       const retries = entry.qcRetries ?? 0
       console.warn(`[job-processor] QC REJECTED ${templateId} (attempt ${retries + 1}): ${qc.reason}`)
 
-      if (retries < QC_MAX_RETRIES) {
+      // Hard order-level ceiling first — never exceed the package's photo
+      // count in total fal.ai calls, no matter what the per-template retry
+      // budget below would otherwise allow.
+      if (attemptsUsed >= maxAttempts) {
+        console.warn(`[job-processor] Order-level generation cap reached (${attemptsUsed}/${maxAttempts}) — accepting best effort for ${templateId}`)
+      } else if (retries < QC_MAX_RETRIES) {
+        attemptsUsed++ // reserve the slot synchronously before the await below
         const resubmittedEntry = await resubmitTemplateJob(entry)
         if (resubmittedEntry) {
           resubmitted.push(resubmittedEntry)
           return
         }
-        // Resubmit itself failed (fal.ai error) — fall through and accept
-        // the original rather than losing the photo entirely.
+        // Resubmit itself failed (fal.ai error) — give the slot back and
+        // fall through to accept the original rather than losing the photo.
+        attemptsUsed--
       } else {
         console.warn(`[job-processor] QC exhausted ${QC_MAX_RETRIES} retries for ${templateId} — accepting best effort`)
       }
@@ -157,17 +194,21 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
 
   if (allPending.length === 0) {
     if (totalSaved > 0) {
-      await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId)
+      await supabase.from('orders').update({
+        status: 'ready', generation_attempts_used: attemptsUsed, processing_locked_at: null,
+      }).eq('id', orderId)
       if (order.email) {
         await sendReadyEmail(order.email, orderId, totalSaved).catch(e =>
           console.error('[job-processor] ready email failed:', e)
         )
       }
-      console.log(`[job-processor] Order ${orderId} READY — ${totalSaved} photos`)
+      console.log(`[job-processor] Order ${orderId} READY — ${totalSaved} photos, ${attemptsUsed}/${maxAttempts} generation attempts used`)
       return { status: 'ready', count: totalSaved }
     } else {
       console.error(`[job-processor] Order ${orderId} FAILED — all ${failedCount} jobs rejected`)
-      await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId)
+      await supabase.from('orders').update({
+        status: 'failed', generation_attempts_used: attemptsUsed, processing_locked_at: null,
+      }).eq('id', orderId)
       if (order.email) {
         await sendFailedEmail(order.email, orderId).catch(e =>
           console.error('[job-processor] failure email failed:', e)
@@ -177,10 +218,15 @@ export async function processOrderJobs(orderId: string, supabase: any): Promise<
     }
   }
 
-  // Still running (or awaiting a QC-triggered retry) — persist the updated list
+  // Still running (or awaiting a QC-triggered retry) — persist the updated
+  // list, the attempt counter, and release the lock for the next poll.
   await supabase
     .from('orders')
-    .update({ replicate_training_id: JSON.stringify(allPending) })
+    .update({
+      replicate_training_id: JSON.stringify(allPending),
+      generation_attempts_used: attemptsUsed,
+      processing_locked_at: null,
+    })
     .eq('id', orderId)
 
   return { status: 'generating', saved: totalSaved, pending: allPending.length }

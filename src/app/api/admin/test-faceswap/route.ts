@@ -53,7 +53,11 @@ export async function POST(req: NextRequest) {
     const falTattooUrl = tattooSourceUrl ? await toFalUrl(tattooSourceUrl).catch(() => undefined) : undefined
 
     let entries = await submitFaceSwapJobs(falPhotoUrls, packageId, hasTattoos, falTattooUrl)
-    await supabase.from('orders').update({ replicate_training_id: JSON.stringify(entries) }).eq('id', orderId)
+    await supabase.from('orders').update({
+      replicate_training_id: JSON.stringify(entries),
+      max_generation_attempts: entries.length,
+      generation_attempts_used: entries.length,
+    }).eq('id', orderId)
 
     // Poll until done (max 50s)
     const start = Date.now()

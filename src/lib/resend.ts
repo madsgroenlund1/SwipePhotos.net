@@ -606,7 +606,7 @@ export async function sendFailedEmail(email: string, orderId: string) {
 
 export async function sendCancellationEmail(
   email: string,
-  { periodEnd, reason }: { periodEnd: Date; reason: string | null }
+  { periodEnd, reason, immediate }: { periodEnd: Date; reason: string | null; immediate?: boolean }
 ) {
   const endStr = periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
@@ -633,9 +633,9 @@ export async function sendCancellationEmail(
       text-align:center;
       line-height:1.65;
     ">
-      You&rsquo;ll keep full access until<br />
-      <strong style="color:${TEXT_PRI};">${endStr}</strong>.<br />
-      No more charges after that date.
+      ${immediate
+        ? 'Your access has ended immediately, since your free retention month was conditional on staying subscribed.<br />No more charges.'
+        : `You&rsquo;ll keep full access until<br /><strong style="color:${TEXT_PRI};">${endStr}</strong>.<br />No more charges after that date.`}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" border="0"

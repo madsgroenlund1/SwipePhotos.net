@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClientDirect()
     const { data: userRow } = await admin
       .from('users')
-      .select('stripe_customer_id, stripe_subscription_id')
+      .select('stripe_customer_id, stripe_subscription_id, retention_offer_type')
       .eq('id', user.id)
       .single()
 
@@ -42,23 +42,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, periodEnd: periodEnd(sub), alreadyCancelled: true })
     }
 
-    const updated = await stripe.subscriptions.update(sub.id, {
-      cancel_at_period_end: true,
-    })
+    // The retention offer ("keep your subscription and get 1 month free")
+    // is conditional on actually staying subscribed. A customer who takes
+    // the free month and then cancels anyway forfeits it immediately —
+    // access ends now, not at the end of the (free) billing period.
+    const usedRetentionOffer = userRow.retention_offer_type === 'free_month'
 
-    await admin.from('users').update({ stripe_subscription_id: sub.id }).eq('id', user.id)
+    const updated = usedRetentionOffer
+      ? await stripe.subscriptions.cancel(sub.id)
+      : await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true })
 
-    const end = periodEnd(updated)
+    await admin.from('users').update({
+      stripe_subscription_id: usedRetentionOffer ? null : sub.id,
+    }).eq('id', user.id)
+
+    const end = usedRetentionOffer ? Math.floor(Date.now() / 1000) : periodEnd(updated)
     const email = user.email ?? ''
     if (email) {
       await sendCancellationEmail(email, {
         periodEnd: new Date(end * 1000),
         reason: reason || null,
+        immediate: usedRetentionOffer,
       }).catch(e => console.error('[cancel] email error:', e))
     }
 
-    console.log(`[cancel] User ${user.id} sub ${sub.id} cancel_at_period_end. Reason: ${reason}`)
-    return NextResponse.json({ ok: true, periodEnd: end })
+    console.log(`[cancel] User ${user.id} sub ${sub.id} ${usedRetentionOffer ? 'CANCELLED IMMEDIATELY (forfeited retention offer)' : 'cancel_at_period_end'}. Reason: ${reason}`)
+    return NextResponse.json({ ok: true, periodEnd: end, immediate: usedRetentionOffer })
   } catch (err) {
     console.error('[cancel-subscription]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })

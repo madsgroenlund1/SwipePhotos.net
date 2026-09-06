@@ -102,7 +102,12 @@ export async function POST(req: NextRequest) {
       // Store {requestId, templateId}[] so the poll endpoint can trace each result back to its template
       await supabase
         .from('orders')
-        .update({ status: 'generating', replicate_training_id: JSON.stringify(entries) })
+        .update({
+          status: 'generating',
+          replicate_training_id: JSON.stringify(entries),
+          max_generation_attempts: entries.length,
+          generation_attempts_used: entries.length,
+        })
         .eq('id', orderId)
 
       console.log(`[stripe webhook] ${entries.length} face-swap jobs queued for order ${orderId}`)

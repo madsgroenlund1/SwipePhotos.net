@@ -647,7 +647,7 @@ function CancelModal({
 
   const offerText = interval === 'month' ? 'Stay free for 1 month' : '50% off your next renewal'
   const offerDesc = interval === 'month'
-    ? 'Your next billing cycle is on us — no charge. You keep all your photos and can cancel after.'
+    ? "Your next billing cycle is on us — no charge. This offer is conditional on staying subscribed: if you cancel after accepting it, access ends immediately rather than at the end of the free month."
     : 'Get 50% off your next yearly renewal. Your subscription continues as normal after that.'
 
   async function handleContinueFromReason() {

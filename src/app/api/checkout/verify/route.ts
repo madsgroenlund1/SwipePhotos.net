@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
       await supabase.from('orders').update({
         status: 'generating',
         replicate_training_id: JSON.stringify(entries),
+        max_generation_attempts: entries.length,
+        generation_attempts_used: entries.length,
       }).eq('id', orderId)
 
       console.log('[verify] Face-swap pipeline started, jobs:', entries.length)
