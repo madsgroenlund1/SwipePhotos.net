@@ -34,6 +34,11 @@ at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM
 const OID_LEAF = Buffer.from('060a2a864886f76364060b01', 'hex')
 const OID_INTERMEDIATE = Buffer.from('060a2a864886f76364060201', 'hex')
 
+// Local end-to-end tests (scripts/test-iap-flow.mts) sign with their own
+// certificate chain. This override only exists outside production, so it can
+// never weaken verification on Vercel (NODE_ENV is always "production" there).
+const TEST_ROOT_PEM = process.env.NODE_ENV !== 'production' ? process.env.APPLE_IAP_TEST_ROOT_PEM : undefined
+
 export class AppleVerificationError extends Error {}
 
 function b64urlDecode(s: string): Buffer {
@@ -47,7 +52,7 @@ function b64urlDecode(s: string): Buffer {
  */
 export function verifyAppleJWS<T = Record<string, unknown>>(
   jws: string,
-  rootPem: string = APPLE_ROOT_CA_G3_PEM,
+  rootPem: string = TEST_ROOT_PEM ?? APPLE_ROOT_CA_G3_PEM,
   now: Date = new Date()
 ): T {
   const parts = jws.split('.')
