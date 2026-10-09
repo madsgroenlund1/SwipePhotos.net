@@ -14,7 +14,7 @@ export default async function PrivacyPage() {
       <Navbar />
       <main className="max-w-2xl mx-auto px-6 pt-28 pb-20">
         <h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
-        <p className="text-zinc-500 text-sm mb-10">Last updated: July 11, 2026</p>
+        <p className="text-zinc-500 text-sm mb-10">Last updated: October 9, 2026</p>
 
         <div className="prose prose-invert max-w-none space-y-8 text-zinc-300 text-sm leading-relaxed">
 
@@ -44,9 +44,16 @@ export default async function PrivacyPage() {
                 via our face-swap pipeline. See section 3 for details.
               </li>
               <li>
-                <strong className="text-white">Payment data</strong> — handled entirely by Stripe. We never store
-                your card number or payment credentials. We receive order confirmations and subscription status
-                from Stripe webhooks.
+                <strong className="text-white">Payment data</strong> — handled entirely by Stripe (website) or by
+                Apple (iOS app). We never store your card number or payment credentials. We receive order
+                confirmations and subscription status from Stripe webhooks or, for the iOS app, Apple transaction
+                information (product, expiry date, renewal status).
+              </li>
+              <li>
+                <strong className="text-white">iOS app sign-in</strong> — in the iOS app you sign in with a one-time
+                code sent to your e-mail address (we store only a hashed copy for 10 minutes to check it) or with
+                Sign in with Apple, in which case we receive the e-mail address Apple provides (this can be a
+                private relay address).
               </li>
               <li>
                 <strong className="text-white">Usage data</strong> — pages visited, session duration, browser type,

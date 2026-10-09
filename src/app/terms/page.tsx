@@ -14,7 +14,7 @@ export default async function TermsPage() {
       <Navbar />
       <main className="max-w-3xl mx-auto px-6 pt-28 pb-20 text-zinc-400 text-sm leading-relaxed">
         <h1 className="text-3xl font-bold text-white mb-2">Terms of Service</h1>
-        <p className="text-zinc-600 mb-10">Last updated: July 11, 2026</p>
+        <p className="text-zinc-600 mb-10">Last updated: October 9, 2026</p>
 
         <section className="mb-8">
           <h2 className="text-white font-semibold text-base mb-3">1. Service Description</h2>
@@ -108,9 +108,18 @@ export default async function TermsPage() {
             settings. Cancellation takes effect at the end of your current paid billing period; you retain
             access to your photos and plan benefits until then.
           </p>
+          <p className="mb-3">
+            We may offer a retention discount (for example one free month) if you initiate cancellation. Such an
+            offer is conditional on you remaining subscribed: if you accept it and then cancel, your access ends
+            immediately and the discount is forfeited.
+          </p>
           <p>
-            We may offer retention discounts if you initiate cancellation. Accepting a retention offer does not
-            extend your commitment beyond the discounted period — you can still cancel at any time.
+            <strong className="text-white">Subscriptions bought in the iOS app.</strong> If you subscribe in the
+            SwipePhotos iOS app, payment is processed by Apple through the App Store instead of Stripe and is
+            charged to your Apple ID. The subscription renews automatically unless you cancel at least 24 hours
+            before the end of the current period. You manage or cancel it in Settings → Apple ID → Subscriptions on
+            your device, and refund requests for App Store purchases are handled by Apple (reportaproblem.apple.com).
+            The quality promise in section 7 applies no matter where you subscribed.
           </p>
         </section>
 
