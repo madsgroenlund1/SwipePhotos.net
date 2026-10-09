@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 vercel.env
+
+# iOS app
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+ios/build/
+ios/DerivedData/

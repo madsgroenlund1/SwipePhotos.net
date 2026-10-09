@@ -1,0 +1,444 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7E29BEE2E1472B763BC3C1C6 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6055650A18065AE56BAC3655 /* RootView.swift */; };
+		D5A1E2288A1C080BC4CCAFF6 /* SwipePhotosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90222525256D13C9D05C2D0 /* SwipePhotosApp.swift */; };
+		A795424425CB04FF0B63B47E /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311391CC78F88E64DBEF2184 /* APIClient.swift */; };
+		E53FBF3BE9E44312EDC5B39C /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A261A9E05ABAE4008C96201 /* AppModel.swift */; };
+		C3783AD958AD695C3F4E4F66 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706522F4B1773056294646B3 /* Config.swift */; };
+		7B5E09BAF51F92285D27087A /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5853192C6BFBCE2A09EB1809 /* ImageProcessing.swift */; };
+		793BF39E39D11E79BEC68CF8 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1C46CC0BE45A3D4988E371 /* Keychain.swift */; };
+		FB64880BBD8195D46A5B5D07 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E6CDBE3D5CD28DF7920179 /* Models.swift */; };
+		6CDBF6867F095CF627409792 /* OrderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8F9054F4867675DBFDEF7 /* OrderService.swift */; };
+		E80E6A278F034E612E55B77F /* PendingPurchase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE790D2069832B11FF2C9CE /* PendingPurchase.swift */; };
+		9E282D2F745272A2131AA41F /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F65CA2516AE78CBA26C48B /* Platform.swift */; };
+		92395D83AD4791CABDDDD015 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3469214EE7C84EC3F24593B8 /* Session.swift */; };
+		E97CF35E4CC92171577A81D9 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD66B63E74E377FD83075DF /* StoreManager.swift */; };
+		6A4AB481AF92953C9576A5C3 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACD1D89F8A8750FB5378A792 /* Theme.swift */; };
+		FBF27EB65E5C7F981D046F76 /* AccountTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3C86AC8464791EEB8AFD73 /* AccountTab.swift */; };
+		F3B8EEA45FBC01AD83BADA16 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A27D83F98A02E4869F80A0 /* SignInView.swift */; };
+		DFA826A4296032834D542517 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE99A36A6731F1C5A9BA118 /* MainTabView.swift */; };
+		AB89F72A80B556F1C6E761B0 /* OrderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37369EEC63FE6348E7012D97 /* OrderDetailView.swift */; };
+		B31634A3B0FA0006E597E010 /* PhotosTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE11CCD1669AD172B2A0860F /* PhotosTab.swift */; };
+		4E0906830440F0EE5C6B362E /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5701A24228C3D0775EC56E4 /* OnboardingFlow.swift */; };
+		A5B4008B54FB9B67537EA269 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6608F22E684DB1DBA2DFD0C2 /* OnboardingModel.swift */; };
+		8D8D6663D5A3A160D5AE0EE6 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEE2E250B981174EF69C3D1 /* PaywallView.swift */; };
+		DC322301B6858403E8D327B4 /* PreviewSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = E49A0EFACAAE6C21813D343D /* PreviewSteps.swift */; };
+		D459DA7A771D9E87BD288415 /* ProgressViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 712EC0D1A55AC85057E4BB84 /* ProgressViews.swift */; };
+		787BE7211D03C7C4810A6148 /* SetupSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7FFC70F29E7B72EDF5D69D4 /* SetupSteps.swift */; };
+		17A38848084E04FD9DEF6091 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C20F0FD15E4B033F22452A /* WelcomeView.swift */; };
+		2AB03B4B9A5A9C021FFD855C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 695B14D092922F9B54DD47C3 /* Assets.xcassets */; };
+		3D458A67402C180772777564 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B5BD331F93D8D7E71618BFC6 /* PrivacyInfo.xcprivacy */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		EFE3E8C5213E55B655B01817 /* SwipePhotos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipePhotos.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6055650A18065AE56BAC3655 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootView.swift"; sourceTree = "<group>"; };
+		F90222525256D13C9D05C2D0 /* SwipePhotosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwipePhotosApp.swift"; sourceTree = "<group>"; };
+		311391CC78F88E64DBEF2184 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIClient.swift"; sourceTree = "<group>"; };
+		6A261A9E05ABAE4008C96201 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel.swift"; sourceTree = "<group>"; };
+		706522F4B1773056294646B3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Config.swift"; sourceTree = "<group>"; };
+		5853192C6BFBCE2A09EB1809 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImageProcessing.swift"; sourceTree = "<group>"; };
+		8C1C46CC0BE45A3D4988E371 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Keychain.swift"; sourceTree = "<group>"; };
+		61E6CDBE3D5CD28DF7920179 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Models.swift"; sourceTree = "<group>"; };
+		51C8F9054F4867675DBFDEF7 /* OrderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderService.swift"; sourceTree = "<group>"; };
+		4EE790D2069832B11FF2C9CE /* PendingPurchase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PendingPurchase.swift"; sourceTree = "<group>"; };
+		A7F65CA2516AE78CBA26C48B /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Platform.swift"; sourceTree = "<group>"; };
+		3469214EE7C84EC3F24593B8 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Session.swift"; sourceTree = "<group>"; };
+		6AD66B63E74E377FD83075DF /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StoreManager.swift"; sourceTree = "<group>"; };
+		ACD1D89F8A8750FB5378A792 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Theme.swift"; sourceTree = "<group>"; };
+		7A3C86AC8464791EEB8AFD73 /* AccountTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AccountTab.swift"; sourceTree = "<group>"; };
+		89A27D83F98A02E4869F80A0 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SignInView.swift"; sourceTree = "<group>"; };
+		1CE99A36A6731F1C5A9BA118 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainTabView.swift"; sourceTree = "<group>"; };
+		37369EEC63FE6348E7012D97 /* OrderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OrderDetailView.swift"; sourceTree = "<group>"; };
+		BE11CCD1669AD172B2A0860F /* PhotosTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PhotosTab.swift"; sourceTree = "<group>"; };
+		B5701A24228C3D0775EC56E4 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingFlow.swift"; sourceTree = "<group>"; };
+		6608F22E684DB1DBA2DFD0C2 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingModel.swift"; sourceTree = "<group>"; };
+		3DEE2E250B981174EF69C3D1 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaywallView.swift"; sourceTree = "<group>"; };
+		E49A0EFACAAE6C21813D343D /* PreviewSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PreviewSteps.swift"; sourceTree = "<group>"; };
+		712EC0D1A55AC85057E4BB84 /* ProgressViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProgressViews.swift"; sourceTree = "<group>"; };
+		D7FFC70F29E7B72EDF5D69D4 /* SetupSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetupSteps.swift"; sourceTree = "<group>"; };
+		C9C20F0FD15E4B033F22452A /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WelcomeView.swift"; sourceTree = "<group>"; };
+		695B14D092922F9B54DD47C3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		F68F8433AC222E6A1A23E460 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		B5BD331F93D8D7E71618BFC6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+		238A5F963BB2D4AAE3690BA0 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Products.storekit"; sourceTree = "<group>"; };
+		2AC504B24C77A4511E77389D /* SwipePhotos.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "SwipePhotos.entitlements"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EA8594C83D82D703505DFABE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A2772EB5676ED2B691193947 = {
+			isa = PBXGroup;
+			children = (
+				3C115BF6A0FE59F7BAE5580A /* SwipePhotos */,
+				2116D6AA12F4BF2842BA267B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2116D6AA12F4BF2842BA267B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EFE3E8C5213E55B655B01817 /* SwipePhotos.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3C115BF6A0FE59F7BAE5580A /* SwipePhotos */ = {
+			isa = PBXGroup;
+			children = (
+				623239B6786802375D47D43A /* App */,
+				6D5DCA8205EB7274E33E3269 /* Core */,
+				C7006E370DAC5C5C961B1239 /* Features */,
+				44C724C7060B00E4BE37298D /* Resources */,
+			);
+			path = "SwipePhotos";
+			sourceTree = "<group>";
+		};
+		623239B6786802375D47D43A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				6055650A18065AE56BAC3655 /* RootView.swift */,
+				F90222525256D13C9D05C2D0 /* SwipePhotosApp.swift */,
+			);
+			path = "App";
+			sourceTree = "<group>";
+		};
+		6D5DCA8205EB7274E33E3269 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				311391CC78F88E64DBEF2184 /* APIClient.swift */,
+				6A261A9E05ABAE4008C96201 /* AppModel.swift */,
+				706522F4B1773056294646B3 /* Config.swift */,
+				5853192C6BFBCE2A09EB1809 /* ImageProcessing.swift */,
+				8C1C46CC0BE45A3D4988E371 /* Keychain.swift */,
+				61E6CDBE3D5CD28DF7920179 /* Models.swift */,
+				51C8F9054F4867675DBFDEF7 /* OrderService.swift */,
+				4EE790D2069832B11FF2C9CE /* PendingPurchase.swift */,
+				A7F65CA2516AE78CBA26C48B /* Platform.swift */,
+				3469214EE7C84EC3F24593B8 /* Session.swift */,
+				6AD66B63E74E377FD83075DF /* StoreManager.swift */,
+				ACD1D89F8A8750FB5378A792 /* Theme.swift */,
+			);
+			path = "Core";
+			sourceTree = "<group>";
+		};
+		C7006E370DAC5C5C961B1239 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				3A0BB125CE11C5B1E9D0918E /* Account */,
+				DEA55D547823439F174824B4 /* Auth */,
+				CACB0AD4874938E8E5EA6E05 /* Home */,
+				0002D888636106AD8C81A773 /* Onboarding */,
+				DA907D46A251B809694AAA96 /* Welcome */,
+			);
+			path = "Features";
+			sourceTree = "<group>";
+		};
+		3A0BB125CE11C5B1E9D0918E /* Account */ = {
+			isa = PBXGroup;
+			children = (
+				7A3C86AC8464791EEB8AFD73 /* AccountTab.swift */,
+			);
+			path = "Account";
+			sourceTree = "<group>";
+		};
+		DEA55D547823439F174824B4 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				89A27D83F98A02E4869F80A0 /* SignInView.swift */,
+			);
+			path = "Auth";
+			sourceTree = "<group>";
+		};
+		CACB0AD4874938E8E5EA6E05 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				1CE99A36A6731F1C5A9BA118 /* MainTabView.swift */,
+				37369EEC63FE6348E7012D97 /* OrderDetailView.swift */,
+				BE11CCD1669AD172B2A0860F /* PhotosTab.swift */,
+			);
+			path = "Home";
+			sourceTree = "<group>";
+		};
+		0002D888636106AD8C81A773 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B5701A24228C3D0775EC56E4 /* OnboardingFlow.swift */,
+				6608F22E684DB1DBA2DFD0C2 /* OnboardingModel.swift */,
+				3DEE2E250B981174EF69C3D1 /* PaywallView.swift */,
+				E49A0EFACAAE6C21813D343D /* PreviewSteps.swift */,
+				712EC0D1A55AC85057E4BB84 /* ProgressViews.swift */,
+				D7FFC70F29E7B72EDF5D69D4 /* SetupSteps.swift */,
+			);
+			path = "Onboarding";
+			sourceTree = "<group>";
+		};
+		DA907D46A251B809694AAA96 /* Welcome */ = {
+			isa = PBXGroup;
+			children = (
+				C9C20F0FD15E4B033F22452A /* WelcomeView.swift */,
+			);
+			path = "Welcome";
+			sourceTree = "<group>";
+		};
+		44C724C7060B00E4BE37298D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				695B14D092922F9B54DD47C3 /* Assets.xcassets */,
+				F68F8433AC222E6A1A23E460 /* Info.plist */,
+				B5BD331F93D8D7E71618BFC6 /* PrivacyInfo.xcprivacy */,
+				238A5F963BB2D4AAE3690BA0 /* Products.storekit */,
+				2AC504B24C77A4511E77389D /* SwipePhotos.entitlements */,
+			);
+			path = "Resources";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		42AEFBAE01D2DFD981F7DA7D /* SwipePhotos */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 710E4C902EAB327A675B770E /* Build configuration list for PBXNativeTarget "SwipePhotos" */;
+			buildPhases = (
+				80DAA310FC779194862C0D32 /* Sources */,
+				EA8594C83D82D703505DFABE /* Frameworks */,
+				16B6DB84760A9CCAF0F0E448 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SwipePhotos;
+			productName = SwipePhotos;
+			productReference = EFE3E8C5213E55B655B01817 /* SwipePhotos.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					42AEFBAE01D2DFD981F7DA7D = {
+						SystemCapabilities = {
+							com.apple.InAppPurchase = {
+								enabled = 1;
+							};
+							com.apple.SignInWithApple = {
+								enabled = 1;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = AC4D63F12EBBDCB32DFBA89F /* Build configuration list for PBXProject "SwipePhotos" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A2772EB5676ED2B691193947;
+			productRefGroup = 2116D6AA12F4BF2842BA267B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				42AEFBAE01D2DFD981F7DA7D /* SwipePhotos */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		16B6DB84760A9CCAF0F0E448 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2AB03B4B9A5A9C021FFD855C /* Assets.xcassets in Resources */,
+				3D458A67402C180772777564 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		80DAA310FC779194862C0D32 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E29BEE2E1472B763BC3C1C6 /* RootView.swift in Sources */,
+				D5A1E2288A1C080BC4CCAFF6 /* SwipePhotosApp.swift in Sources */,
+				A795424425CB04FF0B63B47E /* APIClient.swift in Sources */,
+				E53FBF3BE9E44312EDC5B39C /* AppModel.swift in Sources */,
+				C3783AD958AD695C3F4E4F66 /* Config.swift in Sources */,
+				7B5E09BAF51F92285D27087A /* ImageProcessing.swift in Sources */,
+				793BF39E39D11E79BEC68CF8 /* Keychain.swift in Sources */,
+				FB64880BBD8195D46A5B5D07 /* Models.swift in Sources */,
+				6CDBF6867F095CF627409792 /* OrderService.swift in Sources */,
+				E80E6A278F034E612E55B77F /* PendingPurchase.swift in Sources */,
+				9E282D2F745272A2131AA41F /* Platform.swift in Sources */,
+				92395D83AD4791CABDDDD015 /* Session.swift in Sources */,
+				E97CF35E4CC92171577A81D9 /* StoreManager.swift in Sources */,
+				6A4AB481AF92953C9576A5C3 /* Theme.swift in Sources */,
+				FBF27EB65E5C7F981D046F76 /* AccountTab.swift in Sources */,
+				F3B8EEA45FBC01AD83BADA16 /* SignInView.swift in Sources */,
+				DFA826A4296032834D542517 /* MainTabView.swift in Sources */,
+				AB89F72A80B556F1C6E761B0 /* OrderDetailView.swift in Sources */,
+				B31634A3B0FA0006E597E010 /* PhotosTab.swift in Sources */,
+				4E0906830440F0EE5C6B362E /* OnboardingFlow.swift in Sources */,
+				A5B4008B54FB9B67537EA269 /* OnboardingModel.swift in Sources */,
+				8D8D6663D5A3A160D5AE0EE6 /* PaywallView.swift in Sources */,
+				DC322301B6858403E8D327B4 /* PreviewSteps.swift in Sources */,
+				D459DA7A771D9E87BD288415 /* ProgressViews.swift in Sources */,
+				787BE7211D03C7C4810A6148 /* SetupSteps.swift in Sources */,
+				17A38848084E04FD9DEF6091 /* WelcomeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5DFF4F54E01360C985A107DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5F933D77A9C901C5D51DFD6E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		497CE359E62989D4957947D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SwipePhotos/Resources/SwipePhotos.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "SwipePhotos/Resources/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.swipephotos.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		EC44B42E329CFABF13136126 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "SwipePhotos/Resources/SwipePhotos.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "SwipePhotos/Resources/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.swipephotos.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AC4D63F12EBBDCB32DFBA89F /* Build configuration list for PBXProject "SwipePhotos" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5DFF4F54E01360C985A107DF /* Debug */,
+				5F933D77A9C901C5D51DFD6E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		710E4C902EAB327A675B770E /* Build configuration list for PBXNativeTarget "SwipePhotos" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				497CE359E62989D4957947D3 /* Debug */,
+				EC44B42E329CFABF13136126 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}

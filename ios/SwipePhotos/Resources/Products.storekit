@@ -1,0 +1,160 @@
+{
+  "identifier": "SWPH0001",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "21400000",
+      "localizations": [
+        {
+          "description": "SwipePhotos subscription plans",
+          "displayName": "SwipePhotos Plans",
+          "locale": "en_US"
+        }
+      ],
+      "name": "SwipePhotos Plans",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "29.99",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "6740000001",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "5 AI photos per month",
+              "displayName": "Starter Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.starter.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Starter Monthly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "179.99",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "6740000002",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "5 AI photos per month",
+              "displayName": "Starter Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.starter.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Starter Yearly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "49.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "6740000003",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "15 AI photos per month",
+              "displayName": "Premium Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.premium.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Premium Monthly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "299.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "6740000004",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "15 AI photos per month",
+              "displayName": "Premium Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.premium.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Premium Yearly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "74.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6740000005",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "45 AI photos per month",
+              "displayName": "Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pro Monthly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "449.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6740000006",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "45 AI photos per month",
+              "displayName": "Pro Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "net.swipephotos.app.pro.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pro Yearly",
+          "subscriptionGroupID": "21400000",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

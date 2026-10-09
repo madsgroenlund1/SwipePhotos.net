@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClientDirect } from '@/lib/supabase/server'
-import { getDbUser } from '@/lib/auth'
+import { forgetClerkUser, getDbUser } from '@/lib/auth'
 import { clerkClient } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 
@@ -71,6 +71,7 @@ export async function POST() {
     await admin.from('users').delete().eq('id', user.id)
     const clerk = await clerkClient()
     await clerk.users.deleteUser(user.clerkId)
+    forgetClerkUser(user.clerkId)
     await admin.auth.admin.deleteUser(user.id).catch(() => {})
 
     console.log(`[account/delete] Deleted account ${user.id} (${user.email}) — ${orderIds.length} orders`)

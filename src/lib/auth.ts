@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { clerkClient, currentUser } from '@clerk/nextjs/server'
 import { cookies, headers } from 'next/headers'
 import { verifyMobileToken } from '@/lib/mobile-auth'
 import { createAdminClientDirect } from '@/lib/supabase/server'
@@ -12,6 +12,31 @@ export type DbUser = {
   referral_code: string | null
   stripe_customer_id: string | null
   retention_offer_accepted_at: string | null
+}
+
+// App session tokens are self-contained, so a deleted account's token would keep
+// "working" (and silently re-create an empty user row). Check the Clerk user
+// still exists; a positive answer is cached briefly to spare the extra API call.
+const clerkAliveUntil = new Map<string, number>()
+
+/** Called when an account is deleted so its tokens stop working at once on this instance. */
+export function forgetClerkUser(clerkId: string) {
+  clerkAliveUntil.delete(clerkId)
+}
+
+async function clerkUserStillExists(clerkId: string): Promise<boolean> {
+  if ((clerkAliveUntil.get(clerkId) ?? 0) > Date.now()) return true
+  try {
+    await (await clerkClient()).users.getUser(clerkId)
+    clerkAliveUntil.set(clerkId, Date.now() + 60_000)
+    return true
+  } catch (e) {
+    if ((e as { status?: number })?.status === 404) {
+      clerkAliveUntil.delete(clerkId)
+      return false
+    }
+    return true // Clerk outage: don't lock everyone out
+  }
 }
 
 /**
@@ -34,6 +59,7 @@ export async function getDbUser(): Promise<DbUser | null> {
   if (mobileToken) {
     const claims = verifyMobileToken(mobileToken)
     if (!claims) return null
+    if (!(await clerkUserStillExists(claims.sub))) return null
     clerkId = claims.sub
     email = claims.email
   } else {
