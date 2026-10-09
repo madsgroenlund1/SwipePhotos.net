@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 /// Server calls for creating, filling and redeeming an order.
 enum OrderService {
@@ -17,11 +17,12 @@ enum OrderService {
         return created.orderId
     }
 
-    static func upload(photos: [PhotoSlot: PickedPhoto], orderId: String) async throws {
+    /// `photos` maps each slot to its upload-ready JPEG bytes.
+    static func upload(photos: [PhotoSlot: Data], orderId: String) async throws {
         var body = MultipartBody()
         for slot in PhotoSlot.uploadOrder {
-            if let photo = photos[slot] {
-                body.addFile("files", fileName: slot.uploadFileName, bytes: photo.jpeg)
+            if let jpeg = photos[slot] {
+                body.addFile("files", fileName: slot.uploadFileName, bytes: jpeg)
             }
         }
         let _: OKDTO = try await APIClient.shared.postMultipart("api/mobile/orders/\(orderId)/photos", body: body)
@@ -39,11 +40,4 @@ enum OrderService {
     static func status(orderId: String) async throws -> OrderStatusDTO {
         try await APIClient.shared.get("api/mobile/orders/\(orderId)")
     }
-}
-
-/// A photo the customer picked: a small thumbnail for the UI + the upload-ready JPEG.
-struct PickedPhoto: Identifiable {
-    let id = UUID()
-    let thumbnail: UIImage
-    let jpeg: Data
 }

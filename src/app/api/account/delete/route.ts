@@ -4,6 +4,35 @@ import { forgetClerkUser, getDbUser } from '@/lib/auth'
 import { clerkClient } from '@clerk/nextjs/server'
 import { stripe } from '@/lib/stripe'
 
+const UPLOADS_PUBLIC_MARKER = '/storage/v1/object/public/uploads/'
+
+// Removes files from the `uploads` bucket (customer selfies + preview images).
+// Preview images live in a per-run folder (previews/<runId>/…) that belongs to a
+// single customer, so the whole folder goes.
+async function removeUploadsFiles(
+  admin: ReturnType<typeof createAdminClientDirect>,
+  orderIds: string[],
+  publicUrls: (string | null)[]
+) {
+  const folders = new Set<string>(orderIds)
+  const singles = new Set<string>()
+  for (const url of publicUrls) {
+    const path = url?.split(UPLOADS_PUBLIC_MARKER)[1]
+    if (!path) continue
+    if (path.startsWith('previews/') && path.includes('/', 'previews/'.length)) folders.add(path.slice(0, path.lastIndexOf('/')))
+    else singles.add(path)
+  }
+  for (const folder of folders) {
+    try {
+      const { data: files } = await admin.storage.from('uploads').list(folder)
+      if (files?.length) await admin.storage.from('uploads').remove(files.map(f => `${folder}/${f.name}`))
+    } catch { /* storage cleanup is best-effort */ }
+  }
+  if (singles.size) {
+    try { await admin.storage.from('uploads').remove([...singles]) } catch { /* best-effort */ }
+  }
+}
+
 // Permanently delete the signed-in user's account and ALL associated data:
 // generated photos (storage + rows), uploads, orders, affiliate records,
 // active Stripe subscriptions, the users row, and the auth user itself.
@@ -35,7 +64,7 @@ export async function POST() {
     // 2. Collect the user's orders (by user_id and by email)
     const { data: orders } = await admin
       .from('orders')
-      .select('id')
+      .select('id, selected_preview_url')
       .or(`user_id.eq.${user.id}${user.email ? `,email.eq.${user.email}` : ''}`)
     const orderIds = (orders ?? []).map(o => o.id)
 
@@ -49,6 +78,15 @@ export async function POST() {
       } catch { /* storage cleanup is best-effort */ }
     }
     if (orderIds.length) {
+      // Customer selfies + preview images in the uploads bucket (not just the DB rows).
+      const { data: refinements } = await admin
+        .from('preview_refinements')
+        .select('input_url, output_url')
+        .in('order_id', orderIds)
+      await removeUploadsFiles(admin, orderIds, [
+        ...(orders ?? []).map(o => o.selected_preview_url as string | null),
+        ...(refinements ?? []).flatMap(r => [r.input_url as string | null, r.output_url as string | null]),
+      ])
       await admin.from('generated_photos').delete().in('order_id', orderIds)
       await admin.from('uploads').delete().in('order_id', orderIds)
       await admin.from('preview_refinements').delete().in('order_id', orderIds)

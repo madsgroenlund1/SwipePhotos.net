@@ -3,8 +3,16 @@ import Foundation
 /// App-wide constants. Product IDs must match App Store Connect and the
 /// server's catalog (src/lib/apple-iap.ts APPLE_PRODUCTS).
 enum Config {
-    /// The bare domain redirects to www; call www directly.
-    static let baseURL = URL(string: "https://www.swipephotos.net")!
+    /// The bare domain redirects to www; call www directly. Debug builds can point
+    /// at a local server with the SWIPEPHOTOS_BASE_URL environment variable.
+    static let baseURL: URL = {
+        #if DEBUG
+        if let override = ProcessInfo.processInfo.environment["SWIPEPHOTOS_BASE_URL"], let url = URL(string: override) {
+            return url
+        }
+        #endif
+        return URL(string: "https://www.swipephotos.net")!
+    }()
     static let supportEmail = "support@swipephotos.net"
 
     static let termsURL = baseURL.appendingPathComponent("terms")

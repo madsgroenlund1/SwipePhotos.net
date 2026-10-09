@@ -121,6 +121,8 @@ final class APIClient {
         return try decode(try await perform(request))
     }
 
+    func decodeInternal<T: Decodable>(_ data: Data) throws -> T { try decode(data) }
+
     private func decode<T: Decodable>(_ data: Data) throws -> T {
         do { return try decoder.decode(T.self, from: data) }
         catch { throw APIError(message: "Unexpected response from the server.") }
@@ -159,3 +161,10 @@ final class APIClient {
         }
     }
 }
+
+#if DEBUG
+extension APIClient {
+    /// Used by tools/selftest to exercise the real date-decoding strategy.
+    static func decodeForTests<T: Decodable>(_ data: Data) throws -> T { try shared.decodeInternal(data) }
+}
+#endif

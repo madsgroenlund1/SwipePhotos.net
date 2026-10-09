@@ -172,7 +172,7 @@ final class OnboardingModel {
         if entitlement.active, entitlement.canStartSet, let activePlan = entitlement.plan {
             let orderId = try await OrderService.createOrder(plan: activePlan, style: style, hasTattoos: hasTattoos,
                                                              previewURL: displayPreviewURL, mode: "subscription")
-            try await OrderService.upload(photos: photos, orderId: orderId)
+            try await OrderService.upload(photos: photos.mapValues(\.jpeg), orderId: orderId)
             try await OrderService.startWithSubscription(orderId: orderId)
             processingOrderId = orderId
             step = .processing
@@ -194,7 +194,7 @@ final class OnboardingModel {
             photosUploaded = false
         }
         if !photosUploaded {
-            try await OrderService.upload(photos: photos, orderId: orderId)
+            try await OrderService.upload(photos: photos.mapValues(\.jpeg), orderId: orderId)
             photosUploaded = true
         }
 

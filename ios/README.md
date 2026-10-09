@@ -123,7 +123,7 @@ Account deletion: Account tab → Delete account.
 | **3.1.1 / 3.1.2** Digitale ydelser skal købes med IAP; tydelig pris/periode/auto-fornyelse | Kun StoreKit i appen (ingen Stripe/links til web-køb). Betalingsskærmen viser pris, periode, auto-fornyelsesvilkår, Terms/Privacy og **Restore Purchases** |
 | **3.1.3(b)** Adgang til abonnement købt andetsteds | Web-abonnenter kan logge ind og bruge deres sæt; IAP tilbydes også |
 | **4.8** Sign in with Apple | Tilbydes ved siden af e-mailkode (ingen tredjeparts-login som Google) |
-| **5.1.1(v)** Slet konto i appen | Account → Delete account → sletter alt (Clerk, database, fotos). Test: gammelt token bliver ugyldigt |
+| **5.1.1(v)** Slet konto i appen | Account → Delete account → sletter alt (Clerk, database, genererede fotos, uploadede selfies og previews i storage). Testet: gammelt token bliver ugyldigt |
 | **5.1.2(i)** Samtykke før deling med tredjeparts-AI | Eget trin "Before you upload" nævner fal.ai og kræver afkrydsning + 18+ |
 | **4.2** Minimumsfunktionalitet | Fuld native app, ikke en web-wrapper |
 | **2.1** Demo-konto | `APPLE_REVIEW_EMAIL/CODE` + seedet galleri |
@@ -136,7 +136,18 @@ Account deletion: Account tab → Delete account.
 `/api/mobile/auth/code/{start,verify}`, `/api/mobile/auth/apple`, `/api/mobile/me`, `/api/mobile/orders` (+ `/[id]`, `/[id]/photos`, `/[id]/start`, `/[id]/iap`), `/api/mobile/iap/sync`, `/api/webhooks/apple`.
 Køb verificeres ved at kontrollere Apples signaturkæde mod **Apple Root CA G3** (fastlåst i koden), at køb tilhører netop den ordre (`appAccountToken`), er ubrugt (unikt index) og matcher planen. Tests: `npx tsx scripts/test-apple-iap.ts` og `scripts/test-mobile-auth.mts` (kører offline).
 
-## 7. Kendte begrænsninger / bevidste valg
+## 7. Kontrolværktøjer (virker uden Xcode)
+
+| Kommando | Hvad den tjekker |
+|---|---|
+| `ios/tools/typecheck.sh` | Typetjekker alle Swift-filer mod iOS-API'et (via Mac Catalyst-målet) |
+| `python3 ios/tools/verify_xcodeproj.py` | Projektfilens struktur: alle referencer findes, alle filer kompileres |
+| `SWIPEPHOTOS_BASE_URL=http://localhost:3000 TEST_EMAIL=… TEST_CODE=… ios/tools/selftest/run.sh` | Kører appens **rigtige netværkskode** (macOS-build) mod en mock-stream og en lokal server: login, `/me`, ordre, multipart-upload, NDJSON-streaming, forfalsket token, kontosletning |
+| `npx tsx scripts/test-apple-iap.ts` / `scripts/test-mobile-auth.mts` | Kvitterings-verifikation (14 forfalskningstests) og login-tokens (18 tests) |
+
+(Den lokale server til selvtesten startes med `APPLE_REVIEW_EMAIL`/`APPLE_REVIEW_CODE` sat til en testadresse og kode.)
+
+## 8. Kendte begrænsninger / bevidste valg
 
 - **Nyt sæt pr. måned**: abonnenter trykker selv "Create new photos" (ét sæt pr. periode; årsabonnement = ét pr. 30 dage). Hjemmesiden genererer heller ikke automatisk ved fornyelse.
 - **Ingen push-notifikationer** endnu – kunder får e-mail når billederne er klar, og appen opdaterer sig når den åbnes.
