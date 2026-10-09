@@ -1,5 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+import { verifyMobileToken } from '@/lib/mobile-auth'
 import { createAdminClientDirect } from '@/lib/supabase/server'
 import { refCodeFromEmail } from '@/lib/utils'
 import { uniqueRefCode } from '@/lib/referral'
@@ -24,11 +25,23 @@ export type DbUser = {
  * Returns null when not signed in.
  */
 export async function getDbUser(): Promise<DbUser | null> {
-  const cu = await currentUser()
-  if (!cu) return null
+  // The iOS app authenticates with its own signed session token (see
+  // lib/mobile-auth.ts) instead of a Clerk browser session.
+  const mobileToken = (await headers()).get('x-swipephotos-token')
 
-  const email = cu.primaryEmailAddress?.emailAddress
-    ?? cu.emailAddresses[0]?.emailAddress
+  let clerkId: string
+  let email: string | undefined
+  if (mobileToken) {
+    const claims = verifyMobileToken(mobileToken)
+    if (!claims) return null
+    clerkId = claims.sub
+    email = claims.email
+  } else {
+    const cu = await currentUser()
+    if (!cu) return null
+    clerkId = cu.id
+    email = cu.primaryEmailAddress?.emailAddress ?? cu.emailAddresses[0]?.emailAddress
+  }
   if (!email) return null
 
   const admin = createAdminClientDirect()
@@ -40,7 +53,7 @@ export async function getDbUser(): Promise<DbUser | null> {
     .maybeSingle()
 
   if (existing) {
-    return { ...existing, clerkId: cu.id }
+    return { ...existing, clerkId }
   }
 
   // First sign-in: public.users.id has an FK to auth.users(id), so create a
@@ -103,6 +116,6 @@ export async function getDbUser(): Promise<DbUser | null> {
     }
   } catch { /* attribution is best-effort */ }
 
-  console.log(`[auth] Created users row for ${email} (clerk ${cu.id})`)
-  return { ...created, clerkId: cu.id }
+  console.log(`[auth] Created users row for ${email} (clerk ${clerkId})`)
+  return { ...created, clerkId }
 }

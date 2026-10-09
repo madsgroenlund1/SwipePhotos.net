@@ -949,3 +949,67 @@ export async function sendAffiliateApprovedEmail(email: string, refLink: string)
     html,
   })
 }
+
+// ─── Login code (iOS app sign-in) ─────────────────────────────────────────────
+
+export async function sendLoginCodeEmail(email: string, code: string) {
+  const html = base(`
+
+    ${brandLogo(68)}
+
+    <h1 class="headline" style="
+      margin:0 0 12px;
+      font-family:${FONT};
+      font-size:26px;
+      font-weight:700;
+      color:${TEXT_PRI};
+      text-align:center;
+      letter-spacing:-0.5px;
+      line-height:1.2;
+    ">Your sign-in code</h1>
+
+    <p style="
+      margin:0 0 28px;
+      font-family:${FONT};
+      font-size:15px;
+      color:${TEXT_SEC};
+      text-align:center;
+      line-height:1.65;
+    ">Enter this code in the SwipePhotos app to sign in. It expires in 10 minutes.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+      style="border-collapse:collapse;margin-bottom:28px;">
+      <tr>
+        <td style="
+          background-color:#f7f8fa;
+          border:1px solid rgba(10,10,10,0.06);
+          border-radius:16px;
+          padding:22px;
+          text-align:center;
+          font-family:${FONT};
+          font-size:36px;
+          font-weight:800;
+          letter-spacing:10px;
+          color:${TEXT_PRI};
+        ">${code}</td>
+      </tr>
+    </table>
+
+    <p style="
+      margin:0;
+      font-family:${FONT};
+      font-size:13px;
+      color:${TEXT_MUT};
+      text-align:center;
+      line-height:1.6;
+    ">If you didn&rsquo;t request this, you can safely ignore this email.</p>
+
+  `, "You're receiving this because someone entered your email in the SwipePhotos app.")
+
+  await getResend().emails.send({
+    from: `SwipePhotos.net <${FROM}>`,
+    to: email,
+    subject: `${code} is your SwipePhotos sign-in code`,
+    html,
+  })
+}
