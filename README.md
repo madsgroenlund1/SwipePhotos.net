@@ -1,4 +1,4 @@
-# SwipeShot.ai
+# SwipePhotos.net
 
 > Get 10x more matches with undetectable AI photos.
 
