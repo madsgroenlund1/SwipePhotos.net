@@ -72,6 +72,7 @@ const config: ExpoConfig = {
   owner: "groenlund",
   extra: {
     router: {},
+    eas: { projectId: "1d677c49-7254-43c8-b0f5-0a88760e168a" },
     // Base-URL kan overstyres ved udvikling: EXPO_PUBLIC_API_URL=http://localhost:3000
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "https://www.swipephotos.net",
   },
