@@ -1,9 +1,19 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "development": { "developmentClient": true, "distribution": "internal" },
-    "preview": { "distribution": "internal" },
-    "production": { "autoIncrement": true }
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
+    }
   },
   "submit": {
     "production": {
@@ -11,7 +21,8 @@
         "ascApiKeyPath": "../../Drikkevand (App)/AuthKey_VZV7A4P89V.p8",
         "ascApiKeyIssuerId": "bd2f818a-0b8b-4df4-a343-88bce7cb30b3",
         "ascApiKeyId": "VZV7A4P89V",
-        "appleTeamId": "742FLZKHC6"
+        "appleTeamId": "742FLZKHC6",
+        "ascAppId": "6821950020"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
