@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.p8
+*.p12
+*.jks
+*.mobileprovision
+credentials.json
+google-play-service-account.json
+.env
+.env.*
+ios/
+android/

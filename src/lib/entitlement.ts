@@ -8,7 +8,7 @@ import { APPLE_PRODUCTS, type PlanId } from '@/lib/apple-iap'
 
 export type Entitlement = {
   active: boolean
-  source: 'apple' | 'stripe' | null
+  source: 'apple' | 'google' | 'stripe' | null
   planId: PlanId | null
   planName: string | null
   photoQuota: number
@@ -30,7 +30,7 @@ const NONE: Entitlement = {
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000
 
 type Candidate = {
-  source: 'apple' | 'stripe'
+  source: 'apple' | 'google' | 'stripe'
   planId: PlanId
   interval: 'month' | 'year'
   start: Date
@@ -49,7 +49,7 @@ export async function getEntitlement(userId: string): Promise<Entitlement> {
   const admin = createAdminClientDirect()
   const { data: u } = await admin
     .from('users')
-    .select('stripe_customer_id, apple_product_id, apple_expires_at, apple_auto_renew')
+    .select('stripe_customer_id, apple_product_id, apple_expires_at, apple_auto_renew, google_product_id, google_expires_at, google_auto_renew')
     .eq('id', userId)
     .maybeSingle()
   if (!u) return NONE
@@ -64,6 +64,18 @@ export async function getEntitlement(userId: string): Promise<Entitlement> {
       candidates.push({
         source: 'apple', planId: product.planId, interval: product.interval,
         start: subtractInterval(end, product.interval), end, willRenew: u.apple_auto_renew !== false,
+      })
+    }
+  }
+
+  // Google Play
+  if (u.google_product_id && u.google_expires_at && new Date(u.google_expires_at) > new Date()) {
+    const product = APPLE_PRODUCTS[u.google_product_id]
+    if (product) {
+      const end = new Date(u.google_expires_at)
+      candidates.push({
+        source: 'google', planId: product.planId, interval: product.interval,
+        start: subtractInterval(end, product.interval), end, willRenew: u.google_auto_renew !== false,
       })
     }
   }

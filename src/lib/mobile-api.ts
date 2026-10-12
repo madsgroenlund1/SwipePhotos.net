@@ -24,6 +24,7 @@ export type OwnedOrder = {
   email: string | null
   created_at: string
   apple_transaction_id: string | null
+  google_purchase_token: string | null
 }
 
 /** Loads an order only if it belongs to this user. */
@@ -32,7 +33,7 @@ export async function loadOwnedOrder(orderId: string, userId: string): Promise<O
   const admin = createAdminClientDirect()
   const { data } = await admin
     .from('orders')
-    .select('id, user_id, status, package_type, email, created_at, apple_transaction_id')
+    .select('id, user_id, status, package_type, email, created_at, apple_transaction_id, google_purchase_token')
     .eq('id', orderId)
     .maybeSingle()
   if (!data || data.user_id !== userId) return null
