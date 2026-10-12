@@ -43,7 +43,7 @@ export async function ensureUsernameRefCode(
  * Tracks the click and sets the 30-day first-click attribution cookie.
  */
 export async function handleReferralRedirect(req: NextRequest, code: string): Promise<NextResponse> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
   const supabase = createAdminClientDirect()
 
   const { data: userRow } = await supabase

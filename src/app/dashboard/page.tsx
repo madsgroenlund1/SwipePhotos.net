@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     return Date.now() - new Date(o.created_at).getTime() < PENDING_GRACE_MS
   })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
 
   // Subscription status from Stripe
   let subscriptionCancelledAtPeriodEnd = false

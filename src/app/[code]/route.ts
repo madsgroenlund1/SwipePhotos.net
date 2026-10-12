@@ -12,7 +12,7 @@ export async function GET(
 
   // Only treat plausible referral codes as such; everything else → home
   if (!/^[a-zA-Z0-9]{3,40}$/.test(code) || !(await refCodeExists(code))) {
-    return NextResponse.redirect(process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net')
+    return NextResponse.redirect(process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net')
   }
 
   return handleReferralRedirect(req, code)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const APP_URL = 'https://swipephotos.net'
+const APP_URL = 'https://www.swipephotos.net'
 const BLUE = '#2563eb'
 const BLUE_SOFT = '#2563eb'
 const BG = '#f4f5f7'

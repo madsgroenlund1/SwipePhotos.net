@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClientDirect()
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
 
     // Look up existing user (optional — new users won't have an account yet)
     let customerId: string | undefined

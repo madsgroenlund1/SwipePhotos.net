@@ -9,7 +9,7 @@ export async function POST() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClientDirect()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
 
   // Check if already an affiliate
   const { data: existing } = await admin

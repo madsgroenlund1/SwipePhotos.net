@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!uploads?.length) return NextResponse.json({ error: 'No uploads' }, { status: 400 })
 
   const imageUrls = uploads.map((u: { file_url: string }) => u.file_url)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
   const email = order.email || ''
   const webhookUrl = `${appUrl}/api/webhooks/replicate?orderId=${orderId}&email=${encodeURIComponent(email)}`
 

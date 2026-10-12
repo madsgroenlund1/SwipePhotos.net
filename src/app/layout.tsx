@@ -14,13 +14,13 @@ export const metadata: Metadata = {
     'Generate professional dating photos with AI. Upload a few clear selfies — we place your real face in premium settings. No photographer, no photoshoot. Plans from €29.',
   keywords: ['AI dating photos', 'Tinder photos', 'Hinge photos', 'dating app photos', 'AI photo generator', 'dating profile photos'],
   alternates: {
-    canonical: 'https://swipephotos.net',
+    canonical: 'https://www.swipephotos.net',
   },
   openGraph: {
     title: 'SwipePhotos.net — Professional AI Dating Photos for Men',
     description:
       'Upload 3 selfies. Our AI places your real face in professional settings and delivers 5–45 photos to your email. No photographer needed.',
-    url: 'https://swipephotos.net',
+    url: 'https://www.swipephotos.net',
     siteName: 'SwipePhotos.net',
     type: 'website',
   },

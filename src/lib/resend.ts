@@ -10,7 +10,7 @@ const _configuredFrom = process.env.RESEND_FROM_EMAIL || ''
 const FROM = _configuredFrom && !_configuredFrom.includes('@gmail.com')
   ? _configuredFrom
   : 'onboarding@resend.dev'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 // Deliberately LIGHT: Gmail mobile force-inverts dark emails (dark bg → white,

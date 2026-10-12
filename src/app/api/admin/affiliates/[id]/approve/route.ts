@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (email && refCode) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://swipephotos.net'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.swipephotos.net'
     const link = `${appUrl}/r/${refCode}`
     await sendAffiliateApprovedEmail(email, link).catch(console.error)
   }
