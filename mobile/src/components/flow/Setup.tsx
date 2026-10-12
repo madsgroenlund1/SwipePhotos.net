@@ -165,6 +165,17 @@ function SlotTile({ slot, width }: { slot: PhotoSlot; width: number }) {
           <Text style={{ color: "#000", fontWeight: "800", fontSize: 13 }}>{"✓"}</Text>
         </View>
       ) : null}
+      {photo ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Mirror ${SLOT_INFO[slot].title} photo`}
+          onPress={() => void flow.mirrorPhoto(slot)}
+          hitSlop={8}
+          style={{ position: "absolute", top: 8, left: 8, paddingHorizontal: 10, height: 28, borderRadius: 14, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>{"↔ Mirror"}</Text>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }

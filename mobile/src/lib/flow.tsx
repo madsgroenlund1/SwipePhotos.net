@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { ApiError, streamNdjson } from "./api";
 import { PhotoSlot, PhotoStyle, Plan, PlanId, PLANS, Billing, productId as makeProductId } from "./config";
-import { appendPhoto, MIN_BYTES, preparePhoto } from "./images";
+import { appendPhoto, flipPhoto, MIN_BYTES, preparePhoto } from "./images";
 import { orders } from "./orders";
 import { pendingPurchase } from "./pending";
 import type { PurchasesApi } from "./purchases.types";
@@ -20,6 +20,7 @@ interface FlowValue {
   setHasTattoos: (v: boolean) => void;
   photos: Partial<Record<PhotoSlot, PickedPhoto>>;
   setPhoto: (slot: PhotoSlot, asset: { uri: string; width: number; height: number }) => Promise<void>;
+  mirrorPhoto: (slot: PhotoSlot) => Promise<void>;
   requiredSlots: PhotoSlot[];
   photosComplete: boolean;
   agreed: boolean;
@@ -91,6 +92,17 @@ export function FlowProvider({ children, seed }: { children: React.ReactNode; se
       setError("We couldn’t read that photo. Please try another one.");
     }
   }, []);
+
+  const mirrorPhoto = useCallback(async (slot: PhotoSlot) => {
+    const current = photos[slot];
+    if (!current) return;
+    try {
+      const flipped = await flipPhoto(current);
+      setPhotos((all) => ({ ...all, [slot]: flipped }));
+    } catch {
+      setError("We couldn’t flip that photo. Please try again.");
+    }
+  }, [photos]);
 
   const generatePreviews = useCallback(async () => {
     if (!photosComplete) return;
@@ -222,10 +234,10 @@ export function FlowProvider({ children, seed }: { children: React.ReactNode; se
   }, [style, hasTattoos, displayUrl, photos, plan, billing]);
 
   const value = useMemo<FlowValue>(() => ({
-    step, setStep, style, setStyle, hasTattoos, setHasTattoos, photos, setPhoto, requiredSlots, photosComplete,
+    step, setStep, style, setStyle, hasTattoos, setHasTattoos, photos, setPhoto, mirrorPhoto, requiredSlots, photosComplete,
     agreed, setAgreed, adult, setAdult, plan, setPlan, billing, setBilling, previewUrls, pickedIndex, setPickedIndex,
     displayUrl, progress, statusText, error, setError, working, processingOrderId, generatePreviews, refine, checkout,
-  }), [step, style, hasTattoos, photos, setPhoto, requiredSlots, photosComplete, agreed, adult, plan, billing,
+  }), [step, style, hasTattoos, photos, setPhoto, mirrorPhoto, requiredSlots, photosComplete, agreed, adult, plan, billing,
        previewUrls, pickedIndex, displayUrl, progress, statusText, error, working, processingOrderId,
        generatePreviews, refine, checkout]);
 

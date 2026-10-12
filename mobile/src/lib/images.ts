@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { File, Paths } from "expo-file-system";
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
+import { FlipType, ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import type { PickedPhoto } from "./types";
 
 export const MIN_BYTES = 15_000;
@@ -22,6 +22,14 @@ export async function preparePhoto(asset: { uri: string; width: number; height: 
   } else {
     bytes = new File(saved.uri).size ?? 0;
   }
+  return { uri: saved.uri, bytes };
+}
+
+/** Mirrors a photo left↔right (fixes selfies saved mirrored by the camera). */
+export async function flipPhoto(photo: PickedPhoto): Promise<PickedPhoto> {
+  const rendered = await ImageManipulator.manipulate(photo.uri).flip(FlipType.Horizontal).renderAsync();
+  const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
+  const bytes = Platform.OS === "web" ? (await (await fetch(saved.uri)).blob()).size : new File(saved.uri).size ?? photo.bytes;
   return { uri: saved.uri, bytes };
 }
 
