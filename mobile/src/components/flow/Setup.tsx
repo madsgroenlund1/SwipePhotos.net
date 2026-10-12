@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Alert, Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Platform, Pressable, Switch, Text, View, useWindowDimensions } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as WebBrowser from "expo-web-browser";
 import { useFlow } from "@/lib/flow";
 import { exampleImage, PhotoSlot, PRIVACY_URL, SLOT_INFO, STYLES, sceneImage } from "@/lib/config";
 import { colors } from "@/lib/theme";
-import { Badge, Button, Card, ErrorBanner, Muted, Photo, Row } from "../ui";
+import { Button, Card, ErrorBanner, Muted, Photo, Row } from "../ui";
 import { StepLayout } from "./StepLayout";
 
 // ─── Step: style ──────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ export function PhotosStep() {
             <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>I have tattoos</Text>
             <Muted>Adds a 5th photo so we can reproduce them.</Muted>
           </View>
-          <Badge text={flow.hasTattoos ? "Yes" : "No"} tint={flow.hasTattoos ? colors.green : colors.textMuted} />
+          <Switch value={flow.hasTattoos} onValueChange={flow.setHasTattoos} trackColor={{ false: "#3a3a3f", true: colors.blue600 }} />
         </Card>
       </Pressable>
 

@@ -56,10 +56,10 @@ export default function RootLayout() {
             >
               <Stack.Screen name="index" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="onboarding" options={{ presentation: "fullScreenModal", gestureEnabled: false }} />
+              <Stack.Screen name="onboarding" options={{ presentation: "card", animation: "slide_from_bottom", gestureEnabled: false }} />
               <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
               <Stack.Screen name="order/[id]" options={{ headerShown: true, title: "Your photos", headerBackTitle: "Photos" }} />
-              <Stack.Screen name="viewer" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="viewer" options={{ presentation: "card", animation: "slide_from_bottom" }} />
             </Stack>
           </PurchasesProvider>
         </MeProvider>
